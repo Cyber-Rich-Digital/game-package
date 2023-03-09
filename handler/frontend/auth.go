@@ -30,8 +30,6 @@ func AuthController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newAuthController(service)
 
 	r.POST("/register", handler.register)
-
-	r = r.Group("/auth")
 	r.POST("/login", handler.login)
 
 }

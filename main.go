@@ -4,6 +4,7 @@ import (
 	docs "cyber-api/docs"
 	backend "cyber-api/handler/backend"
 	frontend "cyber-api/handler/frontend"
+	"cyber-api/middleware"
 	"fmt"
 	"os"
 	"time"
@@ -27,28 +28,30 @@ func main() {
 	db := initDatabase()
 
 	r := gin.New()
+	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	path := "/api"
 	route := r.Group(path)
-	frontPath := "/api"
-	frontRoute := r.Group(frontPath)
-	backPath := "/api/be"
-	backRoute := r.Group(backPath)
 
 	docs.SwaggerInfo.BasePath = path
 
-	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
-
-	route.GET("/ping", func(c *gin.Context) {
+	route.GET("/ping", middleware.Authorize, func(c *gin.Context) {
 		pingExample(c)
 	})
 
+	frontPath := "/api"
+	frontRoute := r.Group(frontPath)
+
 	frontend.PromotionController(frontRoute, db)
 	frontend.AuthController(frontRoute, db)
+
+	backPath := "/api/be"
+	backRoute := r.Group(backPath)
 	backend.PromotionController(backRoute, db)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
+	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	err := r.Run(port)
 	if err != nil {
 		panic(err)
