@@ -44,6 +44,7 @@ func main() {
 
 	frontend.PromotionController(frontRoute, db)
 	frontend.AuthController(frontRoute, db)
+	frontend.UserController(frontRoute, db)
 
 	backPath := "/api/be"
 	backRoute := r.Group(backPath)

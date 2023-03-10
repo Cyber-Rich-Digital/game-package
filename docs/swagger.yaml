@@ -1,4 +1,9 @@
 definitions:
+  handler.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
   main.ping:
     properties:
       message:
@@ -16,12 +21,6 @@ definitions:
     required:
     - email
     - password
-    type: object
-  model.Error:
-    properties:
-      message:
-        example: error
-        type: string
     type: object
   model.Login:
     properties:
@@ -78,9 +77,13 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.Pagination'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Get all promotions
       tags:
-      - promotions backend
+      - Back Promotion
   /auth/login:
     post:
       consumes:
@@ -103,10 +106,10 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Login
       tags:
-      - Front
+      - Front Auth
   /ping:
     get:
       consumes:
@@ -159,9 +162,13 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.Pagination'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Get all promotions
       tags:
-      - promotions
+      - Front Promotion
   /register:
     post:
       consumes:
@@ -181,7 +188,32 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Register
       tags:
-      - Front
+      - Front Auth
+  /users/:id:
+    get:
+      consumes:
+      - application/json
+      description: User
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: get user
+      tags:
+      - Front User
 swagger: "2.0"

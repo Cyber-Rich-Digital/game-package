@@ -1,18 +1,17 @@
 package service
 
 import (
+	"cyber-api/helper"
 	"cyber-api/model"
 	"cyber-api/repository"
-	"errors"
-	"os"
 
-	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var LoginFailed = errors.New("Email Or Password is incorrect")
+var loginFailed = "Email Or Password is incorrect"
 
 type UserService interface {
+	GetUserByID(id int) (*model.User, error)
 	CreateUser(user *model.CreateUser) error
 	Login(user *model.Login) (*string, error)
 }
@@ -31,23 +30,33 @@ func (s *userService) Login(user *model.Login) (*string, error) {
 
 	exist, err := s.repo.GetUserByEmail(user.Email)
 	if err != nil {
-		return nil, err
+		return nil, internalServerError(err.Error())
 	}
 
 	if exist.ID == 0 {
-		return nil, LoginFailed
+		return nil, notFound("User not found")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(exist.Password), []byte(user.Password)); err != nil {
-		return nil, LoginFailed
+		return nil, notFound(loginFailed)
 	}
 
-	token, err := createJWT(&exist)
+	token, err := helper.CreateJWT(&exist)
 	if err != nil {
-		return nil, err
+		return nil, internalServerError(err.Error())
 	}
 
 	return &token, nil
+}
+
+func (s *userService) GetUserByID(id int) (*model.User, error) {
+
+	user, err := s.repo.GetUserByID(id)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+
+	return &user, nil
 }
 
 func (s *userService) CreateUser(user *model.CreateUser) error {
@@ -58,31 +67,15 @@ func (s *userService) CreateUser(user *model.CreateUser) error {
 	}
 
 	if exist {
-		return errors.New("Email already exist")
+		return badRequest("Email already exist")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return internalServerError(err.Error())
 	}
 
 	user.Password = string(hashedPassword)
 
 	return s.repo.CreateUser(user)
-}
-
-func createJWT(user *model.User) (string, error) {
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":       user.ID,
-		"username": user.Username,
-		"email":    user.Email,
-	})
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
 }

@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"cyber-api/handler"
 	"cyber-api/service"
 
 	"cyber-api/repository"
@@ -33,18 +34,19 @@ func PromotionController(r *gin.RouterGroup, db *gorm.DB) {
 
 // @Summary Get all promotions
 // @Description Get all promotions
-// @Tags promotions backend
+// @Tags Back Promotion
 // @Accept  json
 // @Produce  json
 // @Param page query int false "Page"
 // @Param limit query int false "Limit"
 // @Success 200 {object} model.Pagination
+// @Failure 400 {object} handler.ErrorResponse
 // @Router /api/be/promotions [get]
 func (h promotionController) getAll(c *gin.Context) {
 
 	result, err := h.promotionService.GetPromotions()
 	if err != nil {
-		c.JSON(400, err)
+		handler.HandleError(c, err)
 		return
 	}
 

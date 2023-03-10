@@ -6,7 +6,7 @@ import (
 )
 
 type PromotionService interface {
-	GetPromotions() (model.Pagination, error)
+	GetPromotions() (*model.Pagination, error)
 }
 
 type promotionService struct {
@@ -19,14 +19,14 @@ func NewPromotionService(
 	return &promotionService{repo}
 }
 
-func (s *promotionService) GetPromotions() (model.Pagination, error) {
+func (s *promotionService) GetPromotions() (*model.Pagination, error) {
 
 	promotions, err := s.repo.GetPromotions()
 	if err != nil {
-		return model.Pagination{}, err
+		return nil, internalServerError(err.Error())
 	}
 
-	return model.Pagination{
+	return &model.Pagination{
 		List:  promotions,
 		Total: 0,
 	}, nil

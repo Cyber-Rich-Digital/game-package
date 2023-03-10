@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"cyber-api/model"
 	"os"
 	"strings"
 
@@ -9,18 +8,22 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+type authError struct {
+	Message string `json:"message" example:"error" `
+}
+
 func Authorize(c *gin.Context) {
 
 	token := c.Request.Header.Get("Authorization")
 	if token == "" {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
 	}
 
 	if len(strings.Split(token, " ")) != 2 {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
@@ -33,14 +36,14 @@ func Authorize(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
 	}
 
 	if !claims.Valid {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
@@ -55,14 +58,14 @@ func AdminAuthorize(c *gin.Context) {
 
 	token := c.Request.Header.Get("Authorization")
 	if token == "" {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
 	}
 
 	if len(strings.Split(token, " ")) != 2 {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
@@ -75,14 +78,14 @@ func AdminAuthorize(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return
 	}
 
 	if !claims.Valid {
-		c.AbortWithStatusJSON(401, model.Error{
+		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
 		return

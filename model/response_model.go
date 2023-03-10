@@ -14,6 +14,7 @@ type Pagination struct {
 	Total int         `json:"total"`
 }
 
-type Error struct {
-	Message string `json:"message" example:"error" `
+type SuccessWithData struct {
+	Message string      `json:"message" example:"success" `
+	Data    interface{} `json:"data"`
 }

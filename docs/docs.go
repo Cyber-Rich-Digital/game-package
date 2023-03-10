@@ -26,7 +26,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "promotions backend"
+                    "Back Promotion"
                 ],
                 "summary": "Get all promotions",
                 "parameters": [
@@ -49,6 +49,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.Pagination"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -63,7 +69,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Front"
+                    "Front Auth"
                 ],
                 "summary": "Login",
                 "parameters": [
@@ -87,7 +93,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -126,7 +132,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "promotions"
+                    "Front Promotion"
                 ],
                 "summary": "Get all promotions",
                 "parameters": [
@@ -173,6 +179,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.Pagination"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -187,7 +199,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Front"
+                    "Front Auth"
                 ],
                 "summary": "Register",
                 "parameters": [
@@ -207,12 +219,58 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/model.Success"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/:id": {
+            "get": {
+                "description": "User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Front User"
+                ],
+                "summary": "get user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
+        "handler.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "main.ping": {
             "type": "object",
             "properties": {
@@ -236,15 +294,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 6
-                }
-            }
-        },
-        "model.Error": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "error"
                 }
             }
         },
