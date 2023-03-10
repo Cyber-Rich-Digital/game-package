@@ -18,6 +18,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 func main() {
 
 	if err := godotenv.Load(); err != nil {
@@ -34,6 +38,7 @@ func main() {
 	route := r.Group(path)
 
 	docs.SwaggerInfo.BasePath = path
+	docs.SwaggerInfo.Title = "Cyber API"
 
 	route.GET("/ping", middleware.Authorize, func(c *gin.Context) {
 		pingExample(c)

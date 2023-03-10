@@ -37,6 +37,7 @@ func UserController(r *gin.RouterGroup, db *gorm.DB) {
 // @Summary get user
 // @Description User
 // @Tags Front User
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Param id path int true "User ID"

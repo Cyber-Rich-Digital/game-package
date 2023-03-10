@@ -84,7 +84,7 @@ paths:
       summary: Get all promotions
       tags:
       - Back Promotion
-  /auth/login:
+  /login:
     post:
       consumes:
       - application/json
@@ -213,7 +213,14 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: get user
       tags:
       - Front User
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

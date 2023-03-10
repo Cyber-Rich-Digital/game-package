@@ -59,7 +59,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/login": {
             "post": {
                 "description": "Login",
                 "consumes": [
@@ -231,6 +231,11 @@ const docTemplate = `{
         },
         "/users/:id": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "User",
                 "consumes": [
                     "application/json"
@@ -341,6 +346,13 @@ const docTemplate = `{
                 },
                 "token": {}
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
