@@ -5,7 +5,6 @@ import (
 	"cyber-api/middleware"
 	"cyber-api/model"
 	"cyber-api/service"
-	"strconv"
 
 	"cyber-api/repository"
 
@@ -46,10 +45,16 @@ func UserController(r *gin.RouterGroup, db *gorm.DB) {
 // @Router /users/{id} [get]
 func (h userController) getUser(c *gin.Context) {
 
-	getId := c.Param("id")
-	id, _ := strconv.Atoi(getId)
+	var param model.GetParam
 
-	result, err := h.userService.GetUserByID(id)
+	if err := c.ShouldBindUri(&param); err != nil {
+		handler.HandleError(c, err)
+		return
+	}
+
+	print(param.Id)
+
+	result, err := h.userService.GetUserByID(param.Id)
 	if err != nil {
 		handler.HandleError(c, err)
 		return

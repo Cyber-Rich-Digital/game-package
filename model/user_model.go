@@ -18,7 +18,7 @@ type Login struct {
 }
 
 type GetParam struct {
-	Id int `json:"id"`
+	Id int `uri:"id" binding:"required"`
 }
 
 type UserReponse struct {
