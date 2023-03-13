@@ -229,7 +229,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/:id": {
+        "/users/{id}": {
             "get": {
                 "security": [
                     {
@@ -250,7 +250,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "User ID",
+                        "description": "id",
                         "name": "id",
                         "in": "path",
                         "required": true

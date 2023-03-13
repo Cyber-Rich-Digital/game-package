@@ -18,3 +18,7 @@ type SuccessWithData struct {
 	Message string      `json:"message" example:"success" `
 	Data    interface{} `json:"data"`
 }
+
+type OKWithResult struct {
+	Result interface{} `json:"result"`
+}

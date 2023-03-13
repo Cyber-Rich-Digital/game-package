@@ -10,7 +10,7 @@ import (
 func CreateJWT(user *model.User) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":       user.ID,
+		"id":       user.Id,
 		"username": user.Username,
 		"email":    user.Email,
 	})

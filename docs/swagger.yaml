@@ -195,13 +195,13 @@ paths:
       summary: Register
       tags:
       - Front Auth
-  /users/:id:
+  /users/{id}:
     get:
       consumes:
       - application/json
       description: User
       parameters:
-      - description: User ID
+      - description: id
         in: path
         name: id
         required: true

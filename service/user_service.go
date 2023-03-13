@@ -11,7 +11,7 @@ import (
 var loginFailed = "Email Or Password is incorrect"
 
 type UserService interface {
-	GetUserByID(id int) (*model.User, error)
+	GetUserByID(id int) (*model.UserReponse, error)
 	CreateUser(user *model.CreateUser) error
 	Login(user *model.Login) (*string, error)
 }
@@ -33,7 +33,7 @@ func (s *userService) Login(user *model.Login) (*string, error) {
 		return nil, internalServerError(err.Error())
 	}
 
-	if exist.ID == 0 {
+	if exist.Id == 0 {
 		return nil, notFound("User not found")
 	}
 
@@ -49,14 +49,14 @@ func (s *userService) Login(user *model.Login) (*string, error) {
 	return &token, nil
 }
 
-func (s *userService) GetUserByID(id int) (*model.User, error) {
+func (s *userService) GetUserByID(id int) (*model.UserReponse, error) {
 
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (s *userService) CreateUser(user *model.CreateUser) error {

@@ -40,20 +40,20 @@ func UserController(r *gin.RouterGroup, db *gorm.DB) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param id path int true "User ID"
+// @Param id path int true "id"
 // @Ok 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /users/:id [get]
+// @Router /users/{id} [get]
 func (h userController) getUser(c *gin.Context) {
 
-	Id := c.Param("id")
-	getId, err := strconv.Atoi(Id)
+	getId := c.Param("id")
+	id, _ := strconv.Atoi(getId)
 
-	result, err := h.userService.GetUserByID(getId)
+	result, err := h.userService.GetUserByID(id)
 	if err != nil {
 		handler.HandleError(c, err)
 		return
 	}
 
-	c.JSON(200, model.SuccessWithData{Message: "Login success", Data: result})
+	c.JSON(200, model.OKWithResult{Result: result})
 }

@@ -11,25 +11,25 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 type UserRepository interface {
-	GetUserByID(id int) (model.User, error)
+	GetUserByID(id int) (*model.UserReponse, error)
 	GetUserByEmail(email string) (model.User, error)
 	GetUsers() (interface{}, error)
 	CheckUserByEmail(email string) (bool, error)
 	CreateUser(user *model.CreateUser) error
 }
 
-func (r repo) GetUserByID(id int) (model.User, error) {
+func (r repo) GetUserByID(id int) (*model.UserReponse, error) {
 
-	var user model.User
+	var user model.UserReponse
 	if err := r.db.Table("Users").
-		Select("id, email, password, username").
+		Select("id, email, username").
 		Where("id = ?", id).
 		First(&user).
 		Error; err != nil {
-		return model.User{}, err
+		return nil, err
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func (r repo) GetUserByEmail(email string) (model.User, error) {
