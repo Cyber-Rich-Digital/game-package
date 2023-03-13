@@ -1,0 +1,27 @@
+name: Build dev
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pull code and build
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEV_SSH_IP }}
+          username: ${{ secrets.DEV_SSH_USER }}
+          key: ${{ secrets.DEV_KEY }}
+          port: 22
+          script: |
+            cd cybergame-api
+            git fetch
+            git checkout dev
+            git checkout -- .
+            git pull
+            rm .env
+            echo "${{secrets.DEV_ENV}}" >> .env
+            cd ..
+            sudo docker compose up -d --build
