@@ -52,8 +52,6 @@ func (h userController) getUser(c *gin.Context) {
 		return
 	}
 
-	print(param.Id)
-
 	result, err := h.userService.GetUserByID(param.Id)
 	if err != nil {
 		handler.HandleError(c, err)
