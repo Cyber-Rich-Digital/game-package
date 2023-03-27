@@ -11,7 +11,7 @@ type SuccessWithToken struct {
 
 type Pagination struct {
 	List  interface{} `json:"list"`
-	Total int         `json:"total"`
+	Total int64       `json:"total"`
 }
 
 type SuccessWithData struct {
@@ -19,6 +19,6 @@ type SuccessWithData struct {
 	Data    interface{} `json:"data"`
 }
 
-type OKWithResult struct {
-	Result interface{} `json:"result"`
+type ResponseAsList struct {
+	List interface{} `json:"list"`
 }

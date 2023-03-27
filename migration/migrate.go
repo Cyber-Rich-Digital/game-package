@@ -80,12 +80,21 @@ func main() {
 				panic(err)
 			}
 
-			// execute sql file
-			if err := tx.Exec(string(sql)).Error; err != nil {
-				// print color red
-				println(fmt.Sprintf("\033[31m%s\033[0m ", "Error: "+err.Error()))
-				tx.Rollback()
-				panic(err)
+			list := strings.Split(string(sql), ";")
+
+			for _, query := range list {
+
+				if query == "" {
+					continue
+				}
+
+				// execute sql file
+				if err := tx.Exec(query).Error; err != nil {
+					// print color red
+					println(fmt.Sprintf("\033[31m%s\033[0m ", "Error: "+err.Error()))
+					tx.Rollback()
+					panic(err)
+				}
 			}
 
 			// print color green

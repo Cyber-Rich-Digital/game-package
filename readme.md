@@ -1,4 +1,4 @@
-# CYBER GAME
+# CYBER NOTI
 
 Gin is a web framework written in Go (Golang). It features a Martini-like API with much better performance -- up to 40 times faster. It also provides a robust set of features for building web applications and APIs.
 
@@ -18,7 +18,7 @@ go run .
 
 ## How to Migration MySQL
 
-Create a file name migrate.md to root path
+Create a file name migrate.env to root path
 
 ```
 DB_USER = user
@@ -26,6 +26,11 @@ DB_PASS = pass
 DB_HOST = host
 DB_PORT = 3360
 DB_NAME = cybergame
+```
+
+Run migrate
+```
+go run migration/migrate.go
 ```
 
 ## Example APIs
