@@ -84,7 +84,7 @@ func main() {
 
 			for _, query := range list {
 
-				if query == "" {
+				if strings.TrimSpace(query) == "" {
 					continue
 				}
 
@@ -92,7 +92,8 @@ func main() {
 				if err := tx.Exec(query).Error; err != nil {
 					// print color red
 					println(fmt.Sprintf("\033[31m%s\033[0m ", "Error: "+err.Error()))
-					tx.Rollback()
+					// You Cant rollback on Create/Alter
+					// tx.Rollback()
 					panic(err)
 				}
 			}
