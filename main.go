@@ -1,17 +1,13 @@
 package main
 
 import (
-	"context"
 	docs "cybergame-api/docs"
 	handler "cybergame-api/handler"
 	"cybergame-api/middleware"
 	"fmt"
-	"log"
 	"os"
-	"path/filepath"
 	"time"
 
-	firebase "firebase.google.com/go"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerfiles "github.com/swaggo/files"
@@ -19,8 +15,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"google.golang.org/api/option"
 )
 
 // @securityDefinitions.apikey BearerAuth
@@ -67,27 +61,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func initFirebase() (*firebase.App, context.Context) {
-
-	ctx := context.Background()
-
-	serviceAccountKeyFilePath, err := filepath.Abs("firebase_account_key.json")
-	if err != nil {
-		panic("Unable to load serviceAccountKeys.json file")
-	}
-
-	opt := option.WithCredentialsFile(serviceAccountKeyFilePath)
-
-	firebase, err := firebase.NewApp(context.Background(), nil, opt)
-	if err != nil {
-		panic("error initializing app: %v")
-	}
-
-	log.Println("Firebase initialized")
-
-	return firebase, ctx
 }
 
 type ping struct {
@@ -145,3 +118,24 @@ func initDatabase() *gorm.DB {
 
 	return db
 }
+
+// func initFirebase() (*firebase.App, context.Context) {
+
+// 	ctx := context.Background()
+
+// 	serviceAccountKeyFilePath, err := filepath.Abs("firebase_account_key.json")
+// 	if err != nil {
+// 		panic("Unable to load serviceAccountKeys.json file")
+// 	}
+
+// 	opt := option.WithCredentialsFile(serviceAccountKeyFilePath)
+
+// 	firebase, err := firebase.NewApp(context.Background(), nil, opt)
+// 	if err != nil {
+// 		panic("error initializing app: %v")
+// 	}
+
+// 	log.Println("Firebase initialized")
+
+// 	return firebase, ctx
+// }
