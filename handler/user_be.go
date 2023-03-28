@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"cyber-api/middleware"
-	"cyber-api/model"
-	"cyber-api/service"
+	"cybergame-api/middleware"
+	"cybergame-api/model"
+	"cybergame-api/service"
 	"errors"
 	"strconv"
 
-	"cyber-api/repository"
+	"cybergame-api/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"

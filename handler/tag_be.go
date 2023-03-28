@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"cyber-api/middleware"
-	"cyber-api/model"
-	"cyber-api/repository"
-	"cyber-api/service"
+	"cybergame-api/middleware"
+	"cybergame-api/model"
+	"cybergame-api/repository"
+	"cybergame-api/service"
 	"errors"
 	"strconv"
 

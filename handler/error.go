@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"cyber-api/model"
-	"cyber-api/service"
+	"cybergame-api/model"
+	"cybergame-api/service"
 	"errors"
 	"net/http"
 	"strings"

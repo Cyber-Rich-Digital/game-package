@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"cyber-api/model"
+	"cybergame-api/model"
 	"errors"
 	"fmt"
 

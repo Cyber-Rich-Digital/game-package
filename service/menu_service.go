@@ -1,6 +1,6 @@
 package service
 
-import "cyber-api/model"
+import "cybergame-api/model"
 
 type MenuService interface {
 	GetMenu(role string) []model.Menu

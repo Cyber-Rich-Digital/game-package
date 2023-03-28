@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"cyber-api/middleware"
-	"cyber-api/model"
-	"cyber-api/service"
+	"cybergame-api/middleware"
+	"cybergame-api/model"
+	"cybergame-api/service"
 
 	"github.com/gin-gonic/gin"
 )

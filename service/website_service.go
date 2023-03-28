@@ -1,9 +1,9 @@
 package service
 
 import (
-	"cyber-api/helper"
-	"cyber-api/model"
-	"cyber-api/repository"
+	"cybergame-api/helper"
+	"cybergame-api/model"
+	"cybergame-api/repository"
 )
 
 type WebsiteService interface {

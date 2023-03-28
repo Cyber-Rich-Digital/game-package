@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"cyber-api/model"
-	"cyber-api/repository"
+	"cybergame-api/model"
+	"cybergame-api/repository"
 	"fmt"
 	"log"
 

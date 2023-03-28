@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	docs "cyber-api/docs"
-	handler "cyber-api/handler"
-	"cyber-api/middleware"
+	docs "cybergame-api/docs"
+	handler "cybergame-api/handler"
+	"cybergame-api/middleware"
 	"fmt"
 	"log"
 	"os"

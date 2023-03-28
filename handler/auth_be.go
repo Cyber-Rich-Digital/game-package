@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"cyber-api/model"
-	"cyber-api/service"
+	"cybergame-api/model"
+	"cybergame-api/service"
 
-	"cyber-api/repository"
+	"cybergame-api/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"

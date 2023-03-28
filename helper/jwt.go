@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"cyber-api/model"
+	"cybergame-api/model"
 	"os"
 
 	"github.com/golang-jwt/jwt"

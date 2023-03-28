@@ -1,8 +1,8 @@
 package service
 
 import (
-	"cyber-api/model"
-	"cyber-api/repository"
+	"cybergame-api/model"
+	"cybergame-api/repository"
 )
 
 type TagService interface {
