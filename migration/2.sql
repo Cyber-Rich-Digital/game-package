@@ -1,1 +1,2 @@
-ALTER TABLE Users RENAME COLUMN name TO username;
+ALTER TABLE `cybernoti`.`Websites` 
+ADD COLUMN `user_id` INT NULL DEFAULT NULL AFTER `created_at`;

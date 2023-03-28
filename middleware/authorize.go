@@ -49,12 +49,27 @@ func Authorize(c *gin.Context) {
 		return
 	}
 
-	c.Set("id", claims.Claims.(jwt.MapClaims)["id"])
+	if claims.Claims.(jwt.MapClaims)["deviceId"] != nil {
+		c.AbortWithStatusJSON(401, authError{
+			Message: "Unauthorized",
+		})
+		return
+	}
+
+	if claims.Claims.(jwt.MapClaims)["id"] == nil && claims.Claims.(jwt.MapClaims)["role"] == nil {
+		c.AbortWithStatusJSON(401, authError{
+			Message: "Unauthorized",
+		})
+		return
+	}
+
+	c.Set("userId", claims.Claims.(jwt.MapClaims)["id"])
+	c.Set("role", claims.Claims.(jwt.MapClaims)["role"])
 
 	c.Next()
 }
 
-func AdminAuthorize(c *gin.Context) {
+func AppAuthorize(c *gin.Context) {
 
 	token := c.Request.Header.Get("Authorization")
 	if token == "" {
@@ -91,8 +106,18 @@ func AdminAuthorize(c *gin.Context) {
 		return
 	}
 
-	c.Set("id", claims.Claims.(jwt.MapClaims)["id"])
-	c.Set("role", claims.Claims.(jwt.MapClaims)["role"])
+	if claims.Claims.(jwt.MapClaims)["id"] == nil &&
+		claims.Claims.(jwt.MapClaims)["deviceId"] == nil &&
+		claims.Claims.(jwt.MapClaims)["hardwareId"] == nil {
+		c.AbortWithStatusJSON(401, authError{
+			Message: "Unauthorized",
+		})
+		return
+	}
+
+	c.Set("userId", claims.Claims.(jwt.MapClaims)["userId"])
+	c.Set("deviceId", claims.Claims.(jwt.MapClaims)["deviceId"])
+	c.Set("hardwareId", claims.Claims.(jwt.MapClaims)["hardwareId"])
 
 	c.Next()
 }

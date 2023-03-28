@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"cyber-api/model"
-	"cyber-api/service"
+	"cybergame-api/model"
+	"cybergame-api/service"
 	"errors"
 	"net/http"
 	"strings"
@@ -62,6 +62,34 @@ func ValidateField[T *model.CreateUser | *model.Login](data T) error {
 		checkType := strings.Split(err.(validator.ValidationErrors).Error(), "'")[3]
 		if checkType == "Email" || checkType == "Password" {
 			return errors.New("Email or Password is invalid")
+		} else {
+			return errors.New("Invalid data")
+		}
+	}
+
+	return nil
+}
+
+func ValidateFieldUser[T *model.CreateUser | *model.Login](data T) error {
+
+	if err := validator.New().Struct(data); err != nil {
+		checkType := strings.Split(err.(validator.ValidationErrors).Error(), "'")[3]
+		if checkType == "Email" || checkType == "Password" {
+			return errors.New("Email or Password is invalid")
+		} else {
+			return errors.New("Invalid data")
+		}
+	}
+
+	return nil
+}
+
+func ValidateFieldAdmin[T *model.Login | *model.CreateAdmin](data T) error {
+
+	if err := validator.New().Struct(data); err != nil {
+		checkType := strings.Split(err.(validator.ValidationErrors).Error(), "'")[3]
+		if checkType == "Username" || checkType == "Password" {
+			return errors.New("Username or Password is invalid")
 		} else {
 			return errors.New("Invalid data")
 		}

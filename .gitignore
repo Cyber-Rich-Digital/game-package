@@ -17,9 +17,11 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 build/
+docs/
 
 # Go workspace file
 go.work
 
 # Environment file
 *.env
+firebase_account_key.json
