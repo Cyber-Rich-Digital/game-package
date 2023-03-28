@@ -24,5 +24,4 @@ go.work
 
 # Environment file
 *.env
-
 firebase_account_key.json
