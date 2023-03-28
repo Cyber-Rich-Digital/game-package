@@ -1,7 +1,6 @@
-package backend
+package handler
 
 import (
-	"cyber-api/handler"
 	"cyber-api/middleware"
 	"cyber-api/model"
 	"cyber-api/repository"
@@ -48,18 +47,18 @@ func (h tagController) deleteTag(c *gin.Context) {
 	id := c.Param("id")
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	toInt, err := strconv.Atoi(id)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := h.tagService.DeleteTag(toInt); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 

@@ -1,4 +1,4 @@
-# CYBER NOTI
+# CYBER GAME
 
 Gin is a web framework written in Go (Golang). It features a Martini-like API with much better performance -- up to 40 times faster. It also provides a robust set of features for building web applications and APIs.
 

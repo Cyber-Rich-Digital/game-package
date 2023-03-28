@@ -1,7 +1,6 @@
-package backend
+package handler
 
 import (
-	"cyber-api/handler"
 	"cyber-api/middleware"
 	"cyber-api/model"
 	"cyber-api/service"
@@ -58,25 +57,25 @@ func UserController(r *gin.RouterGroup, db *gorm.DB) {
 func (h userController) getAllUser(c *gin.Context) {
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	query := model.UserQuery{}
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(query); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	users, err := h.userService.GetUsers(query)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -99,25 +98,25 @@ func (h userController) getAllUser(c *gin.Context) {
 func (h userController) getAllAdmin(c *gin.Context) {
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	query := model.UserQuery{}
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(query); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	users, err := h.userService.GetAdmins(query)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -138,18 +137,18 @@ func (h userController) getAllAdmin(c *gin.Context) {
 
 // 	data := &model.CreateUser{}
 // 	if err := c.ShouldBindJSON(data); err != nil {
-// 		handler.HandleError(c, err)
+// 		HandleError(c, err)
 // 		return
 // 	}
 
 // 	if err := handler.ValidateFieldUser(data); err != nil {
-// 		handler.HandleError(c, err)
+// 		HandleError(c, err)
 // 		return
 // 	}
 
 // 	err := h.userService.CreateUser(data)
 // 	if err != nil {
-// 		handler.HandleError(c, err)
+// 		HandleError(c, err)
 // 		return
 // 	}
 
@@ -169,24 +168,24 @@ func (h userController) getAllAdmin(c *gin.Context) {
 func (h userController) createAdmin(c *gin.Context) {
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	data := &model.CreateAdmin{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	err := h.userService.CreateAdmin(data, true)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -213,18 +212,18 @@ func (h userController) userChangePassword(c *gin.Context) {
 
 	data := &model.UserChangePassword{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	delErr := h.userService.UserChangePassword(toInt, int(userId2), role, data)
 	if delErr != nil {
-		handler.HandleError(c, delErr)
+		HandleError(c, delErr)
 		return
 	}
 
@@ -246,29 +245,29 @@ func (h userController) adminChangePassword(c *gin.Context) {
 
 	userId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	data := &model.AdminChangePassword{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	delErr := h.userService.AdminChangePassword(userId, data)
 	if delErr != nil {
-		handler.HandleError(c, delErr)
+		HandleError(c, delErr)
 		return
 	}
 
@@ -288,20 +287,20 @@ func (h userController) adminChangePassword(c *gin.Context) {
 func (h userController) deleteUser(c *gin.Context) {
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	id := c.Param("id")
 	toInt, err := strconv.Atoi(id)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	delErr := h.userService.DeleteUser(toInt)
 	if delErr != nil {
-		handler.HandleError(c, delErr)
+		HandleError(c, delErr)
 		return
 	}
 

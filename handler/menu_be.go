@@ -1,4 +1,4 @@
-package backend
+package handler
 
 import (
 	"cyber-api/middleware"

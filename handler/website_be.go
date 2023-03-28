@@ -1,7 +1,6 @@
-package backend
+package handler
 
 import (
-	"cyber-api/handler"
 	"cyber-api/middleware"
 	"cyber-api/model"
 	"cyber-api/repository"
@@ -59,12 +58,12 @@ func (h websiteController) getWebsites(c *gin.Context) {
 	var website model.WebsiteQuery
 
 	if err := c.ShouldBind(&website); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(website); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -73,7 +72,7 @@ func (h websiteController) getWebsites(c *gin.Context) {
 
 	data, err := h.websiteService.GetWebsites(website)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -98,13 +97,13 @@ func (h websiteController) getWebsite(c *gin.Context) {
 	var website model.WebsiteParam
 
 	if err := c.ShouldBindUri(&website); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	data, err := h.websiteService.GetWebsiteAndTags(website, id)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -129,18 +128,18 @@ func (h websiteController) createWebsite(c *gin.Context) {
 	var website model.WebsiteBody
 
 	if err := c.ShouldBindJSON(&website); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(website); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	err := h.websiteService.CreateWebsite(website, toInt)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -162,19 +161,19 @@ func (h websiteController) deleteWebsite(c *gin.Context) {
 	id := c.Param("id")
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	toInt, err := strconv.Atoi(id)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	delErr := h.websiteService.DeleteWebsite(toInt)
 	if delErr != nil {
-		handler.HandleError(c, delErr)
+		HandleError(c, delErr)
 		return
 	}
 
@@ -198,30 +197,30 @@ func (h websiteController) updateWebsite(c *gin.Context) {
 	id := c.Param("id")
 
 	if c.MustGet("role").(string) == "USER" {
-		handler.HandleError(c, errors.New("Permission denied"))
+		HandleError(c, errors.New("Permission denied"))
 		return
 	}
 
 	toInt, err := strconv.Atoi(id)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	body := model.WebsiteBody{}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(body); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := h.websiteService.UpdateWebsite(toInt, body); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 

@@ -1,7 +1,6 @@
-package backend
+package handler
 
 import (
-	"cyber-api/handler"
 	"cyber-api/model"
 	"cyber-api/service"
 
@@ -48,18 +47,18 @@ func (h authController) login(c *gin.Context) {
 
 	body := &model.Login{}
 	if err := c.ShouldBindJSON(body); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
-	if err := handler.ValidateField(body); err != nil {
-		handler.HandleError(c, err)
+	if err := ValidateField(body); err != nil {
+		HandleError(c, err)
 		return
 	}
 
 	token, err := h.userService.Login(body)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -79,18 +78,18 @@ func (h authController) register(c *gin.Context) {
 
 	data := &model.CreateUser{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	if err := validator.New().Struct(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
 	err := h.userService.CreateUser(data)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
@@ -110,18 +109,18 @@ func (h authController) registerAdmin(c *gin.Context) {
 
 	data := &model.CreateAdmin{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
-	if err := handler.ValidateFieldAdmin(data); err != nil {
-		handler.HandleError(c, err)
+	if err := ValidateFieldAdmin(data); err != nil {
+		HandleError(c, err)
 		return
 	}
 
 	err := h.userService.CreateAdmin(data, false)
 	if err != nil {
-		handler.HandleError(c, err)
+		HandleError(c, err)
 		return
 	}
 
