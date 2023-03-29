@@ -10,7 +10,7 @@ type SuccessWithToken struct {
 }
 
 type Pagination struct {
-	List  interface{} `json:"list"`
+	List  interface{} `json:"list" `
 	Total int64       `json:"total"`
 }
 

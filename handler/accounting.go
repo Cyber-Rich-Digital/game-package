@@ -1,11 +1,9 @@
 package handler
 
 import (
-	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/repository"
 	"cybergame-api/service"
-	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -29,48 +27,44 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	service := service.NewAccountingService(repo)
 	handler := newAccountingController(service)
 
-	r = r.Group("/accountings")
-	r.GET("/list", middleware.Authorize, handler.getAccountings)
-	r.GET("/detail/:id", middleware.Authorize, handler.getAccounting)
-	r.POST("", middleware.Authorize, handler.createAccounting)
-	r.PATCH("/:id", middleware.Authorize, handler.updateAccounting)
-	r.DELETE("/:id", middleware.Authorize, handler.deleteAccounting)
+	r1 := r.Group("/banks")
+	r1.GET("/list", handler.getBanks)
+	// r.GET("/detail/:id", handler.getBankByCode)
+	// r.GET("/code/:id", handler.getBankByCode)
+
+	r2 := r.Group("/bankaccounts")
+	r2.GET("/list", handler.getBankAccounts)
+	r2.GET("/detail/:id", handler.getBankAccountById)
+	r2.POST("", handler.createBankAccount)
+	r2.PATCH("/:id", handler.updateBankAccount)
+	r2.DELETE("/:id", handler.deleteBankAccount)
 }
 
-// @Summary GetAccountings
-// @Description get Accountings
-// @Tags Back Accountings
-// @Security BearerAuth
-// @Accept  json
-// @Produce  json
+// @Summary get Bank List
+// @Description get all thai Bank List
+// @Tags Banks
+// @Accept json
+// @Produce json
 // @Param page query int false "page"
 // @Param limit query int false "limit"
 // @Param search query string false "search"
-// @Param sort query int false "sort"
-// @Success 200 {object} model.SuccessWithData
-// @Failure 400 {object} handler.ErrorResponse
-// @Router /be/accountings/list [get]
-func (h accountingController) getAccountings(c *gin.Context) {
+// @Param sortCol query string false "sortCol"
+// @Param sortAsc query string false "sortAsc"
+// @Success 200 {object} model.Pagination
+// @Router /banks/list [get]
+func (h accountingController) getBanks(c *gin.Context) {
 
-	userId := c.MustGet("userId").(float64)
-	role := c.MustGet("role").(string)
-
-	var accounting model.BankAccountQuery
-
-	if err := c.ShouldBind(&accounting); err != nil {
+	var query model.BankListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	if err := validator.New().Struct(accounting); err != nil {
-		HandleError(c, err)
-		return
-	}
-
-	accounting.UserId = int(userId)
-	accounting.Role = role
-
-	data, err := h.accountingService.GetBankAccounts(accounting)
+	data, err := h.accountingService.GetBanks(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -79,20 +73,53 @@ func (h accountingController) getAccountings(c *gin.Context) {
 	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetAccounting
-// @Description get Accounting by id
-// @Tags Back Accountings
-// @Security BearerAuth
-// @Accept  json
-// @Produce  json
+// @Summary GetBankAccounts
+// @Description get BankAccounts
+// @Tags Bank Accounts
+// @Accept json
+// @Produce json
+// @Param page query int false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param sortCol query string false "sortCol"
+// @Param sortAsc query string false "sortAsc"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /bankaccounts/list [get]
+func (h accountingController) getBankAccounts(c *gin.Context) {
+
+	var query model.BankAccountListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetBankAccounts(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetBankAccount
+// @Description get BankAccount by id
+// @Tags Bank Accounts
+// @Accept json
+// @Produce json
 // @Param id path int true "id"
 // @Success 200 {object} model.SuccessWithToken
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /be/accountings/detail/{id} [get]
-func (h accountingController) getAccounting(c *gin.Context) {
+// @Router /bankaccounts/detail/{id} [get]
+func (h accountingController) getBankAccountById(c *gin.Context) {
 
-	userId, _ := c.Get("userId")
-	id := int(userId.(float64))
+	// userId, _ := c.Get("userId")
+	// id := int64(userId.(float64))
 
 	var accounting model.BankAccountParam
 
@@ -101,7 +128,7 @@ func (h accountingController) getAccounting(c *gin.Context) {
 		return
 	}
 
-	data, err := h.accountingService.GetBankAccountAndTags(accounting, id)
+	data, err := h.accountingService.GetBankAccountById(accounting)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -110,99 +137,52 @@ func (h accountingController) getAccounting(c *gin.Context) {
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
-// @Summary CreateAccounting
+// @Summary CreateBankAccount
 // @Description create new accounting
-// @Tags Back Accountings
-// @Security BearerAuth
-// @Accept  json
-// @Produce  json
-// @Param body body model.AccountingBody true "body"
+// @Tags Bank Accounts
+// @Accept json
+// @Produce json
+// @Param body body model.BankAccountBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /be/accountings [post]
-func (h accountingController) createAccounting(c *gin.Context) {
+// @Router /bankaccounts [post]
+func (h accountingController) createBankAccount(c *gin.Context) {
 
-	userId := c.MustGet("userId")
-	toInt := int(userId.(float64))
+	// userId := c.MustGet("userId")
+	// toInt := int(userId.(float64))
 
 	var accounting model.BankAccountBody
-
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
 	}
-
 	if err := validator.New().Struct(accounting); err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	err := h.accountingService.CreateBankAccount(accounting, toInt)
+	err := h.accountingService.CreateBankAccount(accounting)
 	if err != nil {
 		HandleError(c, err)
 		return
 	}
-
 	c.JSON(201, model.Success{Message: "Created success"})
 }
 
-// @Summary DeleteAccounting
-// @Description delete accounting
-// @Tags Back Accountings
-// @Security BearerAuth
-// @Accept  json
-// @Produce  json
-// @Param id path int true "id"
-// @Success 201 {object} model.Success
-// @Failure 400 {object} handler.ErrorResponse
-// @Router /be/accountings/{id} [delete]
-func (h accountingController) deleteAccounting(c *gin.Context) {
-
-	id := c.Param("id")
-
-	if c.MustGet("role").(string) == "USER" {
-		HandleError(c, errors.New("Permission denied"))
-		return
-	}
-
-	toInt, err := strconv.Atoi(id)
-	if err != nil {
-		HandleError(c, err)
-		return
-	}
-
-	delErr := h.accountingService.DeleteBankAccount(toInt)
-	if delErr != nil {
-		HandleError(c, delErr)
-		return
-	}
-
-	c.JSON(201, model.Success{Message: "Deleted success"})
-
-}
-
-// @Summary UpdateAccounting
+// @Summary UpdateBankAccount
 // @Description update accounting
-// @Tags Back Accountings
-// @Security BearerAuth
-// @Accept  json
-// @Produce  json
+// @Tags Bank Accounts
+// @Accept json
+// @Produce json
 // @Param id path int true "id"
-// @Param body body model.AccountingBody true "body"
+// @Param body body model.BankAccountBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /be/accountings/{id} [patch]
-func (h accountingController) updateAccounting(c *gin.Context) {
+// @Router /bankaccounts/{id} [patch]
+func (h accountingController) updateBankAccount(c *gin.Context) {
 
 	id := c.Param("id")
-
-	if c.MustGet("role").(string) == "USER" {
-		HandleError(c, errors.New("Permission denied"))
-		return
-	}
-
-	// toInt, err := strconv.Atoi(id)
-	toPrimaryKey, err := strconv.ParseInt(id, 10, 64)
+	identifier, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -220,10 +200,38 @@ func (h accountingController) updateAccounting(c *gin.Context) {
 		return
 	}
 
-	if err := h.accountingService.UpdateBankAccount(toPrimaryKey, body); err != nil {
+	if err := h.accountingService.UpdateBankAccount(identifier, body); err != nil {
 		HandleError(c, err)
 		return
 	}
 
 	c.JSON(201, model.Success{Message: "Updated success"})
+}
+
+// @Summary DeleteBankAccount
+// @Description delete accounting
+// @Tags Bank Accounts
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /bankaccounts/{id} [delete]
+func (h accountingController) deleteBankAccount(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	delErr := h.accountingService.DeleteBankAccount(identifier)
+	if delErr != nil {
+		HandleError(c, delErr)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Deleted success"})
+
 }

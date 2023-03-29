@@ -7,20 +7,21 @@ import (
 )
 
 type AccountingService interface {
-	GetBankAccountAndTags(data model.BankAccountParam, userId int) (*model.BankAccount, error)
-	GetBankAccount(data model.BankAccountParam, userId int) (*model.BankAccount, error)
-	GetBankAccounts(data model.BankAccountQuery) (*model.Pagination, error)
-	GetBankAccountTotals(body model.BankAccountDate) (*[]model.BankAccountListResponse, error)
-	CreateBankAccount(data model.BankAccountBody, userId int) error
+	GetBanks(data model.BankListRequest) (*model.Pagination, error)
+
+	GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error)
+	GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error)
+	CreateBankAccount(data model.BankAccountBody) error
 	UpdateBankAccount(id int64, data model.BankAccountBody) error
-	DeleteBankAccount(id int) error
+	DeleteBankAccount(id int64) error
 }
 
 type accountingService struct {
 	repo repository.AccountingRepository
 }
 
-var bankAccountNotFound = "Accounting not found"
+var bankNotFound = "Bank not found"
+var bankAccountNotFound = "Account not found"
 
 func NewAccountingService(
 	repo repository.AccountingRepository,
@@ -28,77 +29,39 @@ func NewAccountingService(
 	return &accountingService{repo}
 }
 
-func (s *accountingService) GetBankAccountAndTags(data model.BankAccountParam, userId int) (*model.BankAccount, error) {
+func (s *accountingService) GetBanks(params model.BankListRequest) (*model.Pagination, error) {
 
-	accounting, err := s.repo.GetBankAccountAndTags(data.Id)
+	if err := helper.Pagination(&params.Page, &params.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+
+	records, err := s.repo.GetBanks(params)
 	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
 
+func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error) {
+
+	accounting, err := s.repo.GetBankAccountById(data.Id)
+	if err != nil {
 		if err.Error() == "record not found" {
 			return nil, notFound(bankAccountNotFound)
 		}
-
 		if err.Error() == "Account not found" {
 			return nil, notFound(bankAccountNotFound)
 		}
-
 		return nil, internalServerError(err.Error())
 	}
-
-	// if accounting.UserId != userId {
-	// 	return nil, badRequest("You don't have permission to access this accounting")
-	// }
-
 	return accounting, nil
 }
 
-func (s *accountingService) GetBankAccount(data model.BankAccountParam, userId int) (*model.BankAccount, error) {
-
-	accounting, err := s.repo.GetBankAccount(data.Id)
-	if err != nil {
-
-		if err.Error() == "record not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
-
-		if err.Error() == "Account not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
-
-		return nil, internalServerError(err.Error())
-	}
-
-	// if accounting.UserId != userId {
-	// 	return nil, badRequest("You don't have permission to access this accounting")
-	// }
-
-	return accounting, nil
-}
-
-func (s *accountingService) GetBankAccountTotals(body model.BankAccountDate) (*[]model.BankAccountListResponse, error) {
-
-	accounting, err := s.repo.GetBankAccountTotals(body)
-	if err != nil {
-
-		if err.Error() == "record not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
-
-		if err.Error() == "Account not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
-
-		return nil, internalServerError(err.Error())
-	}
-
-	return accounting, nil
-}
-
-func (s *accountingService) GetBankAccounts(data model.BankAccountQuery) (*model.Pagination, error) {
+func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error) {
 
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-
 	accounting, err := s.repo.GetBankAccounts(data)
 	if err != nil {
 		return nil, internalServerError(err.Error())
@@ -107,9 +70,9 @@ func (s *accountingService) GetBankAccounts(data model.BankAccountQuery) (*model
 	return accounting, nil
 }
 
-func (s *accountingService) CreateBankAccount(data model.BankAccountBody, userId int) error {
+func (s *accountingService) CreateBankAccount(data model.BankAccountBody) error {
 
-	exist, err := s.repo.CheckBankAccount(data.DomainName)
+	exist, err := s.repo.HasBankAccount(data.AccountNumber)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -118,15 +81,11 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountBody, userId
 		return badRequest("Account already exist")
 	}
 
-	key := helper.GenKey(50)
+	var account model.BankAccount
+	account.AccountName = data.AccountName
+	account.AccountNumber = data.AccountNumber
 
-	var accounting model.BankAccount
-	accounting.Title = data.Title
-	accounting.DomainName = data.DomainName
-	accounting.UserId = userId
-	accounting.ApiKey = key
-
-	if err := s.repo.CreateBankAccount(accounting); err != nil {
+	if err := s.repo.CreateBankAccount(account); err != nil {
 		return internalServerError(err.Error())
 	}
 
@@ -135,12 +94,7 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountBody, userId
 
 func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountBody) error {
 
-	// if check, err := s.repo.GetBankAccountsByIdAndUserIds(id); err != nil {
-	// 	return internalServerError(err.Error())
-	// } else if !check {
-	// 	return notFound("Account not found")
-	// }
-	check, err := s.repo.CheckBankAccount(data.DomainName)
+	check, err := s.repo.HasBankAccount(data.AccountNumber)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -156,7 +110,7 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountBo
 	return nil
 }
 
-func (s *accountingService) DeleteBankAccount(id int) error {
+func (s *accountingService) DeleteBankAccount(id int64) error {
 
 	if err := s.repo.DeleteBankAccount(id); err != nil {
 		return internalServerError(err.Error())

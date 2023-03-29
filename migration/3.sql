@@ -47,6 +47,9 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
+ALTER TABLE `bank_accounts`
+	ADD UNIQUE INDEX `uni_account_number` (`account_number`);
+
 CREATE Table
     Bank_statements (
         id INT PRIMARY KEY AUTO_INCREMENT,

@@ -59,6 +59,7 @@ func main() {
 	handler.WebsiteController(backRoute, db)
 	handler.TagController(backRoute, db)
 	handler.MenuController(backRoute)
+	handler.AccountingController(backRoute, db)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
