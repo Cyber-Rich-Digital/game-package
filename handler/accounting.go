@@ -32,6 +32,9 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	// r.GET("/detail/:id", handler.getBankByCode)
 	// r.GET("/code/:id", handler.getBankByCode)
 
+	accountTypeRoute := r.Group("/accounttypes")
+	accountTypeRoute.GET("/list", handler.getAccountTypes)
+
 	r2 := r.Group("/bankaccounts")
 	r2.GET("/list", handler.getBankAccounts)
 	r2.GET("/detail/:id", handler.getBankAccountById)
@@ -65,6 +68,39 @@ func (h accountingController) getBanks(c *gin.Context) {
 	}
 
 	data, err := h.accountingService.GetBanks(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+}
+
+// @Summary get Account Type List
+// @Description get all Account Type
+// @Tags AccountTypes
+// @Accept json
+// @Produce json
+// @Param page query int false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param sortCol query string false "sortCol"
+// @Param sortAsc query string false "sortAsc"
+// @Success 200 {object} model.Pagination
+// @Router /accounttypes/list [get]
+func (h accountingController) getAccountTypes(c *gin.Context) {
+
+	var query model.AccountTypeListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetAccountTypes(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -148,7 +184,7 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 // @Router /bankaccounts [post]
 func (h accountingController) createBankAccount(c *gin.Context) {
 
-	// userId := c.MustGet("userId")
+	// bankId := c.MustGet("bankId")
 	// toInt := int(userId.(float64))
 
 	var accounting model.BankAccountBody

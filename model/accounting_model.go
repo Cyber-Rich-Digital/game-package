@@ -33,10 +33,34 @@ type BankListResponse struct {
 	Total int `json:"total"`
 }
 
+type AccountType struct {
+	Id        int64     `json:"id"`
+	Name      string    `json:"name"`
+	TypeFlag  string    `json:"typeFlag"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+type AccountTypeResponse struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
+}
+type AccountTypeListRequest struct {
+	Page    int    `form:"page" default:"1" min:"1"`
+	Limit   int    `form:"limit" default:"10" min:"1" max:"100"`
+	Search  string `form:"search"`
+	SortCol string `form:"sortCol"`
+	SortAsc string `form:"sortAsc"`
+}
+type AccountTypeListResponse struct {
+	Id    int `json:"id"`
+	Total int `json:"total"`
+}
+
 type BankAccount struct {
 	Id                    int64          `json:"id"`
 	BankId                int64          `json:"bankId"`
+	BankName              string         `json:"bankName"`
 	AccountTypeId         int64          `json:"accountTypeId"`
+	AccountTypeName       string         `json:"accountTypeName"`
 	AccountName           string         `json:"accountHame"`
 	AccountNumber         string         `json:"accountNumber"`
 	TransferPriority      string         `json:"transferPriority"`
@@ -50,7 +74,7 @@ type BankAccount struct {
 	AutoTransferMaxAmount string         `json:"autoTransferMaxAmount"`
 	QrWalletStatus        string         `json:"qrWalletStatus"`
 	CreatedAt             time.Time      `json:"createdAt"`
-	UpdatedAt             time.Time      `json:"updatedAt"`
+	UpdatedAt             *time.Time     `json:"updatedAt"`
 	DeletedAt             gorm.DeletedAt `json:"deletedAt"`
 }
 
@@ -67,6 +91,8 @@ type BankAccountListRequest struct {
 }
 
 type BankAccountBody struct {
+	BankId        int64  `json:"bankId" validate:"required"`
+	AccountTypeId int64  `json:"AccounTypeId" validate:"required"`
 	AccountName   string `json:"accountName" validate:"required"`
 	AccountNumber string `json:"domainName" validate:"required"`
 }
@@ -74,12 +100,14 @@ type BankAccountBody struct {
 type BankAccountResponse struct {
 	Id               int64          `json:"id"`
 	BankId           int64          `json:"bankId"`
+	BankName         string         `json:"bankName"`
 	AccountTypeId    int64          `json:"accountTypeId"`
+	AccountTypeName  string         `json:"accountTypeName"`
 	AccountName      string         `json:"accountHame"`
 	AccountNumber    string         `json:"accountNumber"`
 	TransferPriority string         `json:"transferPriority"`
 	AccountStatus    string         `json:"accountStatus"`
 	CreatedAt        time.Time      `json:"createdAt"`
-	UpdatedAt        time.Time      `json:"updatedAt"`
+	UpdatedAt        *time.Time     `json:"updatedAt"`
 	DeletedAt        gorm.DeletedAt `json:"deletedAt"`
 }

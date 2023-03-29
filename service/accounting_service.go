@@ -4,10 +4,13 @@ import (
 	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
+	"fmt"
 )
 
 type AccountingService interface {
 	GetBanks(data model.BankListRequest) (*model.Pagination, error)
+
+	GetAccountTypes(data model.AccountTypeListRequest) (*model.Pagination, error)
 
 	GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error)
@@ -36,6 +39,19 @@ func (s *accountingService) GetBanks(params model.BankListRequest) (*model.Pagin
 	}
 
 	records, err := s.repo.GetBanks(params)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
+func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest) (*model.Pagination, error) {
+
+	if err := helper.Pagination(&params.Page, &params.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+
+	records, err := s.repo.GetAccountTypes(params)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
@@ -72,16 +88,30 @@ func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (
 
 func (s *accountingService) CreateBankAccount(data model.BankAccountBody) error {
 
-	exist, err := s.repo.HasBankAccount(data.AccountNumber)
+	bank, err := s.repo.GetBankById(data.BankId)
 	if err != nil {
-		return internalServerError(err.Error())
+		fmt.Println(err)
+		return badRequest("Invalid Bank")
 	}
 
+	accountType, err := s.repo.GetAccounTypeById(data.AccountTypeId)
+	if err != nil {
+		fmt.Println(err)
+		return badRequest("Invalid Account Type")
+	}
+
+	exist, err := s.repo.HasBankAccount(data.AccountNumber)
+	if err != nil {
+		fmt.Println(err)
+		return internalServerError(err.Error())
+	}
 	if exist {
 		return badRequest("Account already exist")
 	}
 
-	var account model.BankAccount
+	var account model.BankAccountBody
+	account.BankId = bank.Id
+	account.AccountTypeId = accountType.Id
 	account.AccountName = data.AccountName
 	account.AccountNumber = data.AccountNumber
 
