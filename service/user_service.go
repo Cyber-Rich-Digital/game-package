@@ -191,7 +191,7 @@ func (s *userService) CreateAdmin(data *model.CreateAdmin, admin bool) error {
 		return badRequest("Email already exist")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
+	hashedPassword, err := helper.GenPassword(data.Password)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
