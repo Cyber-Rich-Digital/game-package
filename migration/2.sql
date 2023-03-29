@@ -69,12 +69,22 @@ ALTER TABLE `Bank_accounts`
 	ADD UNIQUE INDEX `uni_account_number` (`account_number`);
 
 CREATE Table
-    Bank_statements (
+    Bank_account_transactions (
         id INT PRIMARY KEY AUTO_INCREMENT,
+        bank_account_id BIGINT NOT NULL,
         description VARCHAR(255) NOT NULL,
         transfer_type VARCHAR(255) NOT NULL,
         amount DECIMAL(14,2) NOT NULL,
         transfer_at DATETIME NOT NULL,
+        create_by_username VARCHAR(255) NOT NULL,
+        created_at DATETIME DEFAULT NOW(),
+        updated_at DATETIME NULL ON UPDATE NOW(),
+        deleted_at DATETIME NULL
+    );
+
+CREATE Table
+    Bank_account_transfers (
+        id INT PRIMARY KEY AUTO_INCREMENT,
         from_account_id BIGINT NOT NULL,
         from_bank_id BIGINT NOT NULL,
         from_account_name VARCHAR(255) NOT NULL,
@@ -83,7 +93,12 @@ CREATE Table
         to_bank_id BIGINT NOT NULL,
         to_account_name VARCHAR(255) NOT NULL,
         to_account_number VARCHAR(255) NOT NULL,
+        amount DECIMAL(14,2) NOT NULL,
+        transfer_at DATETIME NOT NULL,
         create_by_username VARCHAR(255) NOT NULL,
+        status VARCHAR(255) NOT NULL,
+        confirmed_at DATETIME NULL,
+        confirmed_by_username VARCHAR(255) NULL,
         created_at DATETIME DEFAULT NOW(),
         updated_at DATETIME NULL ON UPDATE NOW(),
         deleted_at DATETIME NULL

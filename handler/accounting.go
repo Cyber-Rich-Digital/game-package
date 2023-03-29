@@ -27,20 +27,33 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	service := service.NewAccountingService(repo)
 	handler := newAccountingController(service)
 
-	r1 := r.Group("/banks")
-	r1.GET("/list", handler.getBanks)
-	// r.GET("/detail/:id", handler.getBankByCode)
-	// r.GET("/code/:id", handler.getBankByCode)
+	root := r.Group("/accounting")
 
-	accountTypeRoute := r.Group("/accounttypes")
+	bankRoute := root.Group("/banks")
+	bankRoute.GET("/list", handler.getBanks)
+
+	accountTypeRoute := root.Group("/accounttypes")
 	accountTypeRoute.GET("/list", handler.getAccountTypes)
 
-	r2 := r.Group("/bankaccounts")
-	r2.GET("/list", handler.getBankAccounts)
-	r2.GET("/detail/:id", handler.getBankAccountById)
-	r2.POST("", handler.createBankAccount)
-	r2.PATCH("/:id", handler.updateBankAccount)
-	r2.DELETE("/:id", handler.deleteBankAccount)
+	accountRoute := root.Group("/bankaccounts")
+	accountRoute.GET("/list", handler.getBankAccounts)
+	accountRoute.GET("/detail/:id", handler.getBankAccountById)
+	accountRoute.POST("", handler.createBankAccount)
+	accountRoute.PATCH("/:id", handler.updateBankAccount)
+	accountRoute.DELETE("/:id", handler.deleteBankAccount)
+
+	transactionRoute := root.Group("/transactions")
+	transactionRoute.GET("/list", handler.getTransactions)
+	transactionRoute.GET("/detail/:id", handler.getTransactionById)
+	transactionRoute.POST("", handler.createTransaction)
+	transactionRoute.DELETE("/:id", handler.deleteTransaction)
+
+	transferRoute := root.Group("/transfers")
+	transferRoute.GET("/list", handler.getTransfers)
+	transferRoute.GET("/detail/:id", handler.getTransferById)
+	transferRoute.POST("", handler.createTransfer)
+	transferRoute.POST("/confirm/:id", handler.confirmTransfer)
+	transferRoute.DELETE("/:id", handler.deleteTransfer)
 }
 
 // @Summary get Bank List
@@ -54,7 +67,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 // @Param sortCol query string false "sortCol"
 // @Param sortAsc query string false "sortAsc"
 // @Success 200 {object} model.Pagination
-// @Router /banks/list [get]
+// @Router /accounting/banks/list [get]
 func (h accountingController) getBanks(c *gin.Context) {
 
 	var query model.BankListRequest
@@ -87,7 +100,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 // @Param sortCol query string false "sortCol"
 // @Param sortAsc query string false "sortAsc"
 // @Success 200 {object} model.Pagination
-// @Router /accounttypes/list [get]
+// @Router /accounting/accounttypes/list [get]
 func (h accountingController) getAccountTypes(c *gin.Context) {
 
 	var query model.AccountTypeListRequest
@@ -121,7 +134,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 // @Param sortAsc query string false "sortAsc"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /bankaccounts/list [get]
+// @Router /accounting/bankaccounts/list [get]
 func (h accountingController) getBankAccounts(c *gin.Context) {
 
 	var query model.BankAccountListRequest
@@ -151,7 +164,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 // @Param id path int true "id"
 // @Success 200 {object} model.SuccessWithToken
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /bankaccounts/detail/{id} [get]
+// @Router /accounting/bankaccounts/detail/{id} [get]
 func (h accountingController) getBankAccountById(c *gin.Context) {
 
 	// userId, _ := c.Get("userId")
@@ -181,7 +194,7 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 // @Param body body model.BankAccountBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /bankaccounts [post]
+// @Router /accounting/bankaccounts [post]
 func (h accountingController) createBankAccount(c *gin.Context) {
 
 	// bankId := c.MustGet("bankId")
@@ -214,7 +227,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 // @Param body body model.BankAccountBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /bankaccounts/{id} [patch]
+// @Router /accounting/bankaccounts/{id} [patch]
 func (h accountingController) updateBankAccount(c *gin.Context) {
 
 	id := c.Param("id")
@@ -252,7 +265,7 @@ func (h accountingController) updateBankAccount(c *gin.Context) {
 // @Param id path int true "id"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /bankaccounts/{id} [delete]
+// @Router /accounting/bankaccounts/{id} [delete]
 func (h accountingController) deleteBankAccount(c *gin.Context) {
 
 	id := c.Param("id")
@@ -267,7 +280,286 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 		HandleError(c, delErr)
 		return
 	}
-
 	c.JSON(201, model.Success{Message: "Deleted success"})
+}
 
+// @Summary GetTransactions
+// @Description get Transactions
+// @Tags Bank Account Transactions
+// @Accept json
+// @Produce json
+// @Param page query int false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param sortCol query string false "sortCol"
+// @Param sortAsc query string false "sortAsc"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transactions/list [get]
+func (h accountingController) getTransactions(c *gin.Context) {
+
+	var query model.BankAccountTransactionListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetTransactions(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetTransaction
+// @Description get Transaction by id
+// @Tags Bank Account Transactions
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithToken
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transactions/detail/{id} [get]
+func (h accountingController) getTransactionById(c *gin.Context) {
+
+	// userId, _ := c.Get("userId")
+	// id := int64(userId.(float64))
+
+	var accounting model.BankAccountTransactionParam
+
+	if err := c.ShouldBindUri(&accounting); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetTransactionById(accounting)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary CreateTransaction
+// @Description create new accounting
+// @Tags Bank Account Transactions
+// @Accept json
+// @Produce json
+// @Param body body model.BankAccountTransactionBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transactions [post]
+func (h accountingController) createTransaction(c *gin.Context) {
+
+	// bankId := c.MustGet("bankId")
+	// toInt := int(userId.(float64))
+
+	var accounting model.BankAccountTransactionBody
+	if err := c.ShouldBindJSON(&accounting); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(accounting); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	err := h.accountingService.CreateTransaction(accounting)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary DeleteTransaction
+// @Description delete accounting
+// @Tags Bank Account Transactions
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transactions/{id} [delete]
+func (h accountingController) deleteTransaction(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	delErr := h.accountingService.DeleteTransaction(identifier)
+	if delErr != nil {
+		HandleError(c, delErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Deleted success"})
+}
+
+// @Summary GetTransfers
+// @Description get Transfers
+// @Tags Bank Account Transfers
+// @Accept json
+// @Produce json
+// @Param page query int false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param sortCol query string false "sortCol"
+// @Param sortAsc query string false "sortAsc"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transfers/list [get]
+func (h accountingController) getTransfers(c *gin.Context) {
+
+	var query model.BankAccountTransferListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetTransfers(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetTransfer
+// @Description get Transfer by id
+// @Tags Bank Account Transfers
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithToken
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transfers/detail/{id} [get]
+func (h accountingController) getTransferById(c *gin.Context) {
+
+	// userId, _ := c.Get("userId")
+	// id := int64(userId.(float64))
+
+	var accounting model.BankAccountTransferParam
+
+	if err := c.ShouldBindUri(&accounting); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetTransferById(accounting)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary CreateTransfer
+// @Description create new Transfer
+// @Tags Bank Account Transfers
+// @Accept json
+// @Produce json
+// @Param body body model.BankAccountTransferBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transfers [post]
+func (h accountingController) createTransfer(c *gin.Context) {
+
+	// bankId := c.MustGet("bankId")
+	// toInt := int(userId.(float64))
+
+	var accounting model.BankAccountTransferBody
+	if err := c.ShouldBindJSON(&accounting); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(accounting); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	err := h.accountingService.CreateTransfer(accounting)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary ConfirmTransfer
+// @Description update Transfer
+// @Tags Bank Account Transfers
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Param body body model.BankAccountTransferConfirmBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transfers/confirm/{id} [post]
+func (h accountingController) confirmTransfer(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	body := model.BankAccountTransferConfirmBody{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(body); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.accountingService.ConfirmTransfer(identifier, body); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Updated success"})
+}
+
+// @Summary DeleteTransfer
+// @Description delete Transfer
+// @Tags Bank Account Transfers
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/transfers/{id} [delete]
+func (h accountingController) deleteTransfer(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	delErr := h.accountingService.DeleteTransfer(identifier)
+	if delErr != nil {
+		HandleError(c, delErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Deleted success"})
 }
