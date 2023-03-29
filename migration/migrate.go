@@ -26,6 +26,7 @@ func main() {
 	}
 
 	db := initDatabase()
+	db = db.Table("Migrations")
 
 	// check table migration if not exist then create table migration
 	checkTableMigrate(db)
