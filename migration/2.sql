@@ -8,14 +8,25 @@ CREATE Table
         created_at DATETIME NOT NULL DEFAULT NOW()
     );
 
-ALTER TABLE `banks`
+ALTER TABLE `Banks`
 	ADD UNIQUE INDEX `uni_code` (`code`);
 
-INSERT INTO `banks` (`name`, `code`, `icon_url`, `type_flag`) VALUES
-	('ธนาคารกสิกรไทย', 'KBANK', '', '00001111'),
-	('ธนาคารไทยพาณิชย์', 'SCB', '', '00001111'),
-	('ธนาคารกรุงศรีอยุธยา', 'BAY', '', '00000011'),
-	('ธนาคารกรุงเทพ', 'BBL', '', '00000011');
+INSERT INTO `Banks` (`name`, `code`, `icon_url`, `type_flag`) VALUES
+	('กสิกรไทย', 'kbank', '', '00001111'),
+	('ไทยพาณิชย์', 'scb', '', '00001111'),
+	('กรุงเทพ', 'bbl', '', '00000011'),
+	('กรุงศรีอยุธยา', 'bay', '', '00000011'),
+	('กรุงไทย', 'ktb', '', '00000011'),
+	('ทีเอ็มบีธนชาต', 'ttb', '', '00000011'),
+	('ออมสิน', 'gsb', '', '00000011'),
+	('ธกส', 'baac', '', '00000011'),
+	('เกียรตินาคิน', 'kk', '', '00000011'),
+	('อาคารสงเคราะห์', 'ghb', '', '00000011'),
+	('ยูโอบี', 'uob', '', '00000011'),
+	('แลนด์ แอนด์ เฮ้าส์', 'lh', '', '00000011'),
+	('ซีไอเอ็มบี', 'cimb', '', '00000011'),
+	('เอชเอสบีซี', 'hsbc', '', '00000011'),
+	('ไอซีบีซี', 'icbc', '', '00000011');
 
 CREATE Table
     Bank_account_types (
@@ -25,7 +36,7 @@ CREATE Table
         created_at DATETIME NOT NULL DEFAULT NOW()
     );
 
-INSERT INTO `bank_account_types` (`name`, `limit_flag`) VALUES
+INSERT INTO `Bank_account_types` (`name`, `limit_flag`) VALUES
 	('เฉพาะฝาก', '00001000'),
 	('เฉพาะถอน', '00000100'),
 	('ฝาก-ถอน', '00001100'),
@@ -38,6 +49,7 @@ CREATE Table
         account_type_id BIGINT NOT NULL,
         account_name VARCHAR(255) NOT NULL,
         account_number VARCHAR(255) NOT NULL,
+        account_balance DECIMAL(14,2) NOT NULL,
         transfer_priority VARCHAR(255) NOT NULL,
         account_status VARCHAR(255) NOT NULL,
         device_uid VARCHAR(255) NOT NULL,
@@ -53,7 +65,7 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
-ALTER TABLE `bank_accounts`
+ALTER TABLE `Bank_accounts`
 	ADD UNIQUE INDEX `uni_account_number` (`account_number`);
 
 CREATE Table

@@ -63,6 +63,7 @@ type BankAccount struct {
 	AccountTypeName       string         `json:"accountTypeName"`
 	AccountName           string         `json:"accountHame"`
 	AccountNumber         string         `json:"accountNumber"`
+	AccountBalance        float32        `json:"accountBalance" sql:"type:decimal(14,2);"`
 	TransferPriority      string         `json:"transferPriority"`
 	AccountStatus         string         `json:"accountStatus"`
 	DeviceUid             string         `json:"deviceUid"`
@@ -94,7 +95,7 @@ type BankAccountBody struct {
 	BankId        int64  `json:"bankId" validate:"required"`
 	AccountTypeId int64  `json:"AccounTypeId" validate:"required"`
 	AccountName   string `json:"accountName" validate:"required"`
-	AccountNumber string `json:"domainName" validate:"required"`
+	AccountNumber string `json:"accountNumber" validate:"required"`
 }
 
 type BankAccountResponse struct {
@@ -105,6 +106,7 @@ type BankAccountResponse struct {
 	AccountTypeName  string         `json:"accountTypeName"`
 	AccountName      string         `json:"accountHame"`
 	AccountNumber    string         `json:"accountNumber"`
+	AccountBalance   float32        `json:"accountBalance"`
 	TransferPriority string         `json:"transferPriority"`
 	AccountStatus    string         `json:"accountStatus"`
 	CreatedAt        time.Time      `json:"createdAt"`

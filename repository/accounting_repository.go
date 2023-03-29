@@ -36,12 +36,13 @@ func (r repo) GetBanks(req model.BankListRequest) (*model.Pagination, error) {
 	var err error
 
 	// Count total records for pagination purposes (without limit and offset) //
-	count := r.db.Table("banks")
+	count := r.db.Table("Banks")
 	count = count.Select("id")
 	if req.Search != "" {
 		count = count.Where("code = ?", req.Search)
 	}
 	if err = count.
+		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
@@ -49,7 +50,7 @@ func (r repo) GetBanks(req model.BankListRequest) (*model.Pagination, error) {
 
 	if total > 0 {
 		// SELECT //
-		query := r.db.Table("banks")
+		query := r.db.Table("Banks")
 		query = query.Select("id, name, code, icon_url, icon_url, type_flag")
 		if req.Search != "" {
 			query = query.Where("code = ?", req.Search)
@@ -87,7 +88,7 @@ func (r repo) GetBanks(req model.BankListRequest) (*model.Pagination, error) {
 func (r repo) GetBankById(id int64) (*model.Bank, error) {
 
 	var result *model.Bank
-	if err := r.db.Table("banks").
+	if err := r.db.Table("Banks").
 		Select("id, name, code, icon_url, type_flag").
 		Where("id = ?", id).
 		First(&result).
@@ -104,7 +105,7 @@ func (r repo) GetBankById(id int64) (*model.Bank, error) {
 func (r repo) GetBankByCode(code string) (*model.Bank, error) {
 
 	var result *model.Bank
-	if err := r.db.Table("banks").
+	if err := r.db.Table("Banks").
 		Select("id, name, code, icon_url, type_flag").
 		Where("code = ?", code).
 		First(&result).
@@ -125,12 +126,13 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.Paginati
 	var err error
 
 	// Count total records for pagination purposes (without limit and offset) //
-	count := r.db.Table("bank_account_types")
+	count := r.db.Table("Bank_account_types")
 	count = count.Select("id")
 	if req.Search != "" {
 		count = count.Where("name = ?", req.Search)
 	}
 	if err = count.
+		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
@@ -138,7 +140,7 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.Paginati
 
 	if total > 0 {
 		// SELECT //
-		query := r.db.Table("bank_account_types")
+		query := r.db.Table("Bank_account_types")
 		query = query.Select("id, name, limit_flag")
 		if req.Search != "" {
 			query = query.Where("name = ?", req.Search)
@@ -176,7 +178,7 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.Paginati
 func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 
 	var result *model.AccountType
-	if err := r.db.Table("bank_account_types").
+	if err := r.db.Table("Bank_account_types").
 		Select("id, name, limit_flag").
 		Where("id = ?", id).
 		First(&result).
@@ -192,9 +194,10 @@ func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 
 func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 	var count int64
-	if err := r.db.Table("bank_accounts").
+	if err := r.db.Table("Bank_accounts").
 		Select("id").
 		Where("account_number = ?", accountNumber).
+		Where("deleted_at IS NULL").
 		Limit(1).
 		Count(&count).
 		Error; err != nil {
@@ -206,13 +209,13 @@ func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
-	if err := r.db.Table("bank_accounts as account").
+	if err := r.db.Table("Bank_accounts as account").
 		Select(selectedFields).
-		Joins("LEFT JOIN banks AS bank ON bank.id = account.bank_id").
-		Joins("LEFT JOIN bank_account_types AS account_type ON account_type.id = account.account_type_id").
+		Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id").
+		Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id").
 		Where("account.id = ?", id).
 		Where("account.deleted_at IS NULL").
 		First(&accounting).
@@ -233,13 +236,13 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	var err error
 
 	// SELECT //
-	query := r.db.Table("bank_accounts AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	query := r.db.Table("Bank_accounts AS account")
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	query = query.Select(selectedFields)
-	query = query.Joins("LEFT JOIN banks AS bank ON bank.id = account.bank_id")
-	query = query.Joins("LEFT JOIN bank_account_types AS account_type ON account_type.id = account.account_type_id")
+	query = query.Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id")
+	query = query.Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
 		query = query.Where("account.account_name LIKE ?", search_like).Or("account.account_number LIKE ?", search_like)
@@ -266,13 +269,14 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	}
 
 	// Count total records for pagination purposes (without limit and offset) //
-	count := r.db.Table("bank_accounts")
+	count := r.db.Table("Bank_accounts")
 	count = count.Select("id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
 		count = count.Where("account_name LIKE ?", search_like).Or("account_number LIKE ?", search_like)
 	}
 	if err = count.
+		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
@@ -286,21 +290,21 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 }
 
 func (r repo) CreateBankAccount(data model.BankAccountBody) error {
-	if err := r.db.Table("bank_accounts").Create(&data).Error; err != nil {
+	if err := r.db.Table("Bank_accounts").Create(&data).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r repo) UpdateBankAccount(id int64, data model.BankAccountBody) error {
-	if err := r.db.Table("bank_accounts").Where("id = ?", id).Updates(&data).Error; err != nil {
+	if err := r.db.Table("Bank_accounts").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r repo) DeleteBankAccount(id int64) error {
-	if err := r.db.Table("bank_accounts").Where("id = ?", id).Delete(&model.BankAccount{}).Error; err != nil {
+	if err := r.db.Table("Bank_accounts").Where("id = ?", id).Delete(&model.BankAccount{}).Error; err != nil {
 		return err
 	}
 	return nil

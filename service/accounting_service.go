@@ -124,23 +124,50 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountBody) error 
 
 func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountBody) error {
 
-	check, err := s.repo.HasBankAccount(data.AccountNumber)
+	account, err := s.repo.GetBankAccountById(id)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	if check {
-		return badRequest("Account already exist")
+	// Validate
+	if account.BankId != data.BankId {
+		bank, err := s.repo.GetBankById(data.BankId)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid Bank")
+		}
+		data.BankId = bank.Id
+	}
+	if account.AccountTypeId != data.AccountTypeId {
+		accountType, err := s.repo.GetAccounTypeById(data.AccountTypeId)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid Account Type")
+		}
+		data.AccountTypeId = accountType.Id
+	}
+	if account.AccountNumber != data.AccountNumber {
+		check, err := s.repo.HasBankAccount(data.AccountNumber)
+		if err != nil {
+			return internalServerError(err.Error())
+		}
+		if !check {
+			return notFound("Account already exist")
+		}
 	}
 
 	if err := s.repo.UpdateBankAccount(id, data); err != nil {
 		return internalServerError(err.Error())
 	}
-
 	return nil
 }
 
 func (s *accountingService) DeleteBankAccount(id int64) error {
+
+	_, err := s.repo.GetBankAccountById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
 
 	if err := s.repo.DeleteBankAccount(id); err != nil {
 		return internalServerError(err.Error())
