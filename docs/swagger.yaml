@@ -116,6 +116,42 @@ definitions:
     - accounTypeId
     type: object
   model.CreateAdmin:
+    properties:
+      email:
+        type: string
+      fullname:
+        maxLength: 30
+        minLength: 6
+        type: string
+      password:
+        maxLength: 30
+        minLength: 6
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/model.Permission'
+        type: array
+      phone:
+        maxLength: 12
+        minLength: 10
+        type: string
+      roleId:
+        type: string
+      status:
+        type: string
+      username:
+        maxLength: 30
+        minLength: 6
+        type: string
+    required:
+    - email
+    - fullname
+    - password
+    - permissions
+    - phone
+    - roleId
+    - status
+    - username
     type: object
   model.CreateGroup:
     properties:
@@ -152,6 +188,19 @@ definitions:
   model.LoginResponse:
     properties:
       token:
+        type: string
+    type: object
+  model.Permission:
+    properties:
+      createdAt:
+        type: string
+      deleteAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updatedAt:
         type: string
     type: object
   model.PermissionName:
@@ -904,6 +953,32 @@ paths:
       tags:
       - Admins
   /admins/group/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Group
+      tags:
+      - Admins
     get:
       consumes:
       - application/json
@@ -928,6 +1003,33 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Group
+      tags:
+      - Admins
+  /admins/permission/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Permission
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete Permission
       tags:
       - Admins
   /groups/create:
