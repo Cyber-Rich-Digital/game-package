@@ -75,7 +75,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 // @Param search query string false "search"
 // @Param sortCol query string false "sortCol"
 // @Param sortAsc query string false "sortAsc"
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/banks/list [get]
 func (h accountingController) getBanks(c *gin.Context) {
 
@@ -95,7 +95,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary get Account Type List
@@ -104,7 +104,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/accounttypes/list [get]
 func (h accountingController) getAccountTypes(c *gin.Context) {
 
@@ -124,7 +124,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary get Auto Credit Flags
@@ -133,14 +133,14 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/autocreditflags/list [get]
 func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 	var data = []model.SimpleOption{
 		{Key: "manual", Name: "สร้างใบงานและปรับเครดิตเอง"},
 		{Key: "auto", Name: "ปรับเครดิตออโต้ (Bot)"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary get Auto withdraw Flags
@@ -149,7 +149,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/autowithdrawflags/list [get]
 func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 	var data = []model.SimpleOption{
@@ -157,7 +157,7 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 		{Key: "auto_backoffice", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ คลิกผ่านระบบหลังบ้าน"},
 		{Key: "auto_bot", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ โอนเงินออโต้ (Bot)"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary get Qr Wallet Statuses
@@ -166,14 +166,14 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/qrwalletstatuses/list [get]
 func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 	var data = []model.SimpleOption{
 		{Key: "use_qr", Name: "เปิด"},
 		{Key: "disabled", Name: "ปิด"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary get Account Statuses
@@ -182,14 +182,14 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/accountstatuses/list [get]
 func (h accountingController) getAccountStatuses(c *gin.Context) {
 	var data = []model.SimpleOption{
 		{Key: "active", Name: "ใช้งาน"},
 		{Key: "deactive", Name: "ระงับการใช้งาน"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary get Account Priorities
@@ -198,7 +198,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/accountpriorities/list [get]
 func (h accountingController) getAccountPriorities(c *gin.Context) {
 	var data = []model.SimpleOption{
@@ -211,7 +211,7 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 		{Key: "deluxe", Name: "ระดับ DELUXE ฝากสะสมมากกว่า 100,000 บาท"},
 		{Key: "wisdom", Name: "ระดับ WISDOM ฝากสะสมมากกว่า 500,000 บาท"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary get Account Priorities
@@ -220,14 +220,14 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/accountbotstatuses/list [get]
 func (h accountingController) getAccountBotStatuses(c *gin.Context) {
 	var data = []model.SimpleOption{
 		{Key: "active", Name: "เชื่อมต่อ"},
 		{Key: "disconnected", Name: "ไม่ได้เชื่อมต่อ"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary get Transfer Types
@@ -236,14 +236,14 @@ func (h accountingController) getAccountBotStatuses(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} model.Pagination
+// @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/transfertypes/list [get]
 func (h accountingController) getTransferTypes(c *gin.Context) {
 	var data = []model.SimpleOption{
 		{Key: "deposit", Name: "ฝากเงิน"},
 		{Key: "withdraw", Name: "ถอนเงิน"},
 	}
-	c.JSON(200, model.Pagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary GetBankAccounts
@@ -278,7 +278,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary GetBankAccount
@@ -288,7 +288,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Success 200 {object} model.SuccessWithToken
+// @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts/detail/{id} [get]
 func (h accountingController) getBankAccountById(c *gin.Context) {
@@ -448,7 +448,7 @@ func (h accountingController) getTransactions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary GetTransaction
@@ -458,7 +458,7 @@ func (h accountingController) getTransactions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Success 200 {object} model.SuccessWithToken
+// @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transactions/detail/{id} [get]
 func (h accountingController) getTransactionById(c *gin.Context) {
@@ -578,7 +578,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary GetTransfer
@@ -588,7 +588,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Success 200 {object} model.SuccessWithToken
+// @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transfers/detail/{id} [get]
 func (h accountingController) getTransferById(c *gin.Context) {

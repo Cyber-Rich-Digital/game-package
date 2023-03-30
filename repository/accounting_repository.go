@@ -14,34 +14,34 @@ func NewAccountingRepository(db *gorm.DB) AccountingRepository {
 }
 
 type AccountingRepository interface {
-	GetBanks(req model.BankListRequest) (*model.Pagination, error)
+	GetBanks(req model.BankListRequest) (*model.SuccessWithPagination, error)
 	GetBankById(id int64) (*model.Bank, error)
 	GetBankByCode(code string) (*model.Bank, error)
 
-	GetAccountTypes(req model.AccountTypeListRequest) (*model.Pagination, error)
+	GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 	GetAccounTypeById(id int64) (*model.AccountType, error)
 
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
-	GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error)
+	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
 	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
 	DeleteBankAccount(id int64) error
 
 	GetTransactionById(id int64) (*model.BankAccountTransaction, error)
-	GetTransactions(data model.BankAccountTransactionListRequest) (*model.Pagination, error)
+	GetTransactions(data model.BankAccountTransactionListRequest) (*model.SuccessWithPagination, error)
 	CreateTransaction(data model.BankAccountTransactionBody) error
 	UpdateTransaction(id int64, data model.BankAccountTransactionBody) error
 	DeleteTransaction(id int64) error
 
 	GetTransferById(id int64) (*model.BankAccountTransfer, error)
-	GetTransfers(data model.BankAccountTransferListRequest) (*model.Pagination, error)
+	GetTransfers(data model.BankAccountTransferListRequest) (*model.SuccessWithPagination, error)
 	CreateTransfer(data model.BankAccountTransferBody) error
 	ConfirmTransfer(id int64, data model.BankAccountTransferConfirmBody) error
 	DeleteTransfer(id int64) error
 }
 
-func (r repo) GetBanks(req model.BankListRequest) (*model.Pagination, error) {
+func (r repo) GetBanks(req model.BankListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.BankResponse
 	var total int64
@@ -87,7 +87,7 @@ func (r repo) GetBanks(req model.BankListRequest) (*model.Pagination, error) {
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //
-	var result model.Pagination
+	var result model.SuccessWithPagination
 	if list == nil {
 		list = []model.BankResponse{}
 	}
@@ -130,7 +130,7 @@ func (r repo) GetBankByCode(code string) (*model.Bank, error) {
 	return result, nil
 }
 
-func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.Pagination, error) {
+func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.AccountTypeResponse
 	var total int64
@@ -176,7 +176,7 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.Paginati
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //
-	var result model.Pagination
+	var result model.SuccessWithPagination
 	if list == nil {
 		list = []model.AccountTypeResponse{}
 	}
@@ -239,7 +239,7 @@ func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 	return &accounting, nil
 }
 
-func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Pagination, error) {
+func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.BankAccountResponse
 	var total int64
@@ -293,7 +293,7 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //
-	var result model.Pagination
+	var result model.SuccessWithPagination
 	result.List = list
 	result.Total = total
 	return &result, nil
@@ -343,7 +343,7 @@ func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error
 	return &record, nil
 }
 
-func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*model.Pagination, error) {
+func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.BankAccountTransactionResponse
 	var total int64
@@ -429,7 +429,7 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //
-	var result model.Pagination
+	var result model.SuccessWithPagination
 	result.List = list
 	result.Total = total
 	return &result, nil
@@ -481,7 +481,7 @@ func (r repo) GetTransferById(id int64) (*model.BankAccountTransfer, error) {
 	return &record, nil
 }
 
-func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Pagination, error) {
+func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.BankAccountTransferResponse
 	var total int64
@@ -572,7 +572,7 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Pag
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //
-	var result model.Pagination
+	var result model.SuccessWithPagination
 	result.List = list
 	result.Total = total
 	return &result, nil

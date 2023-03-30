@@ -9,24 +9,24 @@ import (
 )
 
 type AccountingService interface {
-	GetBanks(data model.BankListRequest) (*model.Pagination, error)
+	GetBanks(data model.BankListRequest) (*model.SuccessWithPagination, error)
 
-	GetAccountTypes(data model.AccountTypeListRequest) (*model.Pagination, error)
+	GetAccountTypes(data model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 
 	GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error)
-	GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error)
+	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
 	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
 	DeleteBankAccount(id int64) error
 
 	GetTransactionById(data model.BankAccountTransactionParam) (*model.BankAccountTransaction, error)
-	GetTransactions(data model.BankAccountTransactionListRequest) (*model.Pagination, error)
+	GetTransactions(data model.BankAccountTransactionListRequest) (*model.SuccessWithPagination, error)
 	CreateTransaction(data model.BankAccountTransactionBody) error
 	UpdateTransaction(id int64, data model.BankAccountTransactionBody) error
 	DeleteTransaction(id int64) error
 
 	GetTransferById(data model.BankAccountTransferParam) (*model.BankAccountTransfer, error)
-	GetTransfers(data model.BankAccountTransferListRequest) (*model.Pagination, error)
+	GetTransfers(data model.BankAccountTransferListRequest) (*model.SuccessWithPagination, error)
 	CreateTransfer(data model.BankAccountTransferBody) error
 	ConfirmTransfer(id int64) error
 	DeleteTransfer(id int64) error
@@ -45,7 +45,7 @@ func NewAccountingService(
 	return &accountingService{repo}
 }
 
-func (s *accountingService) GetBanks(params model.BankListRequest) (*model.Pagination, error) {
+func (s *accountingService) GetBanks(params model.BankListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&params.Page, &params.Limit); err != nil {
 		return nil, badRequest(err.Error())
@@ -58,7 +58,7 @@ func (s *accountingService) GetBanks(params model.BankListRequest) (*model.Pagin
 	return records, nil
 }
 
-func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest) (*model.Pagination, error) {
+func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&params.Page, &params.Limit); err != nil {
 		return nil, badRequest(err.Error())
@@ -86,7 +86,7 @@ func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*mo
 	return accounting, nil
 }
 
-func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error) {
+func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
@@ -205,7 +205,7 @@ func (s *accountingService) GetTransactionById(data model.BankAccountTransaction
 	return accounting, nil
 }
 
-func (s *accountingService) GetTransactions(data model.BankAccountTransactionListRequest) (*model.Pagination, error) {
+func (s *accountingService) GetTransactions(data model.BankAccountTransactionListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
@@ -272,7 +272,7 @@ func (s *accountingService) GetTransferById(data model.BankAccountTransferParam)
 	return accounting, nil
 }
 
-func (s *accountingService) GetTransfers(data model.BankAccountTransferListRequest) (*model.Pagination, error) {
+func (s *accountingService) GetTransfers(data model.BankAccountTransferListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())

@@ -22,6 +22,99 @@ definitions:
     - groupId
     - permissionIds
     type: object
+  model.BankAccountCreateBody:
+    properties:
+      accounTypeId:
+        type: integer
+      accountName:
+        type: string
+      accountNumber:
+        type: string
+      accountPriority:
+        type: string
+      accountStatus:
+        type: string
+      autoCreditFlag:
+        type: string
+      autoTransferMaxAmount:
+        type: string
+      autoWithdrawFlag:
+        type: string
+      autoWithdrawMaxAmount:
+        type: string
+      bankId:
+        type: integer
+      deviceUid:
+        type: string
+      pinCode:
+        type: string
+      qrWalletStatus:
+        type: string
+    required:
+    - accounTypeId
+    - accountName
+    - accountNumber
+    - bankId
+    type: object
+  model.BankAccountTransactionBody:
+    properties:
+      accountId:
+        type: integer
+      amount:
+        type: number
+      description:
+        type: string
+      transferAt:
+        type: string
+      transferType:
+        type: string
+    required:
+    - accountId
+    - amount
+    - transferAt
+    - transferType
+    type: object
+  model.BankAccountTransferBody:
+    properties:
+      amount:
+        type: number
+      fromAccountId:
+        type: integer
+      toAccountId:
+        type: integer
+      transferAt:
+        type: string
+    required:
+    - amount
+    - fromAccountId
+    - toAccountId
+    - transferAt
+    type: object
+  model.BankAccountUpdateBody:
+    properties:
+      accounTypeId:
+        type: integer
+      accountPriority:
+        type: string
+      accountStatus:
+        type: string
+      autoCreditFlag:
+        type: string
+      autoTransferMaxAmount:
+        type: string
+      autoWithdrawFlag:
+        type: string
+      autoWithdrawMaxAmount:
+        type: string
+      deviceUid:
+        type: string
+      pinCode:
+        type: string
+      qrWalletStatus:
+        type: string
+    required:
+    - accounTypeId
+    type: object
   model.CreateAdmin:
     type: object
   model.CreateGroup:
@@ -85,9 +178,654 @@ definitions:
       message:
         type: string
     type: object
+  model.SuccessWithPagination:
+    properties:
+      list: {}
+      message:
+        type: string
+      total:
+        type: integer
+    type: object
 info:
   contact: {}
 paths:
+  /accounting/accountbotstatuses/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Account Priorities Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Account Priorities
+      tags:
+      - Options
+  /accounting/accountpriorities/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Account Priorities Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Account Priorities
+      tags:
+      - Options
+  /accounting/accountstatuses/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Account Statuses Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Account Statuses
+      tags:
+      - Options
+  /accounting/accounttypes/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Account Type
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Account Type List
+      tags:
+      - Options
+  /accounting/autocreditflags/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Auto Credit Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Auto Credit Flags
+      tags:
+      - Options
+  /accounting/autowithdrawflags/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Auto withdraw Flags Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Auto withdraw Flags
+      tags:
+      - Options
+  /accounting/bankaccounts:
+    post:
+      consumes:
+      - application/json
+      description: create new accounting
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.BankAccountCreateBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: CreateBankAccount
+      tags:
+      - Bank Accounts
+  /accounting/bankaccounts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete accounting
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: DeleteBankAccount
+      tags:
+      - Bank Accounts
+    patch:
+      consumes:
+      - application/json
+      description: update accounting
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.BankAccountUpdateBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: UpdateBankAccount
+      tags:
+      - Bank Accounts
+  /accounting/bankaccounts/detail/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get BankAccount by id
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetBankAccount
+      tags:
+      - Bank Accounts
+  /accounting/bankaccounts/list:
+    get:
+      consumes:
+      - application/json
+      description: get BankAccounts
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: sortCol
+        in: query
+        name: sortCol
+        type: string
+      - description: sortAsc
+        in: query
+        name: sortAsc
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetBankAccounts
+      tags:
+      - Bank Accounts
+  /accounting/banks/list:
+    get:
+      consumes:
+      - application/json
+      description: get all thai Bank List
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: sortCol
+        in: query
+        name: sortCol
+        type: string
+      - description: sortAsc
+        in: query
+        name: sortAsc
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Bank List
+      tags:
+      - Options
+  /accounting/qrwalletstatuses/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Qr Wallet Statuses Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Qr Wallet Statuses
+      tags:
+      - Options
+  /accounting/transactions:
+    post:
+      consumes:
+      - application/json
+      description: create new accounting
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.BankAccountTransactionBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: CreateTransaction
+      tags:
+      - Bank Account Transactions
+  /accounting/transactions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete accounting
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: DeleteTransaction
+      tags:
+      - Bank Account Transactions
+  /accounting/transactions/detail/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get Transaction by id
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetTransaction
+      tags:
+      - Bank Account Transactions
+  /accounting/transactions/list:
+    get:
+      consumes:
+      - application/json
+      description: get Transactions
+      parameters:
+      - description: accountId
+        in: query
+        name: accountId
+        type: string
+      - description: fromCreatedDate
+        in: query
+        name: fromCreatedDate
+        type: string
+      - description: toCreatedDate
+        in: query
+        name: toCreatedDate
+        type: string
+      - description: transferType
+        in: query
+        name: transferType
+        type: string
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: sortCol
+        in: query
+        name: sortCol
+        type: string
+      - description: sortAsc
+        in: query
+        name: sortAsc
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetTransactions
+      tags:
+      - Bank Account Transactions
+  /accounting/transfers:
+    post:
+      consumes:
+      - application/json
+      description: create new Transfer
+      parameters:
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.BankAccountTransferBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: CreateTransfer
+      tags:
+      - Bank Account Transfers
+  /accounting/transfers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete Transfer
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: DeleteTransfer
+      tags:
+      - Bank Account Transfers
+  /accounting/transfers/confirm/{id}:
+    post:
+      consumes:
+      - application/json
+      description: update Transfer
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ConfirmTransfer
+      tags:
+      - Bank Account Transfers
+  /accounting/transfers/detail/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get Transfer by id
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetTransfer
+      tags:
+      - Bank Account Transfers
+  /accounting/transfers/list:
+    get:
+      consumes:
+      - application/json
+      description: get Transfers
+      parameters:
+      - description: accountId
+        in: query
+        name: accountId
+        type: string
+      - description: fromCreatedDate
+        in: query
+        name: fromCreatedDate
+        type: string
+      - description: toCreatedDate
+        in: query
+        name: toCreatedDate
+        type: string
+      - description: toAccountId
+        in: query
+        name: toAccountId
+        type: string
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: sortCol
+        in: query
+        name: sortCol
+        type: string
+      - description: sortAsc
+        in: query
+        name: sortAsc
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetTransfers
+      tags:
+      - Bank Account Transfers
+  /accounting/transfertypes/list:
+    get:
+      consumes:
+      - application/json
+      description: get all Transfer Types Flags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SuccessWithPagination'
+      security:
+      - BearerAuth: []
+      summary: get Transfer Types
+      tags:
+      - Options
   /admins/create:
     post:
       consumes:
