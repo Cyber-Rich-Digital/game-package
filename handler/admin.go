@@ -4,7 +4,6 @@ import (
 	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
-	"errors"
 	"strconv"
 
 	"cybergame-api/repository"
@@ -73,11 +72,6 @@ func (h adminController) groupList(c *gin.Context) {
 func (h adminController) getGroup(c *gin.Context) {
 
 	id := c.Param("id")
-	if id == "" {
-		HandleError(c, errors.New("id is required"))
-		return
-	}
-
 	toInt, err := strconv.Atoi(id)
 	if err != nil {
 		HandleError(c, err)
