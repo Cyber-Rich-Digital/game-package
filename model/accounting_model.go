@@ -147,16 +147,16 @@ type BankAccountResponse struct {
 }
 
 type BankAccountTransaction struct {
-	Id               int64          `json:"id"`
-	AccountId        int64          `json:"accountId"`
-	Description      string         `json:"description"`
-	TransferType     string         `json:"transferType"`
-	Amount           float32        `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt       time.Time      `json:"transferAt"`
-	CreateByUsername string         `json:"createByUsername"`
-	CreatedAt        time.Time      `json:"createdAt"`
-	UpdatedAt        *time.Time     `json:"updatedAt"`
-	DeletedAt        gorm.DeletedAt `json:"deletedAt"`
+	Id                int64          `json:"id"`
+	AccountId         int64          `json:"accountId"`
+	Description       string         `json:"description"`
+	TransferType      string         `json:"transferType"`
+	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
+	TransferAt        time.Time      `json:"transferAt"`
+	CreatedByUsername string         `json:"createdByUsername"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         *time.Time     `json:"updatedAt"`
+	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
 type BankAccountTransactionParam struct {
@@ -172,24 +172,28 @@ type BankAccountTransactionListRequest struct {
 }
 
 type BankAccountTransactionBody struct {
-	AccountId    int64     `json:"accountId" validate:"required"`
-	Description  string    `json:"description"`
-	TransferType string    `json:"transferType" validate:"required"`
-	Amount       float32   `json:"amount" validate:"required"`
-	TransferAt   time.Time `json:"transferAt" validate:"required"`
+	AccountId         int64     `json:"accountId" validate:"required"`
+	Description       string    `json:"description"`
+	TransferType      string    `json:"transferType" validate:"required"`
+	Amount            float32   `json:"amount" validate:"required"`
+	TransferAt        time.Time `json:"transferAt" validate:"required"`
+	CreatedByUsername string    `json:"-"`
 }
 
 type BankAccountTransactionResponse struct {
-	Id               int64          `json:"id"`
-	AccountId        int64          `json:"accountId"`
-	Description      string         `json:"description"`
-	TransferType     string         `json:"transferType"`
-	Amount           float32        `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt       time.Time      `json:"transferAt"`
-	CreateByUsername string         `json:"createByUsername"`
-	CreatedAt        time.Time      `json:"createdAt"`
-	UpdatedAt        *time.Time     `json:"updatedAt"`
-	DeletedAt        gorm.DeletedAt `json:"deletedAt"`
+	Id                int64          `json:"id"`
+	AccountId         int64          `json:"accountId"`
+	BankName          string         `json:"bankName"`
+	AccountName       string         `json:"accountHame"`
+	AccountNumber     string         `json:"accountNumber"`
+	Description       string         `json:"description"`
+	TransferType      string         `json:"transferType"`
+	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
+	TransferAt        time.Time      `json:"transferAt"`
+	CreatedByUsername string         `json:"createdByUsername"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         *time.Time     `json:"updatedAt"`
+	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
 type BankAccountTransfer struct {
@@ -204,7 +208,7 @@ type BankAccountTransfer struct {
 	ToAccountNumber     string         `json:"toAccountNumber"`
 	Amount              float32        `json:"amount" sql:"type:decimal(14,2);"`
 	TransferAt          time.Time      `json:"transferAt"`
-	CreateByUsername    string         `json:"createByUsername"`
+	CreatedByUsername   string         `json:"createdByUsername"`
 	Status              string         `json:"status"`
 	ConfirmedAt         time.Time      `json:"confirmedAt"`
 	ConfirmedByUsername string         `json:"confirmedByUsername"`
@@ -257,7 +261,7 @@ type BankAccountTransferResponse struct {
 	ToAccountNumber     string         `json:"toAccountNumber"`
 	Amount              float32        `json:"amount" sql:"type:decimal(14,2);"`
 	TransferAt          time.Time      `json:"transferAt"`
-	CreateByUsername    string         `json:"createByUsername"`
+	CreatedByUsername   string         `json:"createdByUsername"`
 	Status              string         `json:"status"`
 	ConfirmedAt         time.Time      `json:"confirmedAt"`
 	ConfirmedByUsername string         `json:"confirmedByUsername"`

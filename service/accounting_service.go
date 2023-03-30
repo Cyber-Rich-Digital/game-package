@@ -231,6 +231,7 @@ func (s *accountingService) CreateTransaction(data model.BankAccountTransactionB
 	transaction.TransferType = data.TransferType
 	transaction.Amount = data.Amount
 	transaction.TransferAt = data.TransferAt
+	transaction.CreatedByUsername = data.CreatedByUsername
 
 	if err := s.repo.CreateTransaction(transaction); err != nil {
 		return internalServerError(err.Error())

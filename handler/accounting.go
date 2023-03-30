@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/repository"
 	"cybergame-api/service"
@@ -28,44 +29,45 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newAccountingController(service)
 
 	root := r.Group("/accounting")
-	root.GET("/autocreditflags/list", handler.getAutoCreditFlags)
-	root.GET("/autowithdrawflags/list", handler.getAutoWithdrawFlags)
-	root.GET("/qrwalletstatuses/list", handler.getQrWalletStatuses)
-	root.GET("/accountpriorities/list", handler.getAccountPriorities)
-	root.GET("/accountstatuses/list", handler.getAccountStatuses)
-	root.GET("/accountbotstatuses/list", handler.getAccountBotStatuses)
-	root.GET("/transfertypes/list", handler.getTransferTypes)
+	root.GET("/autocreditflags/list", middleware.Authorize, handler.getAutoCreditFlags)
+	root.GET("/autowithdrawflags/list", middleware.Authorize, handler.getAutoWithdrawFlags)
+	root.GET("/qrwalletstatuses/list", middleware.Authorize, handler.getQrWalletStatuses)
+	root.GET("/accountpriorities/list", middleware.Authorize, handler.getAccountPriorities)
+	root.GET("/accountstatuses/list", middleware.Authorize, handler.getAccountStatuses)
+	root.GET("/accountbotstatuses/list", middleware.Authorize, handler.getAccountBotStatuses)
+	root.GET("/transfertypes/list", middleware.Authorize, handler.getTransferTypes)
 
 	bankRoute := root.Group("/banks")
-	bankRoute.GET("/list", handler.getBanks)
+	bankRoute.GET("/list", middleware.Authorize, handler.getBanks)
 
 	accountTypeRoute := root.Group("/accounttypes")
-	accountTypeRoute.GET("/list", handler.getAccountTypes)
+	accountTypeRoute.GET("/list", middleware.Authorize, handler.getAccountTypes)
 
 	accountRoute := root.Group("/bankaccounts")
-	accountRoute.GET("/list", handler.getBankAccounts)
-	accountRoute.GET("/detail/:id", handler.getBankAccountById)
-	accountRoute.POST("", handler.createBankAccount)
-	accountRoute.PATCH("/:id", handler.updateBankAccount)
-	accountRoute.DELETE("/:id", handler.deleteBankAccount)
+	accountRoute.GET("/list", middleware.Authorize, handler.getBankAccounts)
+	accountRoute.GET("/detail/:id", middleware.Authorize, handler.getBankAccountById)
+	accountRoute.POST("", middleware.Authorize, handler.createBankAccount)
+	accountRoute.PATCH("/:id", middleware.Authorize, handler.updateBankAccount)
+	accountRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankAccount)
 
 	transactionRoute := root.Group("/transactions")
-	transactionRoute.GET("/list", handler.getTransactions)
-	transactionRoute.GET("/detail/:id", handler.getTransactionById)
-	transactionRoute.POST("", handler.createTransaction)
-	transactionRoute.DELETE("/:id", handler.deleteTransaction)
+	transactionRoute.GET("/list", middleware.Authorize, handler.getTransactions)
+	transactionRoute.GET("/detail/:id", middleware.Authorize, handler.getTransactionById)
+	transactionRoute.POST("", middleware.Authorize, handler.createTransaction)
+	transactionRoute.DELETE("/:id", middleware.Authorize, handler.deleteTransaction)
 
 	transferRoute := root.Group("/transfers")
-	transferRoute.GET("/list", handler.getTransfers)
-	transferRoute.GET("/detail/:id", handler.getTransferById)
-	transferRoute.POST("", handler.createTransfer)
-	transferRoute.POST("/confirm/:id", handler.confirmTransfer)
-	transferRoute.DELETE("/:id", handler.deleteTransfer)
+	transferRoute.GET("/list", middleware.Authorize, handler.getTransfers)
+	transferRoute.GET("/detail/:id", middleware.Authorize, handler.getTransferById)
+	transferRoute.POST("", middleware.Authorize, handler.createTransfer)
+	transferRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmTransfer)
+	transferRoute.DELETE("/:id", middleware.Authorize, handler.deleteTransfer)
 }
 
 // @Summary get Bank List
 // @Description get all thai Bank List
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param page query int false "page"
@@ -99,6 +101,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 // @Summary get Account Type List
 // @Description get all Account Type
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -127,6 +130,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 // @Summary get Auto Credit Flags
 // @Description get all Auto Credit Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -142,6 +146,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 // @Summary get Auto withdraw Flags
 // @Description get all Auto withdraw Flags Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -158,6 +163,7 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 // @Summary get Qr Wallet Statuses
 // @Description get all Qr Wallet Statuses Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -173,6 +179,7 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 // @Summary get Account Statuses
 // @Description get all Account Statuses Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -188,6 +195,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 // @Summary get Account Priorities
 // @Description get all Account Priorities Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -209,6 +217,7 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 // @Summary get Account Priorities
 // @Description get all Account Priorities Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -224,6 +233,7 @@ func (h accountingController) getAccountBotStatuses(c *gin.Context) {
 // @Summary get Transfer Types
 // @Description get all Transfer Types Flags
 // @Tags Options
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.Pagination
@@ -239,6 +249,7 @@ func (h accountingController) getTransferTypes(c *gin.Context) {
 // @Summary GetBankAccounts
 // @Description get BankAccounts
 // @Tags Bank Accounts
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param page query int false "page"
@@ -273,6 +284,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 // @Summary GetBankAccount
 // @Description get BankAccount by id
 // @Tags Bank Accounts
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -303,6 +315,7 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 // @Summary CreateBankAccount
 // @Description create new accounting
 // @Tags Bank Accounts
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param body body model.BankAccountCreateBody true "body"
@@ -335,6 +348,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 // @Summary UpdateBankAccount
 // @Description update accounting
 // @Tags Bank Accounts
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -374,6 +388,7 @@ func (h accountingController) updateBankAccount(c *gin.Context) {
 // @Summary DeleteBankAccount
 // @Description delete accounting
 // @Tags Bank Accounts
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -400,6 +415,7 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 // @Summary GetTransactions
 // @Description get Transactions
 // @Tags Bank Account Transactions
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param accountId query string false "accountId"
@@ -434,6 +450,7 @@ func (h accountingController) getTransactions(c *gin.Context) {
 // @Summary GetTransaction
 // @Description get Transaction by id
 // @Tags Bank Account Transactions
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -464,6 +481,7 @@ func (h accountingController) getTransactionById(c *gin.Context) {
 // @Summary CreateTransaction
 // @Description create new accounting
 // @Tags Bank Account Transactions
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param body body model.BankAccountTransactionBody true "body"
@@ -472,10 +490,10 @@ func (h accountingController) getTransactionById(c *gin.Context) {
 // @Router /accounting/transactions [post]
 func (h accountingController) createTransaction(c *gin.Context) {
 
-	// bankId := c.MustGet("bankId")
-	// toInt := int(userId.(float64))
+	username := strconv.FormatFloat(c.MustGet("userId").(float64), 'f', -1, 64)
 
 	var accounting model.BankAccountTransactionBody
+	accounting.CreatedByUsername = username
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -496,6 +514,7 @@ func (h accountingController) createTransaction(c *gin.Context) {
 // @Summary DeleteTransaction
 // @Description delete accounting
 // @Tags Bank Account Transactions
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -522,6 +541,7 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 // @Summary GetTransfers
 // @Description get Transfers
 // @Tags Bank Account Transfers
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param accountId query string false "accountId"
@@ -556,6 +576,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 // @Summary GetTransfer
 // @Description get Transfer by id
 // @Tags Bank Account Transfers
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -586,6 +607,7 @@ func (h accountingController) getTransferById(c *gin.Context) {
 // @Summary CreateTransfer
 // @Description create new Transfer
 // @Tags Bank Account Transfers
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param body body model.BankAccountTransferBody true "body"
@@ -618,6 +640,7 @@ func (h accountingController) createTransfer(c *gin.Context) {
 // @Summary ConfirmTransfer
 // @Description update Transfer
 // @Tags Bank Account Transfers
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
@@ -644,6 +667,7 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 // @Summary DeleteTransfer
 // @Description delete Transfer
 // @Tags Bank Account Transfers
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"

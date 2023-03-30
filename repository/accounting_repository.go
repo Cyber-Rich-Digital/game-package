@@ -220,11 +220,11 @@ func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
 	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url as bank_icon_url, bank.type_flag"
+	selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
-		Joins("LEFT JOIN Banks AS bank ON bank.id = accounts.bank_id").
+		Joins("LEFT JOIN Banks AS bank ON banks.id = accounts.bank_id").
 		Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = accounts.account_type_id").
 		Where("accounts.id = ?", id).
 		Where("accounts.deleted_at IS NULL").
@@ -248,10 +248,10 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	// SELECT //
 	query := r.db.Table("Bank_accounts AS accounts")
 	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url as bank_icon_url, bank.type_flag"
+	selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	query = query.Select(selectedFields)
-	query = query.Joins("LEFT JOIN Banks AS bank ON bank.id = accounts.bank_id")
+	query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
 	query = query.Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = accounts.account_type_id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
@@ -323,11 +323,13 @@ func (r repo) DeleteBankAccount(id int64) error {
 func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error) {
 
 	var record model.BankAccountTransaction
-	selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.create_by_username, transactions.created_at, transactions.updated_at"
+	selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
 	selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+	selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
 	if err := r.db.Table("Bank_account_transactions as transactions").
 		Select(selectedFields).
 		Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = transactions.account_id").
+		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
 		Where("transactions.id = ?", id).
 		Where("transactions.deleted_at IS NULL").
 		First(&record).
@@ -361,11 +363,13 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.create_by_username, transactions.created_at, transactions.updated_at"
+		selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
 		selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+		selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
 		query := r.db.Table("Bank_account_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = transactions.account_id")
+		query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
 		if req.AccountId != 0 {
 			query = query.Where("transactions.account_id = ?", req.AccountId)
 		}
@@ -424,7 +428,7 @@ func (r repo) GetTransferById(id int64) (*model.BankAccountTransfer, error) {
 	var record model.BankAccountTransfer
 	selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
 	selectedFields += ",transfers.to_account_id, transfers.to_bank_id, transfers.to_account_name, transfers.to_account_number"
-	selectedFields += ",transfers.amount, transfers.transfer_at, transfers.create_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
+	selectedFields += ",transfers.amount, transfers.transfer_at, transfers.created_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
 	// selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
 	if err := r.db.Table("Bank_account_transfers as transfers").
 		Select(selectedFields).
@@ -465,7 +469,7 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Pag
 		// SELECT //
 		selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
 		selectedFields += ",transfers.to_account_id, transfers.to_bank_id, transfers.to_account_name, transfers.to_account_number"
-		selectedFields += ",transfers.amount, transfers.transfer_at, transfers.create_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
+		selectedFields += ",transfers.amount, transfers.transfer_at, transfers.created_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
 		// selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
 		query := r.db.Table("Bank_account_transfers as transfers")
 		query = query.Select(selectedFields)

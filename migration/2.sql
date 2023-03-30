@@ -76,7 +76,7 @@ CREATE Table
         transfer_type VARCHAR(255) NOT NULL,
         amount DECIMAL(14,2) NOT NULL,
         transfer_at DATETIME NOT NULL,
-        create_by_username VARCHAR(255) NOT NULL,
+        created_by_username VARCHAR(255) NOT NULL,
         created_at DATETIME DEFAULT NOW(),
         updated_at DATETIME NULL ON UPDATE NOW(),
         deleted_at DATETIME NULL
@@ -95,7 +95,7 @@ CREATE Table
         to_account_number VARCHAR(255) NOT NULL,
         amount DECIMAL(14,2) NOT NULL,
         transfer_at DATETIME NOT NULL,
-        create_by_username VARCHAR(255) NOT NULL,
+        created_by_username VARCHAR(255) NOT NULL,
         status VARCHAR(255) NOT NULL,
         confirmed_at DATETIME NULL,
         confirmed_by_username VARCHAR(255) NULL,
