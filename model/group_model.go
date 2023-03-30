@@ -7,13 +7,19 @@ import (
 )
 
 type Group struct {
-	Id        int            `json:"id"`
+	Id        int64          `json:"id"`
 	Name      string         `json:"name"`
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
-	DeleteAt  gorm.DeletedAt `json:"deleteAt"`
+	DeletedAt gorm.DeletedAt `json:"deletedAt"`
 }
 
 type CreateGroup struct {
-	Name string `json:"group" validate:"required"`
+	Name string `json:"name" validate:"required"`
+}
+
+type GroupList struct {
+	Id         int64  `json:"id"`
+	Name       string `json:"name"`
+	AdminCount int64  `json:"adminCount"`
 }

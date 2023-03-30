@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
 
@@ -29,7 +28,7 @@ func PermissionController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newPermissionController(service)
 
 	r = r.Group("/permissions")
-	r.POST("/create", middleware.Authorize, handler.create)
+	r.POST("/create", handler.create)
 
 }
 

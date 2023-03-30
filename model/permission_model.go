@@ -7,7 +7,7 @@ import (
 )
 
 type Permission struct {
-	Id        int            `json:"id"`
+	Id        int64          `json:"id"`
 	Name      string         `json:"name"`
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
@@ -20,4 +20,9 @@ type CreatePermission struct {
 
 type PermissionName struct {
 	Name string `json:"name" validate:"required"`
+}
+
+type PermissionList struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }

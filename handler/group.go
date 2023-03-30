@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
 
@@ -29,7 +28,7 @@ func GroupController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newGroupController(service)
 
 	r = r.Group("/groups")
-	r.POST("/create", middleware.Authorize, handler.create)
+	r.POST("/create", handler.create)
 
 }
 
@@ -39,7 +38,7 @@ func GroupController(r *gin.RouterGroup, db *gorm.DB) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param register body model.CreatePermission true "Create Group"
+// @Param register body model.CreateGroup true "Create Group"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /groups/create [post]
