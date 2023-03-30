@@ -24,7 +24,9 @@ func newAuthController(
 func AuthController(r *gin.RouterGroup, db *gorm.DB) {
 
 	repo := repository.NewAdminRepository(db)
-	service := service.NewAdminService(repo)
+	perRepo := repository.NewPermissionRepository(db)
+	groupRepo := repository.NewGroupRepository(db)
+	service := service.NewAdminService(repo, perRepo, groupRepo)
 	handler := newAuthController(service)
 
 	r.POST("/login", handler.login)

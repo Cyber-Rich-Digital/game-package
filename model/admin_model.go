@@ -7,7 +7,7 @@ import (
 )
 
 type Admin struct {
-	Id        uint           `json:"id"`
+	Id        int64          `json:"id"`
 	Username  string         `json:"username"`
 	Password  string         `json:"password"`
 	Fullname  string         `json:"fullname"`
@@ -47,4 +47,20 @@ type LoginResponse struct {
 type AdminLoginUpdate struct {
 	IP        string    `json:"ip"`
 	LogedinAt time.Time `json:"logedinAt"`
+}
+
+type AdminCreateGroup struct {
+	GroupId       int64   `json:"groupId" validate:"required"`
+	PermissionIds []int64 `json:"permissionIds" validate:"required"`
+}
+
+type AdminPermissionList struct {
+	GroupId      int64 `json:"groupId"`
+	PermissionId int64 `json:"permissionId"`
+}
+
+type AdminGroupPermission struct {
+	Id          int64            `json:"id"`
+	Name        string           `json:"name"`
+	Permissions []PermissionList `json:"permissions"`
 }
