@@ -164,11 +164,15 @@ type BankAccountTransactionParam struct {
 }
 
 type BankAccountTransactionListRequest struct {
-	AccountId int    `form:"accountId"`
-	Page      int    `form:"page" default:"1" min:"1"`
-	Limit     int    `form:"limit" default:"10" min:"1" max:"100"`
-	SortCol   string `form:"sortCol"`
-	SortAsc   string `form:"sortAsc"`
+	AccountId       int    `form:"accountId"`
+	FromCreatedDate string `form:"fromCreatedDate"`
+	TocreatedDate   string `form:"toCreatedDate"`
+	TransferType    string `form:"transferType"`
+	Search          string `form:"search"`
+	Page            int    `form:"page" default:"1" min:"1"`
+	Limit           int    `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol         string `form:"sortCol"`
+	SortAsc         string `form:"sortAsc"`
 }
 
 type BankAccountTransactionBody struct {
@@ -222,11 +226,15 @@ type BankAccountTransferParam struct {
 }
 
 type BankAccountTransferListRequest struct {
-	AccountId int    `form:"accountId"`
-	Page      int    `form:"page" default:"1" min:"1"`
-	Limit     int    `form:"limit" default:"10" min:"1" max:"100"`
-	SortCol   string `form:"sortCol"`
-	SortAsc   string `form:"sortAsc"`
+	AccountId       int    `form:"accountId"`
+	FromCreatedDate string `form:"fromCreatedDate"`
+	TocreatedDate   string `form:"toCreatedDate"`
+	ToAccountId     int    `form:"toAccountId"`
+	Search          string `form:"search"`
+	Page            int    `form:"page" default:"1" min:"1"`
+	Limit           int    `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol         string `form:"sortCol"`
+	SortAsc         string `form:"sortAsc"`
 }
 
 type BankAccountTransferBody struct {

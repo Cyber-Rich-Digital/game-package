@@ -419,6 +419,10 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param accountId query string false "accountId"
+// @Param fromCreatedDate query string false "fromCreatedDate"
+// @Param toCreatedDate query string false "toCreatedDate"
+// @Param transferType query string false "transferType"
+// @Param search query string false "search"
 // @Param page query int false "page"
 // @Param limit query int false "limit"
 // @Param sortCol query string false "sortCol"
@@ -545,6 +549,10 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param accountId query string false "accountId"
+// @Param fromCreatedDate query string false "fromCreatedDate"
+// @Param toCreatedDate query string false "toCreatedDate"
+// @Param toAccountId query string false "toAccountId"
+// @Param search query string false "search"
 // @Param page query int false "page"
 // @Param limit query int false "limit"
 // @Param sortCol query string false "sortCol"
