@@ -4,7 +4,6 @@ import (
 	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
-	"errors"
 
 	"cybergame-api/repository"
 
@@ -45,11 +44,6 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/create [post]
 func (h adminController) create(c *gin.Context) {
-
-	if c.MustGet("role").(string) == "USER" {
-		HandleError(c, errors.New("Permission denied"))
-		return
-	}
 
 	data := &model.CreateAdmin{}
 	if err := c.ShouldBindJSON(data); err != nil {
