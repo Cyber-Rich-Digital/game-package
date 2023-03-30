@@ -24,8 +24,8 @@ type AccountingRepository interface {
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error)
-	CreateBankAccount(data model.BankAccountBody) error
-	UpdateBankAccount(id int64, data model.BankAccountBody) error
+	CreateBankAccount(data model.BankAccountCreateBody) error
+	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
 	DeleteBankAccount(id int64) error
 
 	GetTransactionById(id int64) (*model.BankAccountTransaction, error)
@@ -219,15 +219,15 @@ func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url as bank_icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
-	if err := r.db.Table("Bank_accounts as account").
+	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
-		Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id").
-		Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id").
-		Where("account.id = ?", id).
-		Where("account.deleted_at IS NULL").
+		Joins("LEFT JOIN Banks AS bank ON bank.id = accounts.bank_id").
+		Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = accounts.account_type_id").
+		Where("accounts.id = ?", id).
+		Where("accounts.deleted_at IS NULL").
 		First(&accounting).
 		Error; err != nil {
 		return nil, err
@@ -246,16 +246,16 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	var err error
 
 	// SELECT //
-	query := r.db.Table("Bank_accounts AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
+	query := r.db.Table("Bank_accounts AS accounts")
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url as bank_icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	query = query.Select(selectedFields)
-	query = query.Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id")
-	query = query.Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id")
+	query = query.Joins("LEFT JOIN Banks AS bank ON bank.id = accounts.bank_id")
+	query = query.Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = accounts.account_type_id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		query = query.Where("account.account_name LIKE ?", search_like).Or("account.account_number LIKE ?", search_like)
+		query = query.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like)
 	}
 
 	// Sort by ANY //
@@ -270,7 +270,7 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	}
 
 	if err = query.
-		Where("account.deleted_at IS NULL").
+		Where("accounts.deleted_at IS NULL").
 		Limit(req.Limit).
 		Offset(req.Page * req.Limit).
 		Scan(&list).
@@ -299,14 +299,14 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 	return &result, nil
 }
 
-func (r repo) CreateBankAccount(data model.BankAccountBody) error {
+func (r repo) CreateBankAccount(data model.BankAccountCreateBody) error {
 	if err := r.db.Table("Bank_accounts").Create(&data).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r repo) UpdateBankAccount(id int64, data model.BankAccountBody) error {
+func (r repo) UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error {
 	if err := r.db.Table("Bank_accounts").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
@@ -323,22 +323,20 @@ func (r repo) DeleteBankAccount(id int64) error {
 func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error) {
 
 	var record model.BankAccountTransaction
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
-	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
-	if err := r.db.Table("Bank_account_transactions as account").
+	selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.create_by_username, transactions.created_at, transactions.updated_at"
+	selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+	if err := r.db.Table("Bank_account_transactions as transactions").
 		Select(selectedFields).
-		Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id").
-		Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id").
-		Where("account.id = ?", id).
-		Where("account.deleted_at IS NULL").
+		Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = transactions.account_id").
+		Where("transactions.id = ?", id).
+		Where("transactions.deleted_at IS NULL").
 		First(&record).
 		Error; err != nil {
 		return nil, err
 	}
 
 	if record.Id == 0 {
-		return nil, errors.New("Account not found")
+		return nil, errors.New("Transaction not found")
 	}
 	return &record, nil
 }
@@ -349,51 +347,48 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 	var total int64
 	var err error
 
-	// SELECT //
-	query := r.db.Table("Bank_account_transactions AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
-	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
-	query = query.Select(selectedFields)
-	query = query.Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id")
-	query = query.Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id")
-	if req.Search != "" {
-		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		query = query.Where("account.account_name LIKE ?", search_like).Or("account.account_number LIKE ?", search_like)
-	}
-
-	// Sort by ANY //
-	req.SortCol = strings.TrimSpace(req.SortCol)
-	if req.SortCol != "" {
-		if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
-			req.SortAsc = "DESC"
-		} else {
-			req.SortAsc = "ASC"
-		}
-		query = query.Order(req.SortCol + " " + req.SortAsc)
-	}
-
-	if err = query.
-		Where("account.deleted_at IS NULL").
-		Limit(req.Limit).
-		Offset(req.Page * req.Limit).
-		Scan(&list).
-		Error; err != nil {
-		return nil, err
-	}
-
 	// Count total records for pagination purposes (without limit and offset) //
-	count := r.db.Table("Bank_account_transactions")
+	count := r.db.Table("Bank_account_transactions as transactions")
 	count = count.Select("id")
-	if req.Search != "" {
-		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where("account_name LIKE ?", search_like).Or("account_number LIKE ?", search_like)
+	if req.AccountId != 0 {
+		count = count.Where("transactions.account_id = ?", req.AccountId)
 	}
 	if err = count.
 		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.create_by_username, transactions.created_at, transactions.updated_at"
+		selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+		query := r.db.Table("Bank_account_transactions as transactions")
+		query = query.Select(selectedFields)
+		query = query.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = transactions.account_id")
+		if req.AccountId != 0 {
+			query = query.Where("transactions.account_id = ?", req.AccountId)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("transactions.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //
@@ -427,22 +422,23 @@ func (r repo) DeleteTransaction(id int64) error {
 func (r repo) GetTransferById(id int64) (*model.BankAccountTransfer, error) {
 
 	var record model.BankAccountTransfer
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
-	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
-	if err := r.db.Table("Bank_account_transfers as account").
+	selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
+	selectedFields += ",transfers.to_account_id, transfers.to_bank_id, transfers.to_account_name, transfers.to_account_number"
+	selectedFields += ",transfers.amount, transfers.transfer_at, transfers.create_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
+	// selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+	if err := r.db.Table("Bank_account_transfers as transfers").
 		Select(selectedFields).
-		Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id").
-		Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id").
-		Where("account.id = ?", id).
-		Where("account.deleted_at IS NULL").
+		// Joins("LEFT JOIN Bank_accounts AS from_accounts ON from_accounts.id = transfers.from_account_id").
+		// Joins("LEFT JOIN Bank_accounts AS to_accounts ON to_accounts.id = transfers.to_account_id").
+		Where("transfers.id = ?", id).
+		Where("transfers.deleted_at IS NULL").
 		First(&record).
 		Error; err != nil {
 		return nil, err
 	}
 
 	if record.Id == 0 {
-		return nil, errors.New("Account not found")
+		return nil, errors.New("Transfer not found")
 	}
 	return &record, nil
 }
@@ -453,51 +449,51 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Pag
 	var total int64
 	var err error
 
-	// SELECT //
-	query := r.db.Table("Bank_account_transfers AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
-	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
-	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
-	query = query.Select(selectedFields)
-	query = query.Joins("LEFT JOIN Banks AS bank ON bank.id = account.bank_id")
-	query = query.Joins("LEFT JOIN Bank_account_types AS account_type ON account_type.id = account.account_type_id")
-	if req.Search != "" {
-		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		query = query.Where("account.account_name LIKE ?", search_like).Or("account.account_number LIKE ?", search_like)
-	}
-
-	// Sort by ANY //
-	req.SortCol = strings.TrimSpace(req.SortCol)
-	if req.SortCol != "" {
-		if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
-			req.SortAsc = "DESC"
-		} else {
-			req.SortAsc = "ASC"
-		}
-		query = query.Order(req.SortCol + " " + req.SortAsc)
-	}
-
-	if err = query.
-		Where("account.deleted_at IS NULL").
-		Limit(req.Limit).
-		Offset(req.Page * req.Limit).
-		Scan(&list).
-		Error; err != nil {
-		return nil, err
-	}
-
 	// Count total records for pagination purposes (without limit and offset) //
-	count := r.db.Table("Bank_account_transfers")
+	count := r.db.Table("Bank_account_transfers as transfers")
 	count = count.Select("id")
-	if req.Search != "" {
-		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where("account_name LIKE ?", search_like).Or("account_number LIKE ?", search_like)
+	if req.AccountId != 0 {
+		count = count.Where("transfers.from_account_id = ?", req.AccountId)
 	}
 	if err = count.
 		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
+		selectedFields += ",transfers.to_account_id, transfers.to_bank_id, transfers.to_account_name, transfers.to_account_number"
+		selectedFields += ",transfers.amount, transfers.transfer_at, transfers.create_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
+		// selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+		query := r.db.Table("Bank_account_transfers as transfers")
+		query = query.Select(selectedFields)
+		// query = query.Joins("LEFT JOIN Bank_accounts AS from_accounts ON from_accounts.id = transfers.from_account_id")
+		// query = query.Joins("LEFT JOIN Bank_accounts AS to_accounts ON to_accounts.id = transfers.to_account_id")
+		if req.AccountId != 0 {
+			query = query.Where("transfers.from_account_id = ?", req.AccountId)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("transfers.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //

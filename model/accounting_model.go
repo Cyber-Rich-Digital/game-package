@@ -63,6 +63,7 @@ type BankAccount struct {
 	Id                    int64          `json:"id"`
 	BankId                int64          `json:"bankId"`
 	BankName              string         `json:"bankName"`
+	BankIconUrl           string         `json:"bankIconUrl"`
 	AccountTypeId         int64          `json:"accountTypeId"`
 	AccountTypeName       string         `json:"accountTypeName"`
 	AccountName           string         `json:"accountHame"`
@@ -95,9 +96,9 @@ type BankAccountListRequest struct {
 	SortAsc string `form:"sortAsc"`
 }
 
-type BankAccountBody struct {
+type BankAccountCreateBody struct {
 	BankId                int64  `json:"bankId" validate:"required"`
-	AccountTypeId         int64  `json:"AccounTypeId" validate:"required"`
+	AccountTypeId         int64  `json:"accounTypeId" validate:"required"`
 	AccountName           string `json:"accountName" validate:"required"`
 	AccountNumber         string `json:"accountNumber" validate:"required"`
 	DeviceUid             string `json:"deviceUid"`
@@ -108,12 +109,31 @@ type BankAccountBody struct {
 	AutoTransferMaxAmount string `json:"autoTransferMaxAmount"`
 	AccountPriority       string `json:"accountPriority"`
 	QrWalletStatus        string `json:"qrWalletStatus"`
+	AccountStatus         string `json:"accountStatus"`
+	ConectionStatus       string `json:"-"`
+}
+type BankAccountUpdateBody struct {
+	BankId                int64  `json:"-"`
+	AccountTypeId         int64  `json:"accounTypeId" validate:"required"`
+	AccountName           string `json:"-"`
+	AccountNumber         string `json:"-"`
+	DeviceUid             string `json:"deviceUid"`
+	PinCode               string `json:"pinCode"`
+	AutoCreditFlag        string `json:"autoCreditFlag"`
+	AutoWithdrawFlag      string `json:"autoWithdrawFlag"`
+	AutoWithdrawMaxAmount string `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount string `json:"autoTransferMaxAmount"`
+	AccountPriority       string `json:"accountPriority"`
+	QrWalletStatus        string `json:"qrWalletStatus"`
+	AccountStatus         string `json:"accountStatus"`
+	ConectionStatus       string `json:"-"`
 }
 
 type BankAccountResponse struct {
 	Id              int64          `json:"id"`
 	BankId          int64          `json:"bankId"`
 	BankName        string         `json:"bankName"`
+	BankIconUrl     string         `json:"bankIconUrl"`
 	AccountTypeId   int64          `json:"accountTypeId"`
 	AccountTypeName string         `json:"accountTypeName"`
 	AccountName     string         `json:"accountHame"`
@@ -144,11 +164,11 @@ type BankAccountTransactionParam struct {
 }
 
 type BankAccountTransactionListRequest struct {
-	Page    int    `form:"page" default:"1" min:"1"`
-	Limit   int    `form:"limit" default:"10" min:"1" max:"100"`
-	Search  string `form:"search"`
-	SortCol string `form:"sortCol"`
-	SortAsc string `form:"sortAsc"`
+	AccountId int    `form:"accountId"`
+	Page      int    `form:"page" default:"1" min:"1"`
+	Limit     int    `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol   string `form:"sortCol"`
+	SortAsc   string `form:"sortAsc"`
 }
 
 type BankAccountTransactionBody struct {
@@ -176,7 +196,7 @@ type BankAccountTransfer struct {
 	Id                  int64          `json:"id"`
 	FromAccountId       int64          `json:"fromAccountId"`
 	FromBankId          int64          `json:"fromBankId"`
-	FfromAccountName    string         `json:"fromAccountName"`
+	FromAccountName     string         `json:"fromAccountName"`
 	FromAccountNumber   string         `json:"fromAccountNumber"`
 	ToAccountId         int64          `json:"toAccountId"`
 	ToBankId            int64          `json:"toBankId"`
@@ -198,19 +218,25 @@ type BankAccountTransferParam struct {
 }
 
 type BankAccountTransferListRequest struct {
-	Page    int    `form:"page" default:"1" min:"1"`
-	Limit   int    `form:"limit" default:"10" min:"1" max:"100"`
-	Search  string `form:"search"`
-	SortCol string `form:"sortCol"`
-	SortAsc string `form:"sortAsc"`
+	AccountId int    `form:"accountId"`
+	Page      int    `form:"page" default:"1" min:"1"`
+	Limit     int    `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol   string `form:"sortCol"`
+	SortAsc   string `form:"sortAsc"`
 }
 
 type BankAccountTransferBody struct {
-	Status        string    `json:"status" validate:"required"`
-	FromAccountId int64     `json:"fromAccountId" validate:"required"`
-	ToAccountId   int64     `json:"toAccountId" validate:"required"`
-	Amount        float32   `json:"amount" validate:"required"`
-	TransferAt    time.Time `json:"transferAt" validate:"required"`
+	Status            string    `json:"-"`
+	FromAccountId     int64     `json:"fromAccountId" validate:"required"`
+	FromBankId        int64     `json:"-"`
+	FromAccountName   string    `json:"-"`
+	FromAccountNumber string    `json:"-"`
+	ToAccountId       int64     `json:"toAccountId" validate:"required"`
+	ToBankId          int64     `json:"-"`
+	ToAccountName     string    `json:"-"`
+	ToAccountNumber   string    `json:"-"`
+	Amount            float32   `json:"amount" validate:"required"`
+	TransferAt        time.Time `json:"transferAt" validate:"required"`
 }
 
 type BankAccountTransferConfirmBody struct {
@@ -223,8 +249,8 @@ type BankAccountTransferResponse struct {
 	Id                  int64          `json:"id"`
 	FromAccountId       int64          `json:"fromAccountId"`
 	FromBankId          int64          `json:"fromBankId"`
-	FfromAccountName    string         `json:"fromAccountName"`
-	FromAccountNumber   string         `json:"fromAccountNumber"`
+	FromAccountName     string         `json:"fromAccountName"`
+	FomAccountNumber    string         `json:"fromAccountNumber"`
 	ToAccountId         int64          `json:"toAccountId"`
 	ToBankId            int64          `json:"toBankId"`
 	ToAccountName       string         `json:"toAccountName"`

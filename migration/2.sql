@@ -71,7 +71,7 @@ ALTER TABLE `Bank_accounts`
 CREATE Table
     Bank_account_transactions (
         id INT PRIMARY KEY AUTO_INCREMENT,
-        bank_account_id BIGINT NOT NULL,
+        account_id BIGINT NOT NULL,
         description VARCHAR(255) NOT NULL,
         transfer_type VARCHAR(255) NOT NULL,
         amount DECIMAL(14,2) NOT NULL,

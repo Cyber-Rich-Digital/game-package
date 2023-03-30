@@ -33,6 +33,8 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	root.GET("/qrwalletstatuses/list", handler.getQrWalletStatuses)
 	root.GET("/accountpriorities/list", handler.getAccountPriorities)
 	root.GET("/accountstatuses/list", handler.getAccountStatuses)
+	root.GET("/accountbotstatuses/list", handler.getAccountBotStatuses)
+	root.GET("/transfertypes/list", handler.getTransferTypes)
 
 	bankRoute := root.Group("/banks")
 	bankRoute.GET("/list", handler.getBanks)
@@ -204,6 +206,36 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 	c.JSON(200, model.Pagination{List: data, Total: 2})
 }
 
+// @Summary get Account Priorities
+// @Description get all Account Priorities Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/accountbotstatuses/list [get]
+func (h accountingController) getAccountBotStatuses(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "active", Name: "เชื่อมต่อ"},
+		{Key: "disconnected", Name: "ไม่ได้เชื่อมต่อ"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
+}
+
+// @Summary get Transfer Types
+// @Description get all Transfer Types Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/transfertypes/list [get]
+func (h accountingController) getTransferTypes(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "deposit", Name: "ฝากเงิน"},
+		{Key: "withdraw", Name: "ถอนเงิน"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
+}
+
 // @Summary GetBankAccounts
 // @Description get BankAccounts
 // @Tags Bank Accounts
@@ -273,7 +305,7 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 // @Tags Bank Accounts
 // @Accept json
 // @Produce json
-// @Param body body model.BankAccountBody true "body"
+// @Param body body model.BankAccountCreateBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts [post]
@@ -282,7 +314,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 	// bankId := c.MustGet("bankId")
 	// toInt := int(userId.(float64))
 
-	var accounting model.BankAccountBody
+	var accounting model.BankAccountCreateBody
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -306,7 +338,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Param body body model.BankAccountBody true "body"
+// @Param body body model.BankAccountUpdateBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts/{id} [patch]
@@ -319,7 +351,7 @@ func (h accountingController) updateBankAccount(c *gin.Context) {
 		return
 	}
 
-	body := model.BankAccountBody{}
+	body := model.BankAccountUpdateBody{}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		HandleError(c, err)
@@ -370,9 +402,9 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 // @Tags Bank Account Transactions
 // @Accept json
 // @Produce json
+// @Param accountId query string false "accountId"
 // @Param page query int false "page"
 // @Param limit query int false "limit"
-// @Param search query string false "search"
 // @Param sortCol query string false "sortCol"
 // @Param sortAsc query string false "sortAsc"
 // @Success 200 {object} model.SuccessWithData
@@ -492,9 +524,9 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 // @Tags Bank Account Transfers
 // @Accept json
 // @Produce json
+// @Param accountId query string false "accountId"
 // @Param page query int false "page"
 // @Param limit query int false "limit"
-// @Param search query string false "search"
 // @Param sortCol query string false "sortCol"
 // @Param sortAsc query string false "sortAsc"
 // @Success 200 {object} model.SuccessWithData
@@ -589,7 +621,6 @@ func (h accountingController) createTransfer(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Param body body model.BankAccountTransferConfirmBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transfers/confirm/{id} [post]
@@ -602,17 +633,7 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 		return
 	}
 
-	body := model.BankAccountTransferConfirmBody{}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		HandleError(c, err)
-		return
-	}
-	if err := validator.New().Struct(body); err != nil {
-		HandleError(c, err)
-		return
-	}
-
-	if err := h.accountingService.ConfirmTransfer(identifier, body); err != nil {
+	if err := h.accountingService.ConfirmTransfer(identifier); err != nil {
 		HandleError(c, err)
 		return
 	}

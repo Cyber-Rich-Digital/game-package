@@ -15,8 +15,8 @@ type AccountingService interface {
 
 	GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.Pagination, error)
-	CreateBankAccount(data model.BankAccountBody) error
-	UpdateBankAccount(id int64, data model.BankAccountBody) error
+	CreateBankAccount(data model.BankAccountCreateBody) error
+	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
 	DeleteBankAccount(id int64) error
 
 	GetTransactionById(data model.BankAccountTransactionParam) (*model.BankAccountTransaction, error)
@@ -28,7 +28,7 @@ type AccountingService interface {
 	GetTransferById(data model.BankAccountTransferParam) (*model.BankAccountTransfer, error)
 	GetTransfers(data model.BankAccountTransferListRequest) (*model.Pagination, error)
 	CreateTransfer(data model.BankAccountTransferBody) error
-	ConfirmTransfer(id int64, data model.BankAccountTransferConfirmBody) error
+	ConfirmTransfer(id int64) error
 	DeleteTransfer(id int64) error
 }
 
@@ -98,7 +98,7 @@ func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (
 	return accounting, nil
 }
 
-func (s *accountingService) CreateBankAccount(data model.BankAccountBody) error {
+func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) error {
 
 	bank, err := s.repo.GetBankById(data.BankId)
 	if err != nil {
@@ -121,11 +121,21 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountBody) error 
 		return badRequest("Account already exist")
 	}
 
-	var account model.BankAccountBody
+	var account model.BankAccountCreateBody
 	account.BankId = bank.Id
 	account.AccountTypeId = accountType.Id
 	account.AccountName = data.AccountName
 	account.AccountNumber = data.AccountNumber
+	account.AccountPriority = data.AccountPriority
+	account.AutoCreditFlag = data.AutoCreditFlag
+	account.AutoWithdrawFlag = data.AutoWithdrawFlag
+	account.AutoTransferMaxAmount = data.AutoTransferMaxAmount
+	account.AutoWithdrawMaxAmount = data.AutoWithdrawMaxAmount
+	account.DeviceUid = data.DeviceUid
+	account.PinCode = data.PinCode
+	account.QrWalletStatus = data.QrWalletStatus
+	account.AccountStatus = data.AccountStatus
+	account.ConectionStatus = "disconnected"
 
 	if err := s.repo.CreateBankAccount(account); err != nil {
 		return internalServerError(err.Error())
@@ -133,7 +143,7 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountBody) error 
 	return nil
 }
 
-func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountBody) error {
+func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error {
 
 	account, err := s.repo.GetBankAccountById(id)
 	if err != nil {
@@ -190,12 +200,6 @@ func (s *accountingService) GetTransactionById(data model.BankAccountTransaction
 
 	accounting, err := s.repo.GetTransactionById(data.Id)
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
-		if err.Error() == "Account not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
 		return nil, internalServerError(err.Error())
 	}
 	return accounting, nil
@@ -262,12 +266,6 @@ func (s *accountingService) GetTransferById(data model.BankAccountTransferParam)
 
 	accounting, err := s.repo.GetTransferById(data.Id)
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
-		if err.Error() == "Account not found" {
-			return nil, notFound(bankAccountNotFound)
-		}
 		return nil, internalServerError(err.Error())
 	}
 	return accounting, nil
@@ -301,7 +299,13 @@ func (s *accountingService) CreateTransfer(data model.BankAccountTransferBody) e
 
 	var body model.BankAccountTransferBody
 	body.FromAccountId = fromAccount.Id
+	body.FromBankId = fromAccount.BankId
+	body.FromAccountName = fromAccount.AccountName
+	body.FromAccountNumber = fromAccount.AccountNumber
 	body.ToAccountId = toAccount.Id
+	body.ToBankId = toAccount.BankId
+	body.ToAccountName = toAccount.AccountName
+	body.ToAccountNumber = toAccount.AccountNumber
 	body.Amount = data.Amount
 	body.TransferAt = data.TransferAt
 	body.Status = "pending"
@@ -312,7 +316,7 @@ func (s *accountingService) CreateTransfer(data model.BankAccountTransferBody) e
 	return nil
 }
 
-func (s *accountingService) ConfirmTransfer(id int64, data model.BankAccountTransferConfirmBody) error {
+func (s *accountingService) ConfirmTransfer(id int64) error {
 
 	transfer, err := s.repo.GetTransferById(id)
 	if err != nil {
@@ -323,7 +327,7 @@ func (s *accountingService) ConfirmTransfer(id int64, data model.BankAccountTran
 		var body model.BankAccountTransferConfirmBody
 		body.Status = "confirmed"
 		body.ConfirmedAt = time.Now()
-		body.ConfirmedByUsername = data.ConfirmedByUsername
+		body.ConfirmedByUsername = "todo"
 		if err := s.repo.ConfirmTransfer(id, body); err != nil {
 			return internalServerError(err.Error())
 		}
