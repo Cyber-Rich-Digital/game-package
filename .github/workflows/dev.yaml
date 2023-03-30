@@ -16,7 +16,7 @@ jobs:
           key: ${{ secrets.DEV_KEY }}
           port: 22
           script: |
-            cd cybergame-api
+            cd cybergame-backend-api
             git fetch
             git checkout dev
             git checkout -- .
