@@ -28,6 +28,11 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newAccountingController(service)
 
 	root := r.Group("/accounting")
+	root.GET("/autocreditflags/list", handler.getAutoCreditFlags)
+	root.GET("/autowithdrawflags/list", handler.getAutoWithdrawFlags)
+	root.GET("/qrwalletstatuses/list", handler.getQrWalletStatuses)
+	root.GET("/accountpriorities/list", handler.getAccountPriorities)
+	root.GET("/accountstatuses/list", handler.getAccountStatuses)
 
 	bankRoute := root.Group("/banks")
 	bankRoute.GET("/list", handler.getBanks)
@@ -58,7 +63,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 
 // @Summary get Bank List
 // @Description get all thai Bank List
-// @Tags Banks
+// @Tags Options
 // @Accept json
 // @Produce json
 // @Param page query int false "page"
@@ -91,14 +96,9 @@ func (h accountingController) getBanks(c *gin.Context) {
 
 // @Summary get Account Type List
 // @Description get all Account Type
-// @Tags AccountTypes
+// @Tags Options
 // @Accept json
 // @Produce json
-// @Param page query int false "page"
-// @Param limit query int false "limit"
-// @Param search query string false "search"
-// @Param sortCol query string false "sortCol"
-// @Param sortAsc query string false "sortAsc"
 // @Success 200 {object} model.Pagination
 // @Router /accounting/accounttypes/list [get]
 func (h accountingController) getAccountTypes(c *gin.Context) {
@@ -120,6 +120,88 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 	}
 
 	c.JSON(200, model.Pagination{List: data.List, Total: data.Total})
+}
+
+// @Summary get Auto Credit Flags
+// @Description get all Auto Credit Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/autocreditflags/list [get]
+func (h accountingController) getAutoCreditFlags(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "manual", Name: "สร้างใบงานและปรับเครดิตเอง"},
+		{Key: "auto", Name: "ปรับเครดิตออโต้ (Bot)"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
+}
+
+// @Summary get Auto withdraw Flags
+// @Description get all Auto withdraw Flags Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/autowithdrawflags/list [get]
+func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "manual", Name: "สร้างใบงานและปรับเครดิตเอง"},
+		{Key: "auto_backoffice", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ คลิกผ่านระบบหลังบ้าน"},
+		{Key: "auto_bot", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ โอนเงินออโต้ (Bot)"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
+}
+
+// @Summary get Qr Wallet Statuses
+// @Description get all Qr Wallet Statuses Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/qrwalletstatuses/list [get]
+func (h accountingController) getQrWalletStatuses(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "use_qr", Name: "เปิด"},
+		{Key: "disabled", Name: "ปิด"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
+}
+
+// @Summary get Account Statuses
+// @Description get all Account Statuses Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/accountstatuses/list [get]
+func (h accountingController) getAccountStatuses(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "active", Name: "ใช้งาน"},
+		{Key: "deactive", Name: "ระงับการใช้งาน"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
+}
+
+// @Summary get Account Priorities
+// @Description get all Account Priorities Flags
+// @Tags Options
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Pagination
+// @Router /accounting/accountpriorities/list [get]
+func (h accountingController) getAccountPriorities(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "new", Name: "ระดับ NEW ทั่วไป"},
+		{Key: "gold", Name: "ระดับ Gold ฝากมากกว่า 10 ครั้ง"},
+		{Key: "platinum", Name: "ระดับ Platinum ฝากมากกว่า 20 ครั้ง"},
+		{Key: "vip", Name: "ระดับ VIP ฝากมากกว่า 20 ครั้ง"},
+		{Key: "classic", Name: "ระดับ CLASSIC ฝากสะสมมากกว่า 1,000 บาท"},
+		{Key: "superior", Name: "ระดับ SUPERIOR ฝากสะสมมากกว่า 10,000 บาท"},
+		{Key: "deluxe", Name: "ระดับ DELUXE ฝากสะสมมากกว่า 100,000 บาท"},
+		{Key: "wisdom", Name: "ระดับ WISDOM ฝากสะสมมากกว่า 500,000 บาท"},
+	}
+	c.JSON(200, model.Pagination{List: data, Total: 2})
 }
 
 // @Summary GetBankAccounts

@@ -50,7 +50,7 @@ CREATE Table
         account_name VARCHAR(255) NOT NULL,
         account_number VARCHAR(255) NOT NULL,
         account_balance DECIMAL(14,2) NOT NULL,
-        transfer_priority VARCHAR(255) NOT NULL,
+        account_priority VARCHAR(255) NOT NULL,
         account_status VARCHAR(255) NOT NULL,
         device_uid VARCHAR(255) NOT NULL,
         pin_code VARCHAR(255) NOT NULL,

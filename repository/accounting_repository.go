@@ -54,7 +54,6 @@ func (r repo) GetBanks(req model.BankListRequest) (*model.Pagination, error) {
 		count = count.Where("code = ?", req.Search)
 	}
 	if err = count.
-		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
@@ -144,7 +143,6 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.Paginati
 		count = count.Where("name = ?", req.Search)
 	}
 	if err = count.
-		Where("deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
@@ -221,7 +219,7 @@ func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	if err := r.db.Table("Bank_accounts as account").
@@ -249,7 +247,7 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.Paginati
 
 	// SELECT //
 	query := r.db.Table("Bank_accounts AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	query = query.Select(selectedFields)
@@ -325,7 +323,7 @@ func (r repo) DeleteBankAccount(id int64) error {
 func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error) {
 
 	var record model.BankAccountTransaction
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	if err := r.db.Table("Bank_account_transactions as account").
@@ -353,7 +351,7 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 
 	// SELECT //
 	query := r.db.Table("Bank_account_transactions AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	query = query.Select(selectedFields)
@@ -429,7 +427,7 @@ func (r repo) DeleteTransaction(id int64) error {
 func (r repo) GetTransferById(id int64) (*model.BankAccountTransfer, error) {
 
 	var record model.BankAccountTransfer
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	if err := r.db.Table("Bank_account_transfers as account").
@@ -457,7 +455,7 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Pag
 
 	// SELECT //
 	query := r.db.Table("Bank_account_transfers AS account")
-	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.transfer_priority, account.account_status, account.created_at, account.updated_at"
+	selectedFields := "account.id, account.bank_id, account.account_type_id, account.account_name, account.account_number, account.account_balance, account.account_priority, account.account_status, account.created_at, account.updated_at"
 	selectedFields += ",bank.name as bank_name, bank.code, bank.icon_url, bank.type_flag"
 	selectedFields += ",account_type.name as account_type_name, account_type.limit_flag"
 	query = query.Select(selectedFields)

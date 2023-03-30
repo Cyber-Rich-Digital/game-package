@@ -6,6 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type SimpleOption struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+}
 type Bank struct {
 	Id        int64     `json:"id"`
 	Name      string    `json:"name"`
@@ -64,7 +68,7 @@ type BankAccount struct {
 	AccountName           string         `json:"accountHame"`
 	AccountNumber         string         `json:"accountNumber"`
 	AccountBalance        float32        `json:"accountBalance" sql:"type:decimal(14,2);"`
-	TransferPriority      string         `json:"transferPriority"`
+	AccountPriority       string         `json:"accountPriority"`
 	AccountStatus         string         `json:"accountStatus"`
 	DeviceUid             string         `json:"deviceUid"`
 	PinCode               string         `json:"pinCode"`
@@ -102,24 +106,24 @@ type BankAccountBody struct {
 	AutoWithdrawFlag      string `json:"autoWithdrawFlag"`
 	AutoWithdrawMaxAmount string `json:"autoWithdrawMaxAmount"`
 	AutoTransferMaxAmount string `json:"autoTransferMaxAmount"`
-	TransferPriority      string `json:"transferPriority"`
+	AccountPriority       string `json:"accountPriority"`
 	QrWalletStatus        string `json:"qrWalletStatus"`
 }
 
 type BankAccountResponse struct {
-	Id               int64          `json:"id"`
-	BankId           int64          `json:"bankId"`
-	BankName         string         `json:"bankName"`
-	AccountTypeId    int64          `json:"accountTypeId"`
-	AccountTypeName  string         `json:"accountTypeName"`
-	AccountName      string         `json:"accountHame"`
-	AccountNumber    string         `json:"accountNumber"`
-	AccountBalance   float32        `json:"accountBalance"`
-	TransferPriority string         `json:"transferPriority"`
-	AccountStatus    string         `json:"accountStatus"`
-	CreatedAt        time.Time      `json:"createdAt"`
-	UpdatedAt        *time.Time     `json:"updatedAt"`
-	DeletedAt        gorm.DeletedAt `json:"deletedAt"`
+	Id              int64          `json:"id"`
+	BankId          int64          `json:"bankId"`
+	BankName        string         `json:"bankName"`
+	AccountTypeId   int64          `json:"accountTypeId"`
+	AccountTypeName string         `json:"accountTypeName"`
+	AccountName     string         `json:"accountHame"`
+	AccountNumber   string         `json:"accountNumber"`
+	AccountBalance  float32        `json:"accountBalance"`
+	AccountPriority string         `json:"accountPriority"`
+	AccountStatus   string         `json:"accountStatus"`
+	CreatedAt       time.Time      `json:"createdAt"`
+	UpdatedAt       *time.Time     `json:"updatedAt"`
+	DeletedAt       gorm.DeletedAt `json:"deletedAt"`
 }
 
 type BankAccountTransaction struct {
