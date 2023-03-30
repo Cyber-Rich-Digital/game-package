@@ -2,16 +2,14 @@ package model
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Permission struct {
-	Id        int64          `json:"id"`
-	Name      string         `json:"name"`
-	CreatedAt time.Time      `json:"createdAt"`
-	UpdatedAt time.Time      `json:"updatedAt"`
-	DeleteAt  gorm.DeletedAt `json:"deleteAt"`
+	Id        int64     `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	DeleteAt  time.Time `json:"deleteAt"`
 }
 
 type CreatePermission struct {
@@ -25,4 +23,8 @@ type PermissionName struct {
 type PermissionList struct {
 	Id   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+type DeletePermission struct {
+	Id int64 `json:"id" validate:"required"`
 }

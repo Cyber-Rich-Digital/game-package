@@ -9,11 +9,13 @@ import (
 )
 
 type AdminService interface {
-	GetGroup(id int) (*model.AdminGroupPermission, error)
+	GetGroup(id int) (*model.AdminGroupPermissionResponse, error)
 	GetGroupList() (*[]model.GroupList, error)
 	Login(data model.LoginAdmin) (*string, error)
 	Create(user *model.CreateAdmin) error
 	CreateGroup(data *model.AdminCreateGroup) error
+	DeleteGroup(id int64) error
+	DeletePermission(id int64) error
 }
 
 const AdminloginFailed = "Phone Or Password is incorrect"
@@ -34,7 +36,7 @@ func NewAdminService(
 	return &adminService{repo, perRepo, groupRepo}
 }
 
-func (s *adminService) GetGroup(id int) (*model.AdminGroupPermission, error) {
+func (s *adminService) GetGroup(id int) (*model.AdminGroupPermissionResponse, error) {
 
 	group, err := s.repo.GetGroup(id)
 	if err != nil {
@@ -172,6 +174,24 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 	}
 
 	if err := s.repo.CreateGroup(list); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *adminService) DeleteGroup(id int64) error {
+
+	if err := s.groupRepo.DeleteGroup(id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *adminService) DeletePermission(id int64) error {
+
+	if err := s.perRepo.DeletePermission(id); err != nil {
 		return err
 	}
 

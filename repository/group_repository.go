@@ -13,6 +13,7 @@ func NewGroupRepository(db *gorm.DB) GroupRepository {
 type GroupRepository interface {
 	CheckGroupExist(id int64) (bool, error)
 	Create(data *model.CreateGroup) error
+	DeleteGroup(id int64) error
 }
 
 func (r repo) CheckGroupExist(id int64) (bool, error) {
@@ -35,6 +36,33 @@ func (r repo) Create(data *model.CreateGroup) error {
 	if err := r.db.Table("Admin_groups").
 		Create(&data).
 		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) DeleteGroup(id int64) error {
+
+	tx := r.db.Begin()
+
+	if err := tx.Table("Admin_groups").
+		Where("id = ?", id).
+		Delete(&model.Group{}).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Table("Admin_group_permissions").
+		Where("group_id = ?", id).
+		Delete(&model.AdminGroupPermission{}).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 
