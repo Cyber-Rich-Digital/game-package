@@ -56,7 +56,12 @@ func Authorize(c *gin.Context) {
 		return
 	}
 
-	if claims.Claims.(jwt.MapClaims)["id"] == nil && claims.Claims.(jwt.MapClaims)["role"] == nil {
+	if claims.Claims.(jwt.MapClaims)["id"] == nil &&
+		claims.Claims.(jwt.MapClaims)["adminId"] == nil &&
+		claims.Claims.(jwt.MapClaims)["phone"] == nil &&
+		claims.Claims.(jwt.MapClaims)["username"] == nil &&
+		claims.Claims.(jwt.MapClaims)["email"] == nil &&
+		claims.Claims.(jwt.MapClaims)["role"] == nil {
 		c.AbortWithStatusJSON(401, authError{
 			Message: "Unauthorized",
 		})
