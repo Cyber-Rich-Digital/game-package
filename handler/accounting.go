@@ -293,9 +293,6 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 // @Router /accounting/bankaccounts/detail/{id} [get]
 func (h accountingController) getBankAccountById(c *gin.Context) {
 
-	// userId, _ := c.Get("userId")
-	// id := int64(userId.(float64))
-
 	var accounting model.BankAccountParam
 
 	if err := c.ShouldBindUri(&accounting); err != nil {
@@ -323,9 +320,6 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts [post]
 func (h accountingController) createBankAccount(c *gin.Context) {
-
-	// bankId := c.MustGet("bankId")
-	// toInt := int(userId.(float64))
 
 	var accounting model.BankAccountCreateBody
 	if err := c.ShouldBindJSON(&accounting); err != nil {
@@ -463,9 +457,6 @@ func (h accountingController) getTransactions(c *gin.Context) {
 // @Router /accounting/transactions/detail/{id} [get]
 func (h accountingController) getTransactionById(c *gin.Context) {
 
-	// userId, _ := c.Get("userId")
-	// id := int64(userId.(float64))
-
 	var accounting model.BankAccountTransactionParam
 
 	if err := c.ShouldBindUri(&accounting); err != nil {
@@ -494,7 +485,7 @@ func (h accountingController) getTransactionById(c *gin.Context) {
 // @Router /accounting/transactions [post]
 func (h accountingController) createTransaction(c *gin.Context) {
 
-	username := strconv.FormatFloat(c.MustGet("userId").(float64), 'f', -1, 64)
+	username := c.MustGet("username").(string)
 
 	var accounting model.BankAccountTransactionBody
 	accounting.CreatedByUsername = username
@@ -516,7 +507,7 @@ func (h accountingController) createTransaction(c *gin.Context) {
 }
 
 // @Summary DeleteTransaction
-// @Description ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม
+// @Description ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย
 // @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
 // @Accept json
@@ -528,7 +519,7 @@ func (h accountingController) createTransaction(c *gin.Context) {
 // @Router /accounting/transactions/{id} [delete]
 func (h accountingController) deleteTransaction(c *gin.Context) {
 
-	cuserId := c.MustGet("userId").(int64)
+	adminId := int64(c.MustGet("adminId").(float64))
 
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
@@ -538,7 +529,7 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 	}
 
 	var confirmation model.ConfirmRequest
-	confirmation.UserId = cuserId
+	confirmation.UserId = adminId
 	if err := c.ShouldBindJSON(&confirmation); err != nil {
 		HandleError(c, err)
 		return
@@ -561,7 +552,7 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 }
 
 // @Summary GetTransfers
-// @Description get Transfers
+// @Description ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
@@ -600,7 +591,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 }
 
 // @Summary GetTransfer
-// @Description get Transfer by id
+// @Description ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
@@ -610,9 +601,6 @@ func (h accountingController) getTransfers(c *gin.Context) {
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transfers/detail/{id} [get]
 func (h accountingController) getTransferById(c *gin.Context) {
-
-	// userId, _ := c.Get("userId")
-	// id := int64(userId.(float64))
 
 	var accounting model.BankAccountTransferParam
 
@@ -631,7 +619,7 @@ func (h accountingController) getTransferById(c *gin.Context) {
 }
 
 // @Summary CreateTransfer
-// @Description create new Transfer
+// @Description สร้างข้อมูลการโอน
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
@@ -642,10 +630,10 @@ func (h accountingController) getTransferById(c *gin.Context) {
 // @Router /accounting/transfers [post]
 func (h accountingController) createTransfer(c *gin.Context) {
 
-	// bankId := c.MustGet("bankId")
-	// toInt := int(userId.(float64))
+	username := c.MustGet("username").(string)
 
 	var accounting model.BankAccountTransferBody
+	accounting.CreatedByUsername = username
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -664,7 +652,7 @@ func (h accountingController) createTransfer(c *gin.Context) {
 }
 
 // @Summary ConfirmTransfer
-// @Description update Transfer
+// @Description ยืนยันการโอน
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
@@ -675,6 +663,8 @@ func (h accountingController) createTransfer(c *gin.Context) {
 // @Router /accounting/transfers/confirm/{id} [post]
 func (h accountingController) confirmTransfer(c *gin.Context) {
 
+	adminId := int64(c.MustGet("adminId").(float64))
+
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -682,7 +672,7 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 		return
 	}
 
-	if err := h.accountingService.ConfirmTransfer(identifier); err != nil {
+	if err := h.accountingService.ConfirmTransfer(identifier, adminId); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -691,20 +681,38 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 }
 
 // @Summary DeleteTransfer
-// @Description delete Transfer
+// @Description ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
+// @Param body body model.ConfirmRequest true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transfers/{id} [delete]
 func (h accountingController) deleteTransfer(c *gin.Context) {
 
+	adminId := int64(c.MustGet("adminId").(float64))
+
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var confirmation model.ConfirmRequest
+	confirmation.UserId = adminId
+	if err := c.ShouldBindJSON(&confirmation); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(confirmation); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if _, err := h.accountingService.CheckConfirmationPassword(confirmation); err != nil {
 		HandleError(c, err)
 		return
 	}

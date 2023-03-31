@@ -755,7 +755,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "create new Transfer",
+                "description": "สร้างข้อมูลการโอน",
                 "consumes": [
                     "application/json"
                 ],
@@ -800,7 +800,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "update Transfer",
+                "description": "ยืนยันการโอน",
                 "consumes": [
                     "application/json"
                 ],
@@ -843,7 +843,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get Transfer by id",
+                "description": "ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*",
                 "consumes": [
                     "application/json"
                 ],
@@ -886,7 +886,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get Transfers",
+                "description": "ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม",
                 "consumes": [
                     "application/json"
                 ],
@@ -976,7 +976,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "delete Transfer",
+                "description": "ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม",
                 "consumes": [
                     "application/json"
                 ],
@@ -994,6 +994,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ConfirmRequest"
+                        }
                     }
                 ],
                 "responses": {

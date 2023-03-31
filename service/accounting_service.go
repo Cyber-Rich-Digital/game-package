@@ -29,7 +29,7 @@ type AccountingService interface {
 	GetTransferById(data model.BankAccountTransferParam) (*model.BankAccountTransfer, error)
 	GetTransfers(data model.BankAccountTransferListRequest) (*model.SuccessWithPagination, error)
 	CreateTransfer(data model.BankAccountTransferBody) error
-	ConfirmTransfer(id int64) error
+	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
 }
 
@@ -38,8 +38,12 @@ type accountingService struct {
 }
 
 var invalidConfirmation = "Invalid confirmation password"
+
+var recordNotFound = "record not found"
 var bankNotFound = "Bank not found"
 var bankAccountNotFound = "Account not found"
+var transactionNotFound = "Transsaction not found"
+var transferNotFound = "Transfer not found"
 
 func NewAccountingService(
 	repo repository.AccountingRepository,
@@ -51,6 +55,7 @@ func (s *accountingService) CheckConfirmationPassword(data model.ConfirmRequest)
 
 	user, err := s.repo.GetAdminById(data.UserId)
 	if err != nil {
+		fmt.Println(data)
 		return nil, notFound(invalidConfirmation)
 	}
 	if user == nil {
@@ -218,6 +223,9 @@ func (s *accountingService) GetTransactionById(data model.BankAccountTransaction
 
 	accounting, err := s.repo.GetTransactionById(data.Id)
 	if err != nil {
+		if err.Error() == recordNotFound {
+			return nil, notFound(transactionNotFound)
+		}
 		return nil, internalServerError(err.Error())
 	}
 	return accounting, nil
@@ -285,6 +293,9 @@ func (s *accountingService) GetTransferById(data model.BankAccountTransferParam)
 
 	accounting, err := s.repo.GetTransferById(data.Id)
 	if err != nil {
+		if err.Error() == recordNotFound {
+			return nil, notFound(transferNotFound)
+		}
 		return nil, internalServerError(err.Error())
 	}
 	return accounting, nil
@@ -327,6 +338,7 @@ func (s *accountingService) CreateTransfer(data model.BankAccountTransferBody) e
 	body.ToAccountNumber = toAccount.AccountNumber
 	body.Amount = data.Amount
 	body.TransferAt = data.TransferAt
+	body.CreatedByUsername = data.CreatedByUsername
 	body.Status = "pending"
 
 	if err := s.repo.CreateTransfer(body); err != nil {
@@ -335,7 +347,7 @@ func (s *accountingService) CreateTransfer(data model.BankAccountTransferBody) e
 	return nil
 }
 
-func (s *accountingService) ConfirmTransfer(id int64) error {
+func (s *accountingService) ConfirmTransfer(id int64, actorId int64) error {
 
 	transfer, err := s.repo.GetTransferById(id)
 	if err != nil {
@@ -346,7 +358,7 @@ func (s *accountingService) ConfirmTransfer(id int64) error {
 		var body model.BankAccountTransferConfirmBody
 		body.Status = "confirmed"
 		body.ConfirmedAt = time.Now()
-		body.ConfirmedByUsername = "todo"
+		body.ConfirmedByUserId = actorId
 		if err := s.repo.ConfirmTransfer(id, body); err != nil {
 			return internalServerError(err.Error())
 		}

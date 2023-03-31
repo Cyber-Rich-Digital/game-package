@@ -707,7 +707,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: create new Transfer
+      description: สร้างข้อมูลการโอน
       parameters:
       - description: body
         in: body
@@ -735,13 +735,19 @@ paths:
     delete:
       consumes:
       - application/json
-      description: delete Transfer
+      description: ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม
       parameters:
       - description: id
         in: path
         name: id
         required: true
         type: integer
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ConfirmRequest'
       produces:
       - application/json
       responses:
@@ -762,7 +768,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: update Transfer
+      description: ยืนยันการโอน
       parameters:
       - description: id
         in: path
@@ -789,7 +795,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get Transfer by id
+      description: ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*
       parameters:
       - description: id
         in: path
@@ -816,7 +822,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get Transfers
+      description: ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
       parameters:
       - description: accountId
         in: query

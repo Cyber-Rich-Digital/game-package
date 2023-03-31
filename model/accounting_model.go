@@ -207,24 +207,26 @@ type BankAccountTransactionResponse struct {
 }
 
 type BankAccountTransfer struct {
-	Id                  int64          `json:"id"`
-	FromAccountId       int64          `json:"fromAccountId"`
-	FromBankId          int64          `json:"fromBankId"`
-	FromAccountName     string         `json:"fromAccountName"`
-	FromAccountNumber   string         `json:"fromAccountNumber"`
-	ToAccountId         int64          `json:"toAccountId"`
-	ToBankId            int64          `json:"toBankId"`
-	ToAccountName       string         `json:"toAccountName"`
-	ToAccountNumber     string         `json:"toAccountNumber"`
-	Amount              float32        `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt          time.Time      `json:"transferAt"`
-	CreatedByUsername   string         `json:"createdByUsername"`
-	Status              string         `json:"status"`
-	ConfirmedAt         time.Time      `json:"confirmedAt"`
-	ConfirmedByUsername string         `json:"confirmedByUsername"`
-	CreatedAt           time.Time      `json:"createdAt"`
-	UpdatedAt           *time.Time     `json:"updatedAt"`
-	DeletedAt           gorm.DeletedAt `json:"deletedAt"`
+	Id                int64          `json:"id"`
+	FromAccountId     int64          `json:"fromAccountId"`
+	FromBankId        int64          `json:"fromBankId"`
+	FromBankName      string         `json:"fromBankName"`
+	FromAccountName   string         `json:"fromAccountName"`
+	FromAccountNumber string         `json:"fromAccountNumber"`
+	ToAccountId       int64          `json:"toAccountId"`
+	ToBankId          int64          `json:"toBankId"`
+	TobankName        string         `json:"toBankName"`
+	ToAccountName     string         `json:"toAccountName"`
+	ToAccountNumber   string         `json:"toAccountNumber"`
+	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
+	TransferAt        time.Time      `json:"transferAt"`
+	CreatedByUsername string         `json:"createdByUsername"`
+	Status            string         `json:"status"`
+	ConfirmedAt       time.Time      `json:"confirmedAt"`
+	ConfirmedByUserId int64          `json:"confirmedByUserId"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         *time.Time     `json:"updatedAt"`
+	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
 type BankAccountTransferParam struct {
@@ -255,31 +257,34 @@ type BankAccountTransferBody struct {
 	ToAccountNumber   string    `json:"-"`
 	Amount            float32   `json:"amount" validate:"required"`
 	TransferAt        time.Time `json:"transferAt" validate:"required"`
+	CreatedByUsername string    `json:"-"`
 }
 
 type BankAccountTransferConfirmBody struct {
-	Status              string    `json:"status" validate:"required"`
-	ConfirmedByUsername string    `json:"confirmedByUsername" validate:"required"`
-	ConfirmedAt         time.Time `json:"confirmedAt" validate:"required"`
+	Status            string    `json:"status" validate:"required"`
+	ConfirmedByUserId int64     `json:"confirmedByUserId" validate:"required"`
+	ConfirmedAt       time.Time `json:"confirmedAt" validate:"required"`
 }
 
 type BankAccountTransferResponse struct {
-	Id                  int64          `json:"id"`
-	FromAccountId       int64          `json:"fromAccountId"`
-	FromBankId          int64          `json:"fromBankId"`
-	FromAccountName     string         `json:"fromAccountName"`
-	FomAccountNumber    string         `json:"fromAccountNumber"`
-	ToAccountId         int64          `json:"toAccountId"`
-	ToBankId            int64          `json:"toBankId"`
-	ToAccountName       string         `json:"toAccountName"`
-	ToAccountNumber     string         `json:"toAccountNumber"`
-	Amount              float32        `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt          time.Time      `json:"transferAt"`
-	CreatedByUsername   string         `json:"createdByUsername"`
-	Status              string         `json:"status"`
-	ConfirmedAt         time.Time      `json:"confirmedAt"`
-	ConfirmedByUsername string         `json:"confirmedByUsername"`
-	CreatedAt           time.Time      `json:"createdAt"`
-	UpdatedAt           *time.Time     `json:"updatedAt"`
-	DeletedAt           gorm.DeletedAt `json:"deletedAt"`
+	Id                int64          `json:"id"`
+	FromAccountId     int64          `json:"fromAccountId"`
+	FromBankId        int64          `json:"fromBankId"`
+	FromBankName      string         `json:"fromBankName"`
+	FromAccountName   string         `json:"fromAccountName"`
+	FomAccountNumber  string         `json:"fromAccountNumber"`
+	ToAccountId       int64          `json:"toAccountId"`
+	ToBankId          int64          `json:"toBankId"`
+	ToBankName        string         `json:"toBankName"`
+	ToAccountName     string         `json:"toAccountName"`
+	ToAccountNumber   string         `json:"toAccountNumber"`
+	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
+	TransferAt        time.Time      `json:"transferAt"`
+	CreatedByUsername string         `json:"createdByUsername"`
+	Status            string         `json:"status"`
+	ConfirmedAt       time.Time      `json:"confirmedAt"`
+	ConfirmedByUserId int64          `json:"confirmedByUserId"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         *time.Time     `json:"updatedAt"`
+	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }

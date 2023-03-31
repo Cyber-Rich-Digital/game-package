@@ -214,7 +214,7 @@ func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 		Error; err != nil {
 		return nil, err
 	}
-	fmt.Println(result)
+
 	if result.Id == 0 {
 		return nil, errors.New("Account type not found")
 	}
@@ -340,7 +340,6 @@ func (r repo) DeleteBankAccount(id int64) error {
 }
 
 func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error) {
-
 	var record model.BankAccountTransaction
 	selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
 	selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
@@ -354,10 +353,6 @@ func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error
 		First(&record).
 		Error; err != nil {
 		return nil, err
-	}
-
-	if record.Id == 0 {
-		return nil, errors.New("Transaction not found")
 	}
 	return &record, nil
 }
@@ -476,11 +471,10 @@ func (r repo) DeleteTransaction(id int64) error {
 }
 
 func (r repo) GetTransferById(id int64) (*model.BankAccountTransfer, error) {
-
 	var record model.BankAccountTransfer
 	selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
 	selectedFields += ",transfers.to_account_id, transfers.to_bank_id, transfers.to_account_name, transfers.to_account_number"
-	selectedFields += ",transfers.amount, transfers.transfer_at, transfers.created_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
+	selectedFields += ",transfers.amount, transfers.transfer_at, transfers.created_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_user_id, transfers.created_at, transfers.updated_at"
 	selectedFields += ",from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 	selectedFields += ",to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
 	if err := r.db.Table("Bank_account_transfers as transfers").
@@ -492,10 +486,6 @@ func (r repo) GetTransferById(id int64) (*model.BankAccountTransfer, error) {
 		First(&record).
 		Error; err != nil {
 		return nil, err
-	}
-
-	if record.Id == 0 {
-		return nil, errors.New("Transfer not found")
 	}
 	return &record, nil
 }
@@ -542,8 +532,8 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Suc
 		// SELECT //
 		selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
 		selectedFields += ",transfers.to_account_id, transfers.to_bank_id, transfers.to_account_name, transfers.to_account_number"
-		selectedFields += ",transfers.amount, transfers.transfer_at, transfers.created_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_username, transfers.created_at, transfers.updated_at"
-		selectedFields += ",from_banks.bank_name as from_bank_name, to_banks.bank_name as to_bank_name"
+		selectedFields += ",transfers.amount, transfers.transfer_at, transfers.created_by_username, transfers.status, transfers.confirmed_at, transfers.confirmed_by_user_id, transfers.created_at, transfers.updated_at"
+		selectedFields += ",from_banks.name as from_bank_name, to_banks.name as to_bank_name"
 		query := r.db.Table("Bank_account_transfers as transfers")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks AS from_banks ON from_banks.id = transfers.from_bank_id")
