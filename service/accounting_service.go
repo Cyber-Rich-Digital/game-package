@@ -9,6 +9,8 @@ import (
 )
 
 type AccountingService interface {
+	CheckCurrentAdminId(input any) (*int64, error)
+	CheckCurrentUsername(input any) (*string, error)
 	CheckConfirmationPassword(data model.ConfirmRequest) (*bool, error)
 
 	GetBanks(data model.BankListRequest) (*model.SuccessWithPagination, error)
@@ -38,6 +40,7 @@ type accountingService struct {
 }
 
 var invalidConfirmation = "Invalid confirmation password"
+var invalidCurrentAdminId = "Invalid current user id"
 
 var recordNotFound = "record not found"
 var bankNotFound = "Bank not found"
@@ -49,6 +52,32 @@ func NewAccountingService(
 	repo repository.AccountingRepository,
 ) AccountingService {
 	return &accountingService{repo}
+}
+
+func (s *accountingService) CheckCurrentAdminId(input any) (*int64, error) {
+
+	// input := c.MustGet("adminId")
+	if input == nil {
+		return nil, badRequest(invalidCurrentAdminId)
+	}
+	var adminId = int64(input.(float64))
+	if adminId <= 0 {
+		return nil, badRequest(invalidCurrentAdminId)
+	}
+	return &adminId, nil
+}
+
+func (s *accountingService) CheckCurrentUsername(input any) (*string, error) {
+
+	// input := c.MustGet("username")
+	if input == nil {
+		return nil, badRequest(invalidCurrentAdminId)
+	}
+	var username = input.(string)
+	// if username == "" {
+	// 	return nil, badRequest(invalidCurrentAdminId)
+	// }
+	return &username, nil
 }
 
 func (s *accountingService) CheckConfirmationPassword(data model.ConfirmRequest) (*bool, error) {

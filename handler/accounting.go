@@ -65,7 +65,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 }
 
 // @Summary get Bank List
-// @Description get all thai Bank List
+// @Description ดึงข้อมูลรายชื่อธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -99,7 +99,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 }
 
 // @Summary get Account Type List
-// @Description get all Account Type
+// @Description ดึงข้อมูลรายชื่อประเภทบัญชีธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -128,7 +128,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 }
 
 // @Summary get Auto Credit Flags
-// @Description get all Auto Credit Flags
+// @Description ดึงข้อมูลรายชื่อประเภท การตั้งค่าปรับเครดิตอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -144,7 +144,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 }
 
 // @Summary get Auto withdraw Flags
-// @Description get all Auto withdraw Flags Flags
+// @Description ดึงข้อมูลรายชื่อประเภท การตั้งค่าถอนโอนเงินอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -161,7 +161,7 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 }
 
 // @Summary get Qr Wallet Statuses
-// @Description get all Qr Wallet Statuses Flags
+// @Description ดึงข้อมูลรายชื่อประเภท การเปิดใช้งาน QR Wallet
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -177,7 +177,7 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 }
 
 // @Summary get Account Statuses
-// @Description get all Account Statuses Flags
+// @Description ดึงข้อมูลรายชื่อประเภท สถานะบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -193,7 +193,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 }
 
 // @Summary get Account Priorities
-// @Description get all Account Priorities Flags
+// @Description ดึงข้อมูลรายชื่อประเภท ลำดับความสำคัญ
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -215,7 +215,7 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 }
 
 // @Summary get Account Priorities
-// @Description get all Account Priorities Flags
+// @Description ดึงข้อมูลรายชื่อประเภท สถานะบอท
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -231,7 +231,7 @@ func (h accountingController) getAccountBotStatuses(c *gin.Context) {
 }
 
 // @Summary get Transfer Types
-// @Description get all Transfer Types Flags
+// @Description ดึงข้อมูลรายชื่อประเภท ธุรกรรม (ฝาก/ถอน)
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -247,7 +247,7 @@ func (h accountingController) getTransferTypes(c *gin.Context) {
 }
 
 // @Summary GetBankAccounts
-// @Description get BankAccounts
+// @Description ดึงข้อมูลลิสบัญชีธนาคาร ใช้แสดงในหน้า จัดการธนาคาร
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
@@ -282,7 +282,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 }
 
 // @Summary GetBankAccount
-// @Description get BankAccount by id
+// @Description ดึงข้อมูลบัญชีธนาคาร ด้วย id
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
@@ -310,7 +310,7 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 }
 
 // @Summary CreateBankAccount
-// @Description create new accounting
+// @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
@@ -340,7 +340,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 }
 
 // @Summary UpdateBankAccount
-// @Description update accounting
+// @Description แก้ไข บัญชีธนาคาร ในหน้า จัดการธนาคาร
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
@@ -380,7 +380,7 @@ func (h accountingController) updateBankAccount(c *gin.Context) {
 }
 
 // @Summary DeleteBankAccount
-// @Description delete accounting
+// @Description ลบข้อมูลบัญชีธนาคาร ด้วย id
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
@@ -485,10 +485,14 @@ func (h accountingController) getTransactionById(c *gin.Context) {
 // @Router /accounting/transactions [post]
 func (h accountingController) createTransaction(c *gin.Context) {
 
-	username := c.MustGet("username").(string)
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
 
 	var accounting model.BankAccountTransactionBody
-	accounting.CreatedByUsername = username
+	accounting.CreatedByUsername = *username
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -498,8 +502,7 @@ func (h accountingController) createTransaction(c *gin.Context) {
 		return
 	}
 
-	err := h.accountingService.CreateTransaction(accounting)
-	if err != nil {
+	if err := h.accountingService.CreateTransaction(accounting); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -519,7 +522,11 @@ func (h accountingController) createTransaction(c *gin.Context) {
 // @Router /accounting/transactions/{id} [delete]
 func (h accountingController) deleteTransaction(c *gin.Context) {
 
-	adminId := int64(c.MustGet("adminId").(float64))
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
 
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
@@ -529,7 +536,7 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 	}
 
 	var confirmation model.ConfirmRequest
-	confirmation.UserId = adminId
+	confirmation.UserId = *adminId
 	if err := c.ShouldBindJSON(&confirmation); err != nil {
 		HandleError(c, err)
 		return
@@ -630,10 +637,14 @@ func (h accountingController) getTransferById(c *gin.Context) {
 // @Router /accounting/transfers [post]
 func (h accountingController) createTransfer(c *gin.Context) {
 
-	username := c.MustGet("username").(string)
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
 
 	var accounting model.BankAccountTransferBody
-	accounting.CreatedByUsername = username
+	accounting.CreatedByUsername = *username
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -643,8 +654,7 @@ func (h accountingController) createTransfer(c *gin.Context) {
 		return
 	}
 
-	err := h.accountingService.CreateTransfer(accounting)
-	if err != nil {
+	if err := h.accountingService.CreateTransfer(accounting); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -663,7 +673,11 @@ func (h accountingController) createTransfer(c *gin.Context) {
 // @Router /accounting/transfers/confirm/{id} [post]
 func (h accountingController) confirmTransfer(c *gin.Context) {
 
-	adminId := int64(c.MustGet("adminId").(float64))
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
 
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
@@ -672,11 +686,10 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 		return
 	}
 
-	if err := h.accountingService.ConfirmTransfer(identifier, adminId); err != nil {
+	if err := h.accountingService.ConfirmTransfer(identifier, *adminId); err != nil {
 		HandleError(c, err)
 		return
 	}
-
 	c.JSON(201, model.Success{Message: "Updated success"})
 }
 
@@ -693,7 +706,11 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 // @Router /accounting/transfers/{id} [delete]
 func (h accountingController) deleteTransfer(c *gin.Context) {
 
-	adminId := int64(c.MustGet("adminId").(float64))
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
 
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
@@ -703,7 +720,7 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 	}
 
 	var confirmation model.ConfirmRequest
-	confirmation.UserId = adminId
+	confirmation.UserId = *adminId
 	if err := c.ShouldBindJSON(&confirmation); err != nil {
 		HandleError(c, err)
 		return
