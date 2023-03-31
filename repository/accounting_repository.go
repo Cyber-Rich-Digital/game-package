@@ -271,7 +271,7 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 	selectedFields += ",account_types.name as account_type_name, account_types.limit_flag"
 	query = query.Select(selectedFields)
 	query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
-	query = query.Joins("LEFT JOIN Bank_account_typess AS account_type ON account_types.id = accounts.account_type_id")
+	query = query.Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
 		query = query.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like)

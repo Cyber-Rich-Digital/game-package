@@ -103,20 +103,21 @@ type BankAccountListRequest struct {
 }
 
 type BankAccountCreateBody struct {
-	BankId                int64  `json:"bankId" validate:"required"`
-	AccountTypeId         int64  `json:"accounTypeId" validate:"required"`
-	AccountName           string `json:"accountName" validate:"required"`
-	AccountNumber         string `json:"accountNumber" validate:"required"`
-	DeviceUid             string `json:"deviceUid"`
-	PinCode               string `json:"pinCode"`
-	AutoCreditFlag        string `json:"autoCreditFlag"`
-	AutoWithdrawFlag      string `json:"autoWithdrawFlag"`
-	AutoWithdrawMaxAmount string `json:"autoWithdrawMaxAmount"`
-	AutoTransferMaxAmount string `json:"autoTransferMaxAmount"`
-	AccountPriority       string `json:"accountPriority"`
-	QrWalletStatus        string `json:"qrWalletStatus"`
-	AccountStatus         string `json:"accountStatus"`
-	ConectionStatus       string `json:"-"`
+	BankId                int64   `json:"bankId" validate:"required"`
+	AccountTypeId         int64   `json:"accounTypeId" validate:"required"`
+	AccountName           string  `json:"accountName" validate:"required"`
+	AccountNumber         string  `json:"accountNumber" validate:"required"`
+	AccountBalance        float32 `json:"-"`
+	DeviceUid             string  `json:"deviceUid"`
+	PinCode               string  `json:"pinCode"`
+	AutoCreditFlag        string  `json:"autoCreditFlag"`
+	AutoWithdrawFlag      string  `json:"autoWithdrawFlag"`
+	AutoWithdrawMaxAmount string  `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount string  `json:"autoTransferMaxAmount"`
+	AccountPriority       string  `json:"accountPriority"`
+	QrWalletStatus        string  `json:"qrWalletStatus"`
+	AccountStatus         string  `json:"accountStatus"`
+	ConectionStatus       string  `json:"-"`
 }
 type BankAccountUpdateBody struct {
 	BankId                int64  `json:"-"`

@@ -158,6 +158,7 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 	account.PinCode = data.PinCode
 	account.QrWalletStatus = data.QrWalletStatus
 	account.AccountStatus = data.AccountStatus
+	account.AccountBalance = 0
 	account.ConectionStatus = "disconnected"
 
 	if err := s.repo.CreateBankAccount(account); err != nil {
@@ -174,9 +175,10 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 	}
 
 	// Validate
-	if account.BankId != data.BankId {
+	if data.BankId != 0 && account.BankId != data.BankId {
 		bank, err := s.repo.GetBankById(data.BankId)
 		if err != nil {
+			fmt.Println(data)
 			fmt.Println(err)
 			return badRequest("Invalid Bank")
 		}
@@ -190,12 +192,13 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 		}
 		data.AccountTypeId = accountType.Id
 	}
-	if account.AccountNumber != data.AccountNumber {
+	if data.AccountNumber != "" && account.AccountNumber != data.AccountNumber {
 		check, err := s.repo.HasBankAccount(data.AccountNumber)
 		if err != nil {
 			return internalServerError(err.Error())
 		}
 		if !check {
+			fmt.Println(data.AccountNumber)
 			return notFound("Account already exist")
 		}
 	}
