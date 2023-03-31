@@ -49,7 +49,7 @@ CREATE Table
         account_type_id BIGINT NOT NULL,
         account_name VARCHAR(255) NOT NULL,
         account_number VARCHAR(255) NOT NULL,
-        account_balance DECIMAL(14,2) NOT NULL,
+        account_balance DECIMAL(14,2) NOT NULL DEFAULT 0,
         account_priority VARCHAR(255) NOT NULL,
         account_status VARCHAR(255) NOT NULL,
         device_uid VARCHAR(255) NOT NULL,
