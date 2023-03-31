@@ -954,6 +954,15 @@ paths:
       consumes:
       - application/json
       description: Group List
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -1021,6 +1030,38 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Group
+      tags:
+      - Admins
+    put:
+      consumes:
+      - application/json
+      description: Update Group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Group
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminUpdateGroup'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Group
       tags:
       - Admins
   /admins/permission/{id}:

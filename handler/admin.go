@@ -4,6 +4,7 @@ import (
 	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
+	"fmt"
 	"strconv"
 
 	"cybergame-api/repository"
@@ -36,6 +37,7 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	r.GET("/group/:id", middleware.Authorize, handler.getGroup)
 	r.POST("/create", middleware.Authorize, handler.create)
 	r.POST("/creategroup", middleware.Authorize, handler.createGroup)
+	r.PUT("/group/:id", middleware.Authorize, handler.updateGroup)
 	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
 	r.DELETE("/permission/:id", middleware.Authorize, handler.DeletePermission)
 
@@ -47,18 +49,28 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
+// @Param page query int false "Page"
+// @Param limit query int false "Limit"
 // @Success 200 {object} model.SuccessWithList
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/group [get]
 func (h adminController) groupList(c *gin.Context) {
 
-	data, err := h.adminService.GetGroupList()
+	query := model.AdminGroupQuery{}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	fmt.Println(query.Page, query.Limit)
+
+	data, err := h.adminService.GetGroupList(query)
 	if err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	c.JSON(200, model.SuccessWithList{Message: "Success", List: data})
+	c.JSON(200, data)
 }
 
 // @Summary Get Group
@@ -151,6 +163,48 @@ func (h adminController) createGroup(c *gin.Context) {
 	}
 
 	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary Update Group
+// @Description Update Group
+// @Tags Admins
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Group ID"
+// @Param register body model.AdminUpdateGroup true "Update Group"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /admins/group/{id} [put]
+func (h adminController) updateGroup(c *gin.Context) {
+
+	data := &model.AdminUpdateGroup{}
+	if err := c.ShouldBindJSON(data); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := validator.New().Struct(data); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data.GroupId = int64(toInt)
+
+	err = h.adminService.UpdateGroup(data)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Updated success"})
 }
 
 // @Summary Delete Group

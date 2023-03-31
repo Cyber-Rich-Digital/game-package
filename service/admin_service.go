@@ -10,10 +10,11 @@ import (
 
 type AdminService interface {
 	GetGroup(id int) (*model.AdminGroupPermissionResponse, error)
-	GetGroupList() (*[]model.GroupList, error)
+	GetGroupList(query model.AdminGroupQuery) (*model.SuccessWithPagination, error)
 	Login(data model.LoginAdmin) (*string, error)
 	Create(user *model.CreateAdmin) error
 	CreateGroup(data *model.AdminCreateGroup) error
+	UpdateGroup(data *model.AdminUpdateGroup) error
 	DeleteGroup(id int64) error
 	DeletePermission(id int64) error
 }
@@ -51,14 +52,23 @@ func (s *adminService) GetGroup(id int) (*model.AdminGroupPermissionResponse, er
 	return group, nil
 }
 
-func (s *adminService) GetGroupList() (*[]model.GroupList, error) {
+func (s *adminService) GetGroupList(query model.AdminGroupQuery) (*model.SuccessWithPagination, error) {
 
-	group, err := s.repo.GetGroupList()
+	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
+		return nil, err
+	}
+	fmt.Println(query.Page, query.Limit)
+	list, total, err := s.repo.GetGroupList(query)
 	if err != nil {
 		return nil, err
 	}
 
-	return group, nil
+	result := &model.SuccessWithPagination{
+		List:  list,
+		Total: *total,
+	}
+
+	return result, nil
 }
 
 func (s *adminService) Login(data model.LoginAdmin) (*string, error) {
@@ -174,6 +184,63 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 	}
 
 	if err := s.repo.CreateGroup(list); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *adminService) UpdateGroup(data *model.AdminUpdateGroup) error {
+
+	checkGroup, err := s.groupRepo.CheckGroupExist(data.GroupId)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if !checkGroup {
+		return badRequest(AdminGroupNotFound)
+	}
+
+	var permissionIds []int64
+	for _, v := range data.PermissionIds {
+		permissionIds = append(permissionIds, int64(v))
+	}
+
+	checkPermission, err := s.perRepo.CheckPerListExist(permissionIds)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	var idNotFound []string
+	for _, j := range permissionIds {
+
+		exist := false
+
+		for _, k := range checkPermission {
+			if j == k {
+				exist = true
+			}
+		}
+
+		if !exist {
+			idNotFound = append(idNotFound, fmt.Sprintf("%d", j))
+		}
+	}
+
+	if len(idNotFound) > 0 {
+		return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
+	}
+
+	var list []model.AdminPermissionList
+
+	for _, v := range data.PermissionIds {
+		list = append(list, model.AdminPermissionList{
+			GroupId:      data.GroupId,
+			PermissionId: v,
+		})
+	}
+
+	if err := s.repo.UpdateGroup(list, permissionIds); err != nil {
 		return err
 	}
 
