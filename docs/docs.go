@@ -30,7 +30,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Account Priorities",
                 "responses": {
@@ -58,7 +58,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Account Priorities",
                 "responses": {
@@ -86,7 +86,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Account Statuses",
                 "responses": {
@@ -114,7 +114,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Account Type List",
                 "responses": {
@@ -142,7 +142,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Auto Credit Flags",
                 "responses": {
@@ -170,7 +170,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Auto withdraw Flags",
                 "responses": {
@@ -198,7 +198,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Accounts"
+                    "Accounting - Bank Accounts"
                 ],
                 "summary": "CreateBankAccount",
                 "parameters": [
@@ -243,7 +243,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Accounts"
+                    "Accounting - Bank Accounts"
                 ],
                 "summary": "GetBankAccount",
                 "parameters": [
@@ -286,7 +286,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Accounts"
+                    "Accounting - Bank Accounts"
                 ],
                 "summary": "GetBankAccounts",
                 "parameters": [
@@ -352,7 +352,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Accounts"
+                    "Accounting - Bank Accounts"
                 ],
                 "summary": "DeleteBankAccount",
                 "parameters": [
@@ -393,7 +393,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Accounts"
+                    "Accounting - Bank Accounts"
                 ],
                 "summary": "UpdateBankAccount",
                 "parameters": [
@@ -445,7 +445,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Bank List",
                 "parameters": [
@@ -505,7 +505,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Qr Wallet Statuses",
                 "responses": {
@@ -525,7 +525,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "create new accounting",
+                "description": "สร้าง ธุรกรรม ในหน้า จัดการธนาคาร - ธุรกรรม ส่ง AccountId มาด้วย",
                 "consumes": [
                     "application/json"
                 ],
@@ -533,7 +533,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transactions"
+                    "Accounting - Bank Account Transactions"
                 ],
                 "summary": "CreateTransaction",
                 "parameters": [
@@ -570,7 +570,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get Transaction by id",
+                "description": "ดึงข้อมูลธุรกรรมด้วย id *ยังไม่ได้ใช้งาน*",
                 "consumes": [
                     "application/json"
                 ],
@@ -578,7 +578,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transactions"
+                    "Accounting - Bank Account Transactions"
                 ],
                 "summary": "GetTransaction",
                 "parameters": [
@@ -613,7 +613,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get Transactions",
+                "description": "ดึงข้อมูลลิสธุรกรรม ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม และ รายการฝากถอนเงินสด",
                 "consumes": [
                     "application/json"
                 ],
@@ -621,7 +621,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transactions"
+                    "Accounting - Bank Account Transactions"
                 ],
                 "summary": "GetTransactions",
                 "parameters": [
@@ -703,7 +703,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "delete accounting",
+                "description": "ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม",
                 "consumes": [
                     "application/json"
                 ],
@@ -711,7 +711,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transactions"
+                    "Accounting - Bank Account Transactions"
                 ],
                 "summary": "DeleteTransaction",
                 "parameters": [
@@ -721,6 +721,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ConfirmRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -746,7 +755,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "create new Transfer",
+                "description": "สร้างข้อมูลการโอน",
                 "consumes": [
                     "application/json"
                 ],
@@ -754,7 +763,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transfers"
+                    "Accounting - Bank Account Transfers"
                 ],
                 "summary": "CreateTransfer",
                 "parameters": [
@@ -791,7 +800,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "update Transfer",
+                "description": "ยืนยันการโอน",
                 "consumes": [
                     "application/json"
                 ],
@@ -799,7 +808,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transfers"
+                    "Accounting - Bank Account Transfers"
                 ],
                 "summary": "ConfirmTransfer",
                 "parameters": [
@@ -834,7 +843,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get Transfer by id",
+                "description": "ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*",
                 "consumes": [
                     "application/json"
                 ],
@@ -842,7 +851,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transfers"
+                    "Accounting - Bank Account Transfers"
                 ],
                 "summary": "GetTransfer",
                 "parameters": [
@@ -877,7 +886,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get Transfers",
+                "description": "ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม",
                 "consumes": [
                     "application/json"
                 ],
@@ -885,7 +894,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transfers"
+                    "Accounting - Bank Account Transfers"
                 ],
                 "summary": "GetTransfers",
                 "parameters": [
@@ -967,7 +976,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "delete Transfer",
+                "description": "ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม",
                 "consumes": [
                     "application/json"
                 ],
@@ -975,7 +984,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Bank Account Transfers"
+                    "Accounting - Bank Account Transfers"
                 ],
                 "summary": "DeleteTransfer",
                 "parameters": [
@@ -985,6 +994,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ConfirmRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -1018,7 +1036,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Options"
+                    "Accounting - Options"
                 ],
                 "summary": "get Transfer Types",
                 "responses": {
@@ -1621,6 +1639,14 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ConfirmRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateAdmin": {
             "type": "object",
             "required": [
@@ -1811,7 +1837,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
+	Title:            "CyberGame API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

@@ -98,7 +98,7 @@ CREATE Table
         created_by_username VARCHAR(255) NOT NULL,
         status VARCHAR(255) NOT NULL,
         confirmed_at DATETIME NULL,
-        confirmed_by_username VARCHAR(255) NULL,
+        confirmed_by_user_id BIGINT NULL,
         created_at DATETIME DEFAULT NOW(),
         updated_at DATETIME NULL ON UPDATE NOW(),
         deleted_at DATETIME NULL
