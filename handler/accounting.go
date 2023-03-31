@@ -66,7 +66,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 
 // @Summary get Bank List
 // @Description get all thai Bank List
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -100,7 +100,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 
 // @Summary get Account Type List
 // @Description get all Account Type
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -129,7 +129,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 
 // @Summary get Auto Credit Flags
 // @Description get all Auto Credit Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -145,7 +145,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 
 // @Summary get Auto withdraw Flags
 // @Description get all Auto withdraw Flags Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -162,7 +162,7 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 
 // @Summary get Qr Wallet Statuses
 // @Description get all Qr Wallet Statuses Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -178,7 +178,7 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 
 // @Summary get Account Statuses
 // @Description get all Account Statuses Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -194,7 +194,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 
 // @Summary get Account Priorities
 // @Description get all Account Priorities Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -216,7 +216,7 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 
 // @Summary get Account Priorities
 // @Description get all Account Priorities Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -232,7 +232,7 @@ func (h accountingController) getAccountBotStatuses(c *gin.Context) {
 
 // @Summary get Transfer Types
 // @Description get all Transfer Types Flags
-// @Tags Options
+// @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -248,7 +248,7 @@ func (h accountingController) getTransferTypes(c *gin.Context) {
 
 // @Summary GetBankAccounts
 // @Description get BankAccounts
-// @Tags Bank Accounts
+// @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -283,7 +283,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 
 // @Summary GetBankAccount
 // @Description get BankAccount by id
-// @Tags Bank Accounts
+// @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -314,7 +314,7 @@ func (h accountingController) getBankAccountById(c *gin.Context) {
 
 // @Summary CreateBankAccount
 // @Description create new accounting
-// @Tags Bank Accounts
+// @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -347,7 +347,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 
 // @Summary UpdateBankAccount
 // @Description update accounting
-// @Tags Bank Accounts
+// @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -387,7 +387,7 @@ func (h accountingController) updateBankAccount(c *gin.Context) {
 
 // @Summary DeleteBankAccount
 // @Description delete accounting
-// @Tags Bank Accounts
+// @Tags Accounting - Bank Accounts
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -413,8 +413,8 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 }
 
 // @Summary GetTransactions
-// @Description get Transactions
-// @Tags Bank Account Transactions
+// @Description ดึงข้อมูลลิสธุรกรรม ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม และ รายการฝากถอนเงินสด
+// @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -452,8 +452,8 @@ func (h accountingController) getTransactions(c *gin.Context) {
 }
 
 // @Summary GetTransaction
-// @Description get Transaction by id
-// @Tags Bank Account Transactions
+// @Description ดึงข้อมูลธุรกรรมด้วย id *ยังไม่ได้ใช้งาน*
+// @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -483,8 +483,8 @@ func (h accountingController) getTransactionById(c *gin.Context) {
 }
 
 // @Summary CreateTransaction
-// @Description create new accounting
-// @Tags Bank Account Transactions
+// @Description สร้าง ธุรกรรม ในหน้า จัดการธนาคาร - ธุรกรรม ส่ง AccountId มาด้วย
+// @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -516,20 +516,38 @@ func (h accountingController) createTransaction(c *gin.Context) {
 }
 
 // @Summary DeleteTransaction
-// @Description delete accounting
-// @Tags Bank Account Transactions
+// @Description ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม
+// @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
+// @Param body body model.ConfirmRequest true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transactions/{id} [delete]
 func (h accountingController) deleteTransaction(c *gin.Context) {
 
+	cuserId := c.MustGet("userId").(int64)
+
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var confirmation model.ConfirmRequest
+	confirmation.UserId = cuserId
+	if err := c.ShouldBindJSON(&confirmation); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(confirmation); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if _, err := h.accountingService.CheckConfirmationPassword(confirmation); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -544,7 +562,7 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 
 // @Summary GetTransfers
 // @Description get Transfers
-// @Tags Bank Account Transfers
+// @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -583,7 +601,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 
 // @Summary GetTransfer
 // @Description get Transfer by id
-// @Tags Bank Account Transfers
+// @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -614,7 +632,7 @@ func (h accountingController) getTransferById(c *gin.Context) {
 
 // @Summary CreateTransfer
 // @Description create new Transfer
-// @Tags Bank Account Transfers
+// @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -647,7 +665,7 @@ func (h accountingController) createTransfer(c *gin.Context) {
 
 // @Summary ConfirmTransfer
 // @Description update Transfer
-// @Tags Bank Account Transfers
+// @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -674,7 +692,7 @@ func (h accountingController) confirmTransfer(c *gin.Context) {
 
 // @Summary DeleteTransfer
 // @Description delete Transfer
-// @Tags Bank Account Transfers
+// @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
 // @Accept json
 // @Produce json

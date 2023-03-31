@@ -14,6 +14,8 @@ func NewAccountingRepository(db *gorm.DB) AccountingRepository {
 }
 
 type AccountingRepository interface {
+	GetAdminById(id int64) (*model.Admin, error)
+
 	GetBanks(req model.BankListRequest) (*model.SuccessWithPagination, error)
 	GetBankById(id int64) (*model.Bank, error)
 	GetBankByCode(code string) (*model.Bank, error)
@@ -39,6 +41,23 @@ type AccountingRepository interface {
 	CreateTransfer(data model.BankAccountTransferBody) error
 	ConfirmTransfer(id int64, data model.BankAccountTransferConfirmBody) error
 	DeleteTransfer(id int64) error
+}
+
+func (r repo) GetAdminById(id int64) (*model.Admin, error) {
+	var admin model.Admin
+
+	if err := r.db.Table("Admins").
+		Select("id, username, phone, password, email, role").
+		Where("id = ?", id).
+		First(&admin).
+		Error; err != nil {
+		return nil, err
+	}
+
+	if admin.Id == 0 {
+		return nil, errors.New("Admin not found")
+	}
+	return &admin, nil
 }
 
 func (r repo) GetBanks(req model.BankListRequest) (*model.SuccessWithPagination, error) {

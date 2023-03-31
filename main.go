@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// @title CyberGame API
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization

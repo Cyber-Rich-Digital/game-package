@@ -115,6 +115,11 @@ definitions:
     required:
     - accounTypeId
     type: object
+  model.ConfirmRequest:
+    properties:
+      password:
+        type: string
+    type: object
   model.CreateAdmin:
     type: object
   model.CreateGroup:
@@ -188,6 +193,7 @@ definitions:
     type: object
 info:
   contact: {}
+  title: CyberGame API
 paths:
   /accounting/accountbotstatuses/list:
     get:
@@ -205,7 +211,7 @@ paths:
       - BearerAuth: []
       summary: get Account Priorities
       tags:
-      - Options
+      - Accounting - Options
   /accounting/accountpriorities/list:
     get:
       consumes:
@@ -222,7 +228,7 @@ paths:
       - BearerAuth: []
       summary: get Account Priorities
       tags:
-      - Options
+      - Accounting - Options
   /accounting/accountstatuses/list:
     get:
       consumes:
@@ -239,7 +245,7 @@ paths:
       - BearerAuth: []
       summary: get Account Statuses
       tags:
-      - Options
+      - Accounting - Options
   /accounting/accounttypes/list:
     get:
       consumes:
@@ -256,7 +262,7 @@ paths:
       - BearerAuth: []
       summary: get Account Type List
       tags:
-      - Options
+      - Accounting - Options
   /accounting/autocreditflags/list:
     get:
       consumes:
@@ -273,7 +279,7 @@ paths:
       - BearerAuth: []
       summary: get Auto Credit Flags
       tags:
-      - Options
+      - Accounting - Options
   /accounting/autowithdrawflags/list:
     get:
       consumes:
@@ -290,7 +296,7 @@ paths:
       - BearerAuth: []
       summary: get Auto withdraw Flags
       tags:
-      - Options
+      - Accounting - Options
   /accounting/bankaccounts:
     post:
       consumes:
@@ -318,7 +324,7 @@ paths:
       - BearerAuth: []
       summary: CreateBankAccount
       tags:
-      - Bank Accounts
+      - Accounting - Bank Accounts
   /accounting/bankaccounts/{id}:
     delete:
       consumes:
@@ -345,7 +351,7 @@ paths:
       - BearerAuth: []
       summary: DeleteBankAccount
       tags:
-      - Bank Accounts
+      - Accounting - Bank Accounts
     patch:
       consumes:
       - application/json
@@ -377,7 +383,7 @@ paths:
       - BearerAuth: []
       summary: UpdateBankAccount
       tags:
-      - Bank Accounts
+      - Accounting - Bank Accounts
   /accounting/bankaccounts/detail/{id}:
     get:
       consumes:
@@ -404,7 +410,7 @@ paths:
       - BearerAuth: []
       summary: GetBankAccount
       tags:
-      - Bank Accounts
+      - Accounting - Bank Accounts
   /accounting/bankaccounts/list:
     get:
       consumes:
@@ -446,7 +452,7 @@ paths:
       - BearerAuth: []
       summary: GetBankAccounts
       tags:
-      - Bank Accounts
+      - Accounting - Bank Accounts
   /accounting/banks/list:
     get:
       consumes:
@@ -484,7 +490,7 @@ paths:
       - BearerAuth: []
       summary: get Bank List
       tags:
-      - Options
+      - Accounting - Options
   /accounting/qrwalletstatuses/list:
     get:
       consumes:
@@ -501,12 +507,12 @@ paths:
       - BearerAuth: []
       summary: get Qr Wallet Statuses
       tags:
-      - Options
+      - Accounting - Options
   /accounting/transactions:
     post:
       consumes:
       - application/json
-      description: create new accounting
+      description: สร้าง ธุรกรรม ในหน้า จัดการธนาคาร - ธุรกรรม ส่ง AccountId มาด้วย
       parameters:
       - description: body
         in: body
@@ -529,18 +535,24 @@ paths:
       - BearerAuth: []
       summary: CreateTransaction
       tags:
-      - Bank Account Transactions
+      - Accounting - Bank Account Transactions
   /accounting/transactions/{id}:
     delete:
       consumes:
       - application/json
-      description: delete accounting
+      description: ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม
       parameters:
       - description: id
         in: path
         name: id
         required: true
         type: integer
+      - description: body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.ConfirmRequest'
       produces:
       - application/json
       responses:
@@ -556,12 +568,12 @@ paths:
       - BearerAuth: []
       summary: DeleteTransaction
       tags:
-      - Bank Account Transactions
+      - Accounting - Bank Account Transactions
   /accounting/transactions/detail/{id}:
     get:
       consumes:
       - application/json
-      description: get Transaction by id
+      description: ดึงข้อมูลธุรกรรมด้วย id *ยังไม่ได้ใช้งาน*
       parameters:
       - description: id
         in: path
@@ -583,12 +595,12 @@ paths:
       - BearerAuth: []
       summary: GetTransaction
       tags:
-      - Bank Account Transactions
+      - Accounting - Bank Account Transactions
   /accounting/transactions/list:
     get:
       consumes:
       - application/json
-      description: get Transactions
+      description: ดึงข้อมูลลิสธุรกรรม ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม และ รายการฝากถอนเงินสด
       parameters:
       - description: accountId
         in: query
@@ -641,7 +653,7 @@ paths:
       - BearerAuth: []
       summary: GetTransactions
       tags:
-      - Bank Account Transactions
+      - Accounting - Bank Account Transactions
   /accounting/transfers:
     post:
       consumes:
@@ -669,7 +681,7 @@ paths:
       - BearerAuth: []
       summary: CreateTransfer
       tags:
-      - Bank Account Transfers
+      - Accounting - Bank Account Transfers
   /accounting/transfers/{id}:
     delete:
       consumes:
@@ -696,7 +708,7 @@ paths:
       - BearerAuth: []
       summary: DeleteTransfer
       tags:
-      - Bank Account Transfers
+      - Accounting - Bank Account Transfers
   /accounting/transfers/confirm/{id}:
     post:
       consumes:
@@ -723,7 +735,7 @@ paths:
       - BearerAuth: []
       summary: ConfirmTransfer
       tags:
-      - Bank Account Transfers
+      - Accounting - Bank Account Transfers
   /accounting/transfers/detail/{id}:
     get:
       consumes:
@@ -750,7 +762,7 @@ paths:
       - BearerAuth: []
       summary: GetTransfer
       tags:
-      - Bank Account Transfers
+      - Accounting - Bank Account Transfers
   /accounting/transfers/list:
     get:
       consumes:
@@ -808,7 +820,7 @@ paths:
       - BearerAuth: []
       summary: GetTransfers
       tags:
-      - Bank Account Transfers
+      - Accounting - Bank Account Transfers
   /accounting/transfertypes/list:
     get:
       consumes:
@@ -825,7 +837,7 @@ paths:
       - BearerAuth: []
       summary: get Transfer Types
       tags:
-      - Options
+      - Accounting - Options
   /admins/create:
     post:
       consumes:

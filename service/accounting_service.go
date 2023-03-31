@@ -9,8 +9,9 @@ import (
 )
 
 type AccountingService interface {
-	GetBanks(data model.BankListRequest) (*model.SuccessWithPagination, error)
+	CheckConfirmationPassword(data model.ConfirmRequest) (*bool, error)
 
+	GetBanks(data model.BankListRequest) (*model.SuccessWithPagination, error)
 	GetAccountTypes(data model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 
 	GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error)
@@ -36,6 +37,7 @@ type accountingService struct {
 	repo repository.AccountingRepository
 }
 
+var invalidConfirmation = "Invalid confirmation password"
 var bankNotFound = "Bank not found"
 var bankAccountNotFound = "Account not found"
 
@@ -43,6 +45,22 @@ func NewAccountingService(
 	repo repository.AccountingRepository,
 ) AccountingService {
 	return &accountingService{repo}
+}
+
+func (s *accountingService) CheckConfirmationPassword(data model.ConfirmRequest) (*bool, error) {
+
+	user, err := s.repo.GetAdminById(data.UserId)
+	if err != nil {
+		return nil, notFound(invalidConfirmation)
+	}
+	if user == nil {
+		return nil, badRequest(invalidConfirmation)
+	}
+	if err := helper.ComparePassword(data.Password, user.Password); err != nil {
+		return nil, badRequest(invalidConfirmation)
+	}
+	token := true
+	return &token, nil
 }
 
 func (s *accountingService) GetBanks(params model.BankListRequest) (*model.SuccessWithPagination, error) {

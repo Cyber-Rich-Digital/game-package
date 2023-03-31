@@ -10,6 +10,12 @@ type SimpleOption struct {
 	Key  string `json:"key"`
 	Name string `json:"name"`
 }
+
+type ConfirmRequest struct {
+	Password string `json:"password"`
+	UserId   int64  `json:"-"`
+}
+
 type Bank struct {
 	Id        int64     `json:"id"`
 	Name      string    `json:"name"`
