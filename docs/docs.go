@@ -1139,6 +1139,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/admins/detail/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get Admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admins"
+                ],
+                "summary": "Get Admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Admin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SuccessWithData"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admins/group": {
             "get": {
                 "security": [
@@ -1364,6 +1407,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/admins/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update Admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admins"
+                ],
+                "summary": "Update Admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Admin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Admin",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AdminBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Success"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/groups/create": {
             "post": {
                 "security": [
@@ -1548,6 +1643,44 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AdminBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "fullname",
+                "groupId",
+                "permissionIds",
+                "phone",
+                "status"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 6
+                },
+                "groupId": {
+                    "type": "integer"
+                },
+                "permissionIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 12,
+                    "minLength": 10
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "model.AdminCreateGroup": {
             "type": "object",
             "required": [
@@ -1714,16 +1847,20 @@ const docTemplate = `{
         "model.CreateAdmin": {
             "type": "object",
             "required": [
+                "adminGroupId",
                 "email",
                 "fullname",
                 "password",
-                "permissions",
+                "permissionIds",
                 "phone",
                 "roleId",
                 "status",
                 "username"
             ],
             "properties": {
+                "adminGroupId": {
+                    "type": "integer"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -1737,10 +1874,10 @@ const docTemplate = `{
                     "maxLength": 30,
                     "minLength": 6
                 },
-                "permissions": {
+                "permissionIds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Permission"
+                        "type": "integer"
                     }
                 },
                 "phone": {
@@ -1812,26 +1949,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "token": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.Permission": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "deleteAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updatedAt": {
                     "type": "string"
                 }
             }

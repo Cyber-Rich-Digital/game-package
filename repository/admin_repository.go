@@ -2,6 +2,7 @@ package repository
 
 import (
 	"cybergame-api/model"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,14 +13,104 @@ func NewAdminRepository(db *gorm.DB) AdminRepository {
 }
 
 type AdminRepository interface {
+	GetAdmin(id int64) (*model.Admin, *[]model.PermissionList, *model.GroupDetail, error)
+	GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int64, error)
 	GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
-	GetGroupList(query model.AdminGroupQuery) (*[]model.GroupList, *int64, error)
+	GetGroupList(query model.AdminGroupQuery) (*[]model.GroupCountList, *int64, error)
 	GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error)
+	GetAdminGroup(adminId int64) (*model.AdminGroupId, error)
 	CheckUsername(username string) (bool, error)
 	CheckPhone(phone string) (bool, error)
-	CreateAdmin(user model.Admin) error
+	CreateAdmin(admin model.Admin, permissionIds *[]int64) error
 	CreateGroup(data []model.AdminPermissionList) error
-	UpdateGroup(data []model.AdminPermissionList, perIds []int64) error
+	UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error
+	UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error
+}
+
+func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int64, error) {
+
+	var err error
+	var list []model.AdminList
+	var total int64
+
+	exec := r.db.Table("Admins").
+		Select("id, username, fullname, phone, email, role, status")
+
+	if query.Search != "" {
+		exec = exec.Where("username LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.Status != "" {
+		exec = exec.Where("status = ?", query.Status)
+	}
+
+	if err := exec.
+		Limit(query.Limit).
+		Offset(query.Limit * query.Page).
+		Find(&list).
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	execTotal := r.db.Table("Admins").
+		Select("id")
+
+	if query.Search != "" {
+		execTotal = execTotal.Where("username LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.Status != "" {
+		execTotal = execTotal.Where("status = ?", query.Status)
+	}
+
+	if err = execTotal.
+		Count(&total).
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	return &list, &total, nil
+}
+
+func (r repo) GetAdmin(id int64) (*model.Admin, *[]model.PermissionList, *model.GroupDetail, error) {
+
+	var admin *model.Admin
+	var permission *[]model.PermissionList
+	var group *model.GroupDetail
+
+	if err := r.db.Table("Admins").
+		Select("id, username, fullname, phone, email, role, status, admin_group_id").
+		Where("id = ?", id).
+		First(&admin).
+		Error; err != nil {
+		println(1)
+		return nil, nil, nil, err
+	}
+
+	if err := r.db.Table("Admin_permissions ap").
+		Joins("LEFT JOIN Permissions p ON p.id = ap.permission_id").
+		Select("ap.id, ap.permission_id, p.name").
+		Where("admin_id = ?", id).
+		Find(&permission).
+		Error; err != nil {
+		println(2)
+		return nil, nil, nil, err
+	}
+
+	if err := r.db.Table("Admin_groups").
+		Select("id, name").
+		Where("id = ?", admin.AdminGroupId).
+		First(&group).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return admin, permission, nil, nil
+		}
+
+		return nil, nil, nil, err
+	}
+
+	return admin, permission, group, nil
 }
 
 func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error) {
@@ -52,9 +143,9 @@ func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
 	return &result, nil
 }
 
-func (r repo) GetGroupList(query model.AdminGroupQuery) (*[]model.GroupList, *int64, error) {
+func (r repo) GetGroupList(query model.AdminGroupQuery) (*[]model.GroupCountList, *int64, error) {
 
-	var list []model.GroupList
+	var list []model.GroupCountList
 	if err := r.db.Table("Admin_groups").
 		Select("id, name, admin_count").
 		Limit(query.Limit).
@@ -100,6 +191,26 @@ func (r repo) GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error) {
 	return &admin, nil
 }
 
+func (r repo) GetAdminGroup(adminId int64) (*model.AdminGroupId, error) {
+
+	var admin *model.AdminGroupId
+
+	if err := r.db.Table("Admins").
+		Select("admin_group_id").
+		Where("id = ?", adminId).
+		First(&admin).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return admin, nil
+}
+
 func (r repo) CheckUsername(username string) (bool, error) {
 	var user model.Admin
 
@@ -107,7 +218,16 @@ func (r repo) CheckUsername(username string) (bool, error) {
 		Where("username = ?", username).
 		First(&user).
 		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
 		return false, err
+	}
+
+	if user.Id != 0 {
+		return false, nil
 	}
 
 	return true, nil
@@ -120,17 +240,55 @@ func (r repo) CheckPhone(phone string) (bool, error) {
 		Where("phone = ?", phone).
 		First(&user).
 		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (r repo) CreateAdmin(user model.Admin) error {
+func (r repo) CreateAdmin(admin model.Admin, permissionIds *[]int64) error {
 
-	if err := r.db.Table("Admins").
-		Create(&user).
+	tx := r.db.Begin()
+
+	if err := tx.Table("Admins").
+		Create(&admin).
 		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if permissionIds != nil {
+
+		var adminPer []model.AdminPermission
+		for _, v := range *permissionIds {
+			adminPer = append(adminPer, model.AdminPermission{
+				AdminId:      admin.Id,
+				PermissionId: v,
+			})
+		}
+
+		if err := tx.Table("Admin_permissions").
+			Create(&adminPer).
+			Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Table("Admin_groups").
+		Where("id = ?", admin.AdminGroupId).
+		Update("admin_count", gorm.Expr("admin_count + ?", 1)).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 
@@ -148,12 +306,12 @@ func (r repo) CreateGroup(data []model.AdminPermissionList) error {
 	return nil
 }
 
-func (r repo) UpdateGroup(data []model.AdminPermissionList, perIds []int64) error {
+func (r repo) UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error {
 
 	tx := r.db.Begin()
 
 	if err := tx.Table("Admin_group_permissions").
-		Where("group_id = ? AND permission_id IN (?)", data[0].GroupId, perIds).
+		Where("group_id = ? AND permission_id IN (?)", groupId, perIds).
 		Delete(&model.AdminGroupPermission{}).
 		Error; err != nil {
 		tx.Rollback()
@@ -165,6 +323,63 @@ func (r repo) UpdateGroup(data []model.AdminPermissionList, perIds []int64) erro
 		Error; err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error {
+
+	tx := r.db.Begin()
+
+	if err := tx.Table("Admins").
+		Where("id = ?", adminId).
+		Updates(&data).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if adminPers != nil {
+
+		if err := tx.Table("Admin_permissions").
+			Where("admin_id = ?", adminId).
+			Delete(model.AdminPermission{}).
+			Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		if err := tx.Table("Admin_permissions").
+			Create(&adminPers).
+			Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		fmt.Println(*data.AdminGroupId, *OldGroupId)
+		if int(*data.AdminGroupId) != *OldGroupId {
+
+			if err := tx.Table("Admin_groups").
+				Where("id = ?", data.AdminGroupId).
+				Update("admin_count", gorm.Expr("admin_count + ?", 1)).
+				Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			if err := tx.Table("Admin_groups").
+				Where("id = ?", OldGroupId).
+				Update("admin_count", gorm.Expr("admin_count - ?", 1)).
+				Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
