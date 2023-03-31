@@ -13,12 +13,13 @@ func NewAdminRepository(db *gorm.DB) AdminRepository {
 
 type AdminRepository interface {
 	GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
-	GetGroupList() (*[]model.GroupList, error)
+	GetGroupList(query model.AdminGroupQuery) (*[]model.GroupList, *int64, error)
 	GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error)
 	CheckUsername(username string) (bool, error)
 	CheckPhone(phone string) (bool, error)
 	CreateAdmin(user model.Admin) error
 	CreateGroup(data []model.AdminPermissionList) error
+	UpdateGroup(data []model.AdminPermissionList, perIds []int64) error
 }
 
 func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error) {
@@ -51,14 +52,26 @@ func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
 	return &result, nil
 }
 
-func (r repo) GetGroupList() (*[]model.GroupList, error) {
+func (r repo) GetGroupList(query model.AdminGroupQuery) (*[]model.GroupList, *int64, error) {
 
 	var list []model.GroupList
-	if err := r.db.Table("Admin_groups").Select("id, name, admin_count").Find(&list).Error; err != nil {
-		return nil, err
+	if err := r.db.Table("Admin_groups").
+		Select("id, name, admin_count").
+		Limit(query.Limit).
+		Offset(query.Limit * query.Page).
+		Find(&list).
+		Error; err != nil {
+		return nil, nil, err
 	}
 
-	return &list, nil
+	var total int64
+	if err := r.db.Table("Admin_groups").
+		Count(&total).
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	return &list, &total, nil
 }
 
 func (r repo) GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error) {
@@ -129,6 +142,32 @@ func (r repo) CreateGroup(data []model.AdminPermissionList) error {
 	if err := r.db.Table("Admin_group_permissions").
 		Create(&data).
 		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) UpdateGroup(data []model.AdminPermissionList, perIds []int64) error {
+
+	tx := r.db.Begin()
+
+	if err := tx.Table("Admin_group_permissions").
+		Where("group_id = ? AND permission_id IN (?)", data[0].GroupId, perIds).
+		Delete(&model.AdminGroupPermission{}).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Table("Admin_group_permissions").
+		Create(&data).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 

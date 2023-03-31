@@ -73,3 +73,18 @@ type AdminGroupPermissionResponse struct {
 	Name        string           `json:"name"`
 	Permissions []PermissionList `json:"permissions"`
 }
+
+type AdminUpdateGroup struct {
+	GroupId       int64   `json:"groupId" validate:"required"`
+	PermissionIds []int64 `json:"permissionId" validate:"required"`
+}
+
+type AdminGroupQuery struct {
+	Page  int `form:"page" validate:"required,min=1"`
+	Limit int `form:"limit" validate:"required,min=1,max=100"`
+}
+
+type AdminGroupPagination struct {
+	Total int64       `json:"total"`
+	List  []GroupList `json:"list"`
+}
