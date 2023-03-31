@@ -72,7 +72,7 @@ type BankAccount struct {
 	BankIconUrl           string         `json:"bankIconUrl"`
 	AccountTypeId         int64          `json:"accountTypeId"`
 	AccountTypeName       string         `json:"accountTypeName"`
-	AccountName           string         `json:"accountHame"`
+	AccountName           string         `json:"accountName"`
 	AccountNumber         string         `json:"accountNumber"`
 	AccountBalance        float32        `json:"accountBalance" sql:"type:decimal(14,2);"`
 	AccountPriority       string         `json:"accountPriority"`
@@ -143,7 +143,7 @@ type BankAccountResponse struct {
 	BankIconUrl     string         `json:"bankIconUrl"`
 	AccountTypeId   int64          `json:"accountTypeId"`
 	AccountTypeName string         `json:"accountTypeName"`
-	AccountName     string         `json:"accountHame"`
+	AccountName     string         `json:"accountName"`
 	AccountNumber   string         `json:"accountNumber"`
 	AccountBalance  float32        `json:"accountBalance"`
 	AccountPriority string         `json:"accountPriority"`
@@ -195,7 +195,7 @@ type BankAccountTransactionResponse struct {
 	Id                int64          `json:"id"`
 	AccountId         int64          `json:"accountId"`
 	BankName          string         `json:"bankName"`
-	AccountName       string         `json:"accountHame"`
+	AccountName       string         `json:"accountName"`
 	AccountNumber     string         `json:"accountNumber"`
 	Description       string         `json:"description"`
 	TransferType      string         `json:"transferType"`
