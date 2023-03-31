@@ -4,7 +4,6 @@ import (
 	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
-	"errors"
 	"strconv"
 
 	"cybergame-api/repository"
@@ -37,6 +36,8 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	r.GET("/group/:id", middleware.Authorize, handler.getGroup)
 	r.POST("/create", middleware.Authorize, handler.create)
 	r.POST("/creategroup", middleware.Authorize, handler.createGroup)
+	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
+	r.DELETE("/permission/:id", middleware.Authorize, handler.DeletePermission)
 
 }
 
@@ -73,11 +74,6 @@ func (h adminController) groupList(c *gin.Context) {
 func (h adminController) getGroup(c *gin.Context) {
 
 	id := c.Param("id")
-	if id == "" {
-		HandleError(c, errors.New("id is required"))
-		return
-	}
-
 	toInt, err := strconv.Atoi(id)
 	if err != nil {
 		HandleError(c, err)
@@ -155,4 +151,64 @@ func (h adminController) createGroup(c *gin.Context) {
 	}
 
 	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary Delete Group
+// @Description Delete Group
+// @Tags Admins
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Group ID"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /admins/group/{id} [delete]
+func (h adminController) deleteGroup(c *gin.Context) {
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var param model.DeleteGroup
+	param.Id = int64(toInt)
+
+	if err := h.adminService.DeleteGroup(param.Id); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Deleted success"})
+}
+
+// @Summary Delete Permission
+// @Description Delete Permission
+// @Tags Admins
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Permission ID"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /admins/permission/{id} [delete]
+func (h adminController) DeletePermission(c *gin.Context) {
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var param model.DeletePermission
+	param.Id = int64(toInt)
+
+	if err := h.adminService.DeletePermission(param.Id); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Deleted success"})
 }

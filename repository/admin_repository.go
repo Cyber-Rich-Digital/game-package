@@ -12,7 +12,7 @@ func NewAdminRepository(db *gorm.DB) AdminRepository {
 }
 
 type AdminRepository interface {
-	GetGroup(groupId int) (*model.AdminGroupPermission, error)
+	GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
 	GetGroupList() (*[]model.GroupList, error)
 	GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error)
 	CheckUsername(username string) (bool, error)
@@ -21,7 +21,7 @@ type AdminRepository interface {
 	CreateGroup(data []model.AdminPermissionList) error
 }
 
-func (r repo) GetGroup(groupId int) (*model.AdminGroupPermission, error) {
+func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error) {
 
 	var group model.Group
 	var permission []model.PermissionList
@@ -43,7 +43,7 @@ func (r repo) GetGroup(groupId int) (*model.AdminGroupPermission, error) {
 		return nil, err
 	}
 
-	var result model.AdminGroupPermission
+	var result model.AdminGroupPermissionResponse
 	result.Id = group.Id
 	result.Name = group.Name
 	result.Permissions = permission

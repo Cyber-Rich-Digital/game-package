@@ -57,7 +57,6 @@ func Authorize(c *gin.Context) {
 	}
 
 	if claims.Claims.(jwt.MapClaims)["id"] == nil &&
-		claims.Claims.(jwt.MapClaims)["adminId"] == nil &&
 		claims.Claims.(jwt.MapClaims)["phone"] == nil &&
 		claims.Claims.(jwt.MapClaims)["username"] == nil &&
 		claims.Claims.(jwt.MapClaims)["email"] == nil &&
@@ -68,7 +67,10 @@ func Authorize(c *gin.Context) {
 		return
 	}
 
-	c.Set("userId", claims.Claims.(jwt.MapClaims)["id"])
+	c.Set("adminId", claims.Claims.(jwt.MapClaims)["id"])
+	c.Set("phone", claims.Claims.(jwt.MapClaims)["phone"])
+	c.Set("username", claims.Claims.(jwt.MapClaims)["username"])
+	c.Set("email", claims.Claims.(jwt.MapClaims)["email"])
 	c.Set("role", claims.Claims.(jwt.MapClaims)["role"])
 
 	c.Next()
