@@ -25,9 +25,9 @@ type Admin struct {
 }
 
 type CreateAdmin struct {
-	Username      string   `json:"username" validate:"required,min=6,max=30"`
-	Password      string   `json:"password" validate:"required,min=6,max=30"`
-	Fullname      string   `json:"fullname" validate:"required,min=6,max=30"`
+	Username      string   `json:"username" validate:"required,8,max=30"`
+	Password      string   `json:"password" validate:"required,8,max=30"`
+	Fullname      string   `json:"fullname" validate:"required,8,max=30"`
 	Phone         string   `json:"phone" validate:"required,min=10,max=12"`
 	Email         string   `json:"email" validate:"required,email"`
 	RoleId        string   `json:"roleId" validate:"required"`
@@ -38,7 +38,7 @@ type CreateAdmin struct {
 
 type LoginAdmin struct {
 	Username string `json:"username" validate:"required,min=8,max=30"`
-	Password string `json:"password" validate:"required,min=6,max=30"`
+	Password string `json:"password" validate:"required,8,max=30"`
 	IP       string `json:"ip"`
 }
 
@@ -99,9 +99,9 @@ type AdminGroupPagination struct {
 }
 
 type UpdateAdmin struct {
-	Fullname     string `json:"fullname" validate:"required,min=6,max=30"`
-	Firstname    string `json:"firstname" validate:"required,min=6,max=30"`
-	Lastname     string `json:"lastname" validate:"required,min=6,max=30"`
+	Fullname     string `json:"fullname" validate:"required,8,max=30"`
+	Firstname    string `json:"firstname" validate:"required,8,max=30"`
+	Lastname     string `json:"lastname" validate:"required,8,max=30"`
 	Phone        string `json:"phone" validate:"required,min=10,max=12"`
 	Email        string `json:"email" validate:"required,email"`
 	Role         string `json:"roleId" validate:"required"`
@@ -110,7 +110,7 @@ type UpdateAdmin struct {
 }
 
 type AdminBody struct {
-	Fullname string `json:"fullname" validate:"required,min=6,max=30"`
+	Fullname string `json:"fullname" validate:"required,8,max=30"`
 	// Phone         string   `json:"phone" validate:"required,number,min=10,max=12"`
 	Email         string   `json:"email" validate:"required,email"`
 	GroupId       *int64   `json:"groupId"`
@@ -147,4 +147,8 @@ type AdminDetail struct {
 
 type AdminGroupId struct {
 	AdminGroupId int `json:"adminGroupId"`
+}
+
+type AdminUpdatePassword struct {
+	Password string `json:"password" validate:"required,min=8,max=30"`
 }

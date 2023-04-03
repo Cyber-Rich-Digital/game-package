@@ -13,10 +13,10 @@ definitions:
   model.AdminBody:
     properties:
       email:
+        description: Phone         string   `json:"phone" validate:"required,number,min=10,max=12"`
         type: string
       fullname:
         maxLength: 30
-        minLength: 6
         type: string
       groupId:
         type: integer
@@ -24,18 +24,11 @@ definitions:
         items:
           type: integer
         type: array
-      phone:
-        maxLength: 12
-        minLength: 10
-        type: string
       status:
         type: string
     required:
     - email
     - fullname
-    - groupId
-    - permissionIds
-    - phone
     - status
     type: object
   model.AdminCreateGroup:
@@ -148,6 +141,15 @@ definitions:
       password:
         type: string
     type: object
+  model.AdminUpdatePassword:
+    properties:
+      password:
+        maxLength: 30
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
   model.CreateAdmin:
     properties:
       adminGroupId:
@@ -156,11 +158,9 @@ definitions:
         type: string
       fullname:
         maxLength: 30
-        minLength: 6
         type: string
       password:
         maxLength: 30
-        minLength: 6
         type: string
       permissionIds:
         items:
@@ -176,7 +176,6 @@ definitions:
         type: string
       username:
         maxLength: 30
-        minLength: 6
         type: string
     required:
     - adminGroupId
@@ -211,7 +210,6 @@ definitions:
         type: string
       password:
         maxLength: 30
-        minLength: 6
         type: string
       username:
         maxLength: 30
@@ -290,34 +288,6 @@ paths:
       summary: Create Admin
       tags:
       - Admins
-  /admins/creategroup:
-    post:
-      consumes:
-      - application/json
-      description: Create Group
-      parameters:
-      - description: Create Group
-        in: body
-        name: register
-        required: true
-        schema:
-          $ref: '#/definitions/model.AdminCreateGroup'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.Success'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Create Group
-      tags:
-      - Admins
   /admins/detail/{id}:
     get:
       consumes:
@@ -373,6 +343,33 @@ paths:
       security:
       - BearerAuth: []
       summary: Group List
+      tags:
+      - Admins
+    post:
+      consumes:
+      - application/json
+      description: Create Group
+      parameters:
+      - description: Create Group
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminCreateGroup'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create Group
       tags:
       - Admins
   /admins/group/{id}:
@@ -460,6 +457,39 @@ paths:
       summary: Update Group
       tags:
       - Admins
+  /admins/password/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update Admin Password
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Admin Password
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminUpdatePassword'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Admin Password
+      tags:
+      - Admins
   /admins/permission/{id}:
     delete:
       consumes:
@@ -485,6 +515,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Permission
+      tags:
+      - Admins
+  /admins/update/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update Admin
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Admin
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Success'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update Admin
       tags:
       - Admins
   /groups/create:

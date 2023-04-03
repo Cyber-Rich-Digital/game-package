@@ -18,6 +18,7 @@ type AdminService interface {
 	CreateGroup(data *model.AdminCreateGroup) error
 	UpdateAdmin(adminId int64, data model.AdminBody) error
 	UpdateGroup(data *model.AdminUpdateGroup) error
+	ResetPassword(adminId int64, body model.AdminUpdatePassword) error
 	DeleteGroup(id int64) error
 	DeletePermission(id int64) error
 }
@@ -156,7 +157,7 @@ func (s *adminService) Login(data model.LoginAdmin) (*string, error) {
 
 func (s *adminService) Create(data *model.CreateAdmin) error {
 
-	username, err := s.repo.CheckUsername(data.Username)
+	username, err := s.repo.CheckAdmin(data.Username)
 	if err != nil {
 		return err
 	}
@@ -432,6 +433,31 @@ func (s *adminService) UpdateGroup(data *model.AdminUpdateGroup) error {
 	}
 
 	if err := s.repo.UpdateGroup(data.GroupId, list, permissionIds); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *adminService) ResetPassword(adminId int64, body model.AdminUpdatePassword) error {
+
+	checkAdmin, err := s.repo.CheckAdminById(adminId)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if !checkAdmin {
+		return notFound(AdminNotFound)
+	}
+
+	newPasword, err := helper.GenPassword(body.Password)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	body.Password = newPasword
+
+	if err := s.repo.UpdatePassword(adminId, body); err != nil {
 		return err
 	}
 
