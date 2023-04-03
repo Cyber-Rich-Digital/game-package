@@ -53,10 +53,10 @@ func (r repo) GetAdminById(id int64) (*model.Admin, error) {
 		Error; err != nil {
 		return nil, err
 	}
-
-	if admin.Id == 0 {
-		return nil, errors.New("Admin not found")
-	}
+	// "record not found"
+	// if admin.Id == 0 {
+	// 	return nil, errors.New("Admin not found")
+	// }
 	return &admin, nil
 }
 

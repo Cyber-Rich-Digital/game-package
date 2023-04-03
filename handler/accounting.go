@@ -65,7 +65,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 }
 
 // @Summary get Bank List
-// @Description ดึงข้อมูลรายชื่อธนาคารทั้งหมด
+// @Description ดึงข้อมูลตัวเลือก รายชื่อธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -99,7 +99,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 }
 
 // @Summary get Account Type List
-// @Description ดึงข้อมูลรายชื่อประเภทบัญชีธนาคารทั้งหมด
+// @Description ดึงข้อมูลตัวเลือก ประเภทบัญชีธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -128,7 +128,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 }
 
 // @Summary get Auto Credit Flags
-// @Description ดึงข้อมูลรายชื่อประเภท การตั้งค่าปรับเครดิตอัตโนมัติ
+// @Description ดึงข้อมูลตัวเลือก การตั้งค่าปรับเครดิตอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -144,7 +144,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 }
 
 // @Summary get Auto withdraw Flags
-// @Description ดึงข้อมูลรายชื่อประเภท การตั้งค่าถอนโอนเงินอัตโนมัติ
+// @Description ดึงข้อมูลตัวเลือก การตั้งค่าถอนโอนเงินอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -161,7 +161,7 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 }
 
 // @Summary get Qr Wallet Statuses
-// @Description ดึงข้อมูลรายชื่อประเภท การเปิดใช้งาน QR Wallet
+// @Description ดึงข้อมูลตัวเลือก การเปิดใช้งาน QR Wallet
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -177,7 +177,7 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 }
 
 // @Summary get Account Statuses
-// @Description ดึงข้อมูลรายชื่อประเภท สถานะบัญชีธนาคาร
+// @Description ดึงข้อมูลตัวเลือก สถานะบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -193,7 +193,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 }
 
 // @Summary get Account Priorities
-// @Description ดึงข้อมูลรายชื่อประเภท ลำดับความสำคัญ
+// @Description ดึงข้อมูลตัวเลือก ลำดับความสำคัญบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -214,8 +214,8 @@ func (h accountingController) getAccountPriorities(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Account Priorities
-// @Description ดึงข้อมูลรายชื่อประเภท สถานะบอท
+// @Summary get Account's Bot Statuses
+// @Description ดึงข้อมูลตัวเลือก สถานะบอท
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -231,7 +231,7 @@ func (h accountingController) getAccountBotStatuses(c *gin.Context) {
 }
 
 // @Summary get Transfer Types
-// @Description ดึงข้อมูลรายชื่อประเภท ธุรกรรม (ฝาก/ถอน)
+// @Description ดึงข้อมูลตัวเลือก ประเภทการทำธุรกรรม (ฝาก/ถอน)
 // @Tags Accounting - Options
 // @Security BearerAuth
 // @Accept json
@@ -246,7 +246,7 @@ func (h accountingController) getTransferTypes(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary GetBankAccounts
+// @Summary GetBankAccountList
 // @Description ดึงข้อมูลลิสบัญชีธนาคาร ใช้แสดงในหน้า จัดการธนาคาร
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
@@ -281,7 +281,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetBankAccount
+// @Summary GetBankAccountById
 // @Description ดึงข้อมูลบัญชีธนาคาร ด้วย id
 // @Tags Accounting - Bank Accounts
 // @Security BearerAuth
@@ -406,7 +406,7 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Deleted success"})
 }
 
-// @Summary GetTransactions
+// @Summary GetTransactionList
 // @Description ดึงข้อมูลลิสธุรกรรม ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม และ รายการฝากถอนเงินสด
 // @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
@@ -445,7 +445,7 @@ func (h accountingController) getTransactions(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetTransaction
+// @Summary GetTransactionById
 // @Description ดึงข้อมูลธุรกรรมด้วย id *ยังไม่ได้ใช้งาน*
 // @Tags Accounting - Bank Account Transactions
 // @Security BearerAuth
@@ -558,7 +558,7 @@ func (h accountingController) deleteTransaction(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Deleted success"})
 }
 
-// @Summary GetTransfers
+// @Summary GetTransferList
 // @Description ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth
@@ -597,7 +597,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetTransfer
+// @Summary GetTransferByID
 // @Description ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*
 // @Tags Accounting - Bank Account Transfers
 // @Security BearerAuth

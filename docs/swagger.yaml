@@ -248,7 +248,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get all Account Priorities Flags
+      description: ดึงข้อมูลตัวเลือก สถานะบอท
       produces:
       - application/json
       responses:
@@ -258,14 +258,14 @@ paths:
             $ref: '#/definitions/model.SuccessWithPagination'
       security:
       - BearerAuth: []
-      summary: get Account Priorities
+      summary: get Account's Bot Statuses
       tags:
       - Accounting - Options
   /accounting/accountpriorities/list:
     get:
       consumes:
       - application/json
-      description: get all Account Priorities Flags
+      description: ดึงข้อมูลตัวเลือก ลำดับความสำคัญบัญชีธนาคาร
       produces:
       - application/json
       responses:
@@ -282,7 +282,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get all Account Statuses Flags
+      description: ดึงข้อมูลตัวเลือก สถานะบัญชีธนาคาร
       produces:
       - application/json
       responses:
@@ -299,7 +299,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get all Account Type
+      description: ดึงข้อมูลตัวเลือก ประเภทบัญชีธนาคารทั้งหมด
       produces:
       - application/json
       responses:
@@ -316,7 +316,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get all Auto Credit Flags
+      description: ดึงข้อมูลตัวเลือก การตั้งค่าปรับเครดิตอัตโนมัติ
       produces:
       - application/json
       responses:
@@ -333,7 +333,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get all Auto withdraw Flags Flags
+      description: ดึงข้อมูลตัวเลือก การตั้งค่าถอนโอนเงินอัตโนมัติ
       produces:
       - application/json
       responses:
@@ -350,7 +350,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: create new accounting
+      description: สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
       parameters:
       - description: body
         in: body
@@ -378,7 +378,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: delete accounting
+      description: ลบข้อมูลบัญชีธนาคาร ด้วย id
       parameters:
       - description: id
         in: path
@@ -404,7 +404,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: update accounting
+      description: แก้ไข บัญชีธนาคาร ในหน้า จัดการธนาคาร
       parameters:
       - description: id
         in: path
@@ -437,7 +437,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get BankAccount by id
+      description: ดึงข้อมูลบัญชีธนาคาร ด้วย id
       parameters:
       - description: id
         in: path
@@ -457,14 +457,14 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetBankAccount
+      summary: GetBankAccountById
       tags:
       - Accounting - Bank Accounts
   /accounting/bankaccounts/list:
     get:
       consumes:
       - application/json
-      description: get BankAccounts
+      description: ดึงข้อมูลลิสบัญชีธนาคาร ใช้แสดงในหน้า จัดการธนาคาร
       parameters:
       - description: page
         in: query
@@ -499,14 +499,14 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetBankAccounts
+      summary: GetBankAccountList
       tags:
       - Accounting - Bank Accounts
   /accounting/banks/list:
     get:
       consumes:
       - application/json
-      description: get all thai Bank List
+      description: ดึงข้อมูลตัวเลือก รายชื่อธนาคารทั้งหมด
       parameters:
       - description: page
         in: query
@@ -544,7 +544,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get all Qr Wallet Statuses Flags
+      description: ดึงข้อมูลตัวเลือก การเปิดใช้งาน QR Wallet
       produces:
       - application/json
       responses:
@@ -589,7 +589,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม
+      description: ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย
       parameters:
       - description: id
         in: path
@@ -642,7 +642,7 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetTransaction
+      summary: GetTransactionById
       tags:
       - Accounting - Bank Account Transactions
   /accounting/transactions/list:
@@ -700,7 +700,7 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetTransactions
+      summary: GetTransactionList
       tags:
       - Accounting - Bank Account Transactions
   /accounting/transfers:
@@ -735,7 +735,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม
+      description: ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย
       parameters:
       - description: id
         in: path
@@ -815,7 +815,7 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetTransfer
+      summary: GetTransferByID
       tags:
       - Accounting - Bank Account Transfers
   /accounting/transfers/list:
@@ -873,14 +873,14 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetTransfers
+      summary: GetTransferList
       tags:
       - Accounting - Bank Account Transfers
   /accounting/transfertypes/list:
     get:
       consumes:
       - application/json
-      description: get all Transfer Types Flags
+      description: ดึงข้อมูลตัวเลือก ประเภทการทำธุรกรรม (ฝาก/ถอน)
       produces:
       - application/json
       responses:

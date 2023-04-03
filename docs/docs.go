@@ -22,7 +22,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Account Priorities Flags",
+                "description": "ดึงข้อมูลตัวเลือก สถานะบอท",
                 "consumes": [
                     "application/json"
                 ],
@@ -32,7 +32,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Options"
                 ],
-                "summary": "get Account Priorities",
+                "summary": "get Account's Bot Statuses",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -50,7 +50,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Account Priorities Flags",
+                "description": "ดึงข้อมูลตัวเลือก ลำดับความสำคัญบัญชีธนาคาร",
                 "consumes": [
                     "application/json"
                 ],
@@ -78,7 +78,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Account Statuses Flags",
+                "description": "ดึงข้อมูลตัวเลือก สถานะบัญชีธนาคาร",
                 "consumes": [
                     "application/json"
                 ],
@@ -106,7 +106,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Account Type",
+                "description": "ดึงข้อมูลตัวเลือก ประเภทบัญชีธนาคารทั้งหมด",
                 "consumes": [
                     "application/json"
                 ],
@@ -134,7 +134,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Auto Credit Flags",
+                "description": "ดึงข้อมูลตัวเลือก การตั้งค่าปรับเครดิตอัตโนมัติ",
                 "consumes": [
                     "application/json"
                 ],
@@ -162,7 +162,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Auto withdraw Flags Flags",
+                "description": "ดึงข้อมูลตัวเลือก การตั้งค่าถอนโอนเงินอัตโนมัติ",
                 "consumes": [
                     "application/json"
                 ],
@@ -190,7 +190,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "create new accounting",
+                "description": "สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร",
                 "consumes": [
                     "application/json"
                 ],
@@ -235,7 +235,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get BankAccount by id",
+                "description": "ดึงข้อมูลบัญชีธนาคาร ด้วย id",
                 "consumes": [
                     "application/json"
                 ],
@@ -245,7 +245,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Bank Accounts"
                 ],
-                "summary": "GetBankAccount",
+                "summary": "GetBankAccountById",
                 "parameters": [
                     {
                         "type": "integer",
@@ -278,7 +278,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get BankAccounts",
+                "description": "ดึงข้อมูลลิสบัญชีธนาคาร ใช้แสดงในหน้า จัดการธนาคาร",
                 "consumes": [
                     "application/json"
                 ],
@@ -288,7 +288,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Bank Accounts"
                 ],
-                "summary": "GetBankAccounts",
+                "summary": "GetBankAccountList",
                 "parameters": [
                     {
                         "type": "integer",
@@ -344,7 +344,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "delete accounting",
+                "description": "ลบข้อมูลบัญชีธนาคาร ด้วย id",
                 "consumes": [
                     "application/json"
                 ],
@@ -385,7 +385,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "update accounting",
+                "description": "แก้ไข บัญชีธนาคาร ในหน้า จัดการธนาคาร",
                 "consumes": [
                     "application/json"
                 ],
@@ -437,7 +437,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all thai Bank List",
+                "description": "ดึงข้อมูลตัวเลือก รายชื่อธนาคารทั้งหมด",
                 "consumes": [
                     "application/json"
                 ],
@@ -497,7 +497,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Qr Wallet Statuses Flags",
+                "description": "ดึงข้อมูลตัวเลือก การเปิดใช้งาน QR Wallet",
                 "consumes": [
                     "application/json"
                 ],
@@ -580,7 +580,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Bank Account Transactions"
                 ],
-                "summary": "GetTransaction",
+                "summary": "GetTransactionById",
                 "parameters": [
                     {
                         "type": "integer",
@@ -623,7 +623,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Bank Account Transactions"
                 ],
-                "summary": "GetTransactions",
+                "summary": "GetTransactionList",
                 "parameters": [
                     {
                         "type": "string",
@@ -703,7 +703,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม",
+                "description": "ลบข้อมูลธุรกรรมด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย",
                 "consumes": [
                     "application/json"
                 ],
@@ -853,7 +853,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Bank Account Transfers"
                 ],
-                "summary": "GetTransfer",
+                "summary": "GetTransferByID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -896,7 +896,7 @@ const docTemplate = `{
                 "tags": [
                     "Accounting - Bank Account Transfers"
                 ],
-                "summary": "GetTransfers",
+                "summary": "GetTransferList",
                 "parameters": [
                     {
                         "type": "string",
@@ -976,7 +976,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม",
+                "description": "ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย",
                 "consumes": [
                     "application/json"
                 ],
@@ -1028,7 +1028,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get all Transfer Types Flags",
+                "description": "ดึงข้อมูลตัวเลือก ประเภทการทำธุรกรรม (ฝาก/ถอน)",
                 "consumes": [
                     "application/json"
                 ],
