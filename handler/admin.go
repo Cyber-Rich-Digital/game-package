@@ -31,8 +31,10 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	service := service.NewAdminService(repo, perRepo, groupRepo)
 	handler := newUserController(service)
 
+	role := middleware.Role(db)
+
 	r = r.Group("/admins")
-	r.GET("/detail/:id", middleware.Authorize, handler.GetAdmin)
+	r.GET("/detail/:id", middleware.Authorize, role.CheckAdmin("test1"), handler.GetAdmin)
 	r.GET("/", middleware.Authorize, handler.getAdminList)
 	r.POST("/create", middleware.Authorize, handler.create)
 	r.PUT("/update/:id", middleware.Authorize, handler.updateAdmin)
