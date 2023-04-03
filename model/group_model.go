@@ -16,10 +16,15 @@ type CreateGroup struct {
 	Name string `json:"name" validate:"required"`
 }
 
-type GroupList struct {
+type GroupCountList struct {
 	Id         int64  `json:"id"`
 	Name       string `json:"name"`
 	AdminCount int64  `json:"adminCount"`
+}
+
+type GroupDetail struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type DeleteGroup struct {
