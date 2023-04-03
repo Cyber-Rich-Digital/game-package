@@ -12,6 +12,7 @@ func NewPermissionRepository(db *gorm.DB) PermissionRepository {
 
 type PermissionRepository interface {
 	CheckPerListExist(ids []int64) ([]int64, error)
+	CheckPerListAndGroupId(groupId int64, perIds []int64) ([]int64, error)
 	CreatePermission(data *model.CreatePermission) error
 	DeletePermission(id int64) error
 }
@@ -21,6 +22,21 @@ func (r repo) CheckPerListExist(ids []int64) ([]int64, error) {
 	var list []int64
 
 	if err := r.db.Table("Permissions").Select("id").Where("id IN ?", ids).Find(&list).Error; err != nil {
+		return nil, err
+	}
+
+	return list, nil
+}
+
+func (r repo) CheckPerListAndGroupId(groupId int64, perIds []int64) ([]int64, error) {
+
+	var list []int64
+
+	if err := r.db.Table("Admin_group_permissions").
+		Select("id").
+		Where("group_id = ? AND permission_id IN (?)", groupId, perIds).
+		Find(&list).
+		Error; err != nil {
 		return nil, err
 	}
 

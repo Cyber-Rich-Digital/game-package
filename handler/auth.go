@@ -7,7 +7,6 @@ import (
 	"cybergame-api/repository"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 )
 
@@ -45,18 +44,19 @@ func AuthController(r *gin.RouterGroup, db *gorm.DB) {
 // @Router /login [post]
 func (h authController) login(c *gin.Context) {
 
-	body := &model.LoginAdmin{}
-	if err := c.ShouldBindJSON(body); err != nil {
+	var body model.LoginAdmin
+
+	if err := c.ShouldBindJSON(&body); err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	if err := validator.New().Struct(body); err != nil {
-		HandleError(c, err)
-		return
-	}
+	// if err := validator.New().Struct(body); err != nil {
+	// 	HandleError(c, err)
+	// 	return
+	// }
 
-	token, err := h.adminService.Login(*body)
+	token, err := h.adminService.Login(body)
 	if err != nil {
 		HandleError(c, err)
 		return

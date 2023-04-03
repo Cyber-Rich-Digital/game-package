@@ -20,7 +20,15 @@ func (r repo) CheckGroupExist(id int64) (bool, error) {
 
 	var count int64
 
-	if err := r.db.Table("Admin_groups").Where("id = ?", id).Count(&count).Error; err != nil {
+	if err := r.db.Table("Admin_groups").
+		Where("id = ?", id).
+		Count(&count).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
 		return false, err
 	}
 
