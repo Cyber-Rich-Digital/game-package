@@ -2,7 +2,6 @@ package repository
 
 import (
 	"cybergame-api/model"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,12 +18,14 @@ type AdminRepository interface {
 	GetGroupList(query model.AdminGroupQuery) (*[]model.GroupCountList, *int64, error)
 	GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error)
 	GetAdminGroup(adminId int64) (*model.AdminGroupId, error)
-	CheckUsername(username string) (bool, error)
+	CheckAdmin(username string) (bool, error)
+	CheckAdminById(id int64) (bool, error)
 	CheckPhone(phone string) (bool, error)
 	CreateAdmin(admin model.Admin, permissionIds *[]int64) error
 	CreateGroup(data []model.AdminPermissionList) error
 	UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error
 	UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error
+	UpdatePassword(adminId int64, data model.AdminUpdatePassword) error
 }
 
 func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int64, error) {
@@ -211,7 +212,7 @@ func (r repo) GetAdminGroup(adminId int64) (*model.AdminGroupId, error) {
 	return admin, nil
 }
 
-func (r repo) CheckUsername(username string) (bool, error) {
+func (r repo) CheckAdmin(username string) (bool, error) {
 	var user model.Admin
 
 	if err := r.db.Table("Admins").
@@ -228,6 +229,24 @@ func (r repo) CheckUsername(username string) (bool, error) {
 
 	if user.Id != 0 {
 		return false, nil
+	}
+
+	return true, nil
+}
+
+func (r repo) CheckAdminById(id int64) (bool, error) {
+	var user model.Admin
+
+	if err := r.db.Table("Admins").
+		Where("id = ?", id).
+		First(&user).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
+		return false, err
 	}
 
 	return true, nil
@@ -361,7 +380,6 @@ func (r repo) UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin
 			return err
 		}
 
-		fmt.Println(*data.AdminGroupId, *OldGroupId)
 		if int(*data.AdminGroupId) != *OldGroupId {
 
 			if err := tx.Table("Admin_groups").
@@ -383,6 +401,18 @@ func (r repo) UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) UpdatePassword(adminId int64, data model.AdminUpdatePassword) error {
+
+	if err := r.db.Table("Admins").
+		Where("id = ?", adminId).
+		Update("password", data.Password).
+		Error; err != nil {
 		return err
 	}
 

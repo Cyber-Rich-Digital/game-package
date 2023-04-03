@@ -121,51 +121,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admins/creategroup": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create Group",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admins"
-                ],
-                "summary": "Create Group",
-                "parameters": [
-                    {
-                        "description": "Create Group",
-                        "name": "register",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.AdminCreateGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.Success"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/admins/detail/{id}": {
             "get": {
                 "security": [
@@ -246,6 +201,49 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/model.SuccessWithList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create Group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admins"
+                ],
+                "summary": "Create Group",
+                "parameters": [
+                    {
+                        "description": "Create Group",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AdminCreateGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Success"
                         }
                     },
                     "400": {
@@ -391,6 +389,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/admins/password/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update Admin Password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admins"
+                ],
+                "summary": "Update Admin Password",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Admin ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Admin Password",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AdminUpdatePassword"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Success"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admins/permission/{id}": {
             "delete": {
                 "security": [
@@ -434,7 +484,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/admins/{id}": {
+        "/admins/update/{id}": {
             "put": {
                 "security": [
                     {
@@ -675,19 +725,16 @@ const docTemplate = `{
             "required": [
                 "email",
                 "fullname",
-                "groupId",
-                "permissionIds",
-                "phone",
                 "status"
             ],
             "properties": {
                 "email": {
+                    "description": "Phone         string   ` + "`" + `json:\"phone\" validate:\"required,number,min=10,max=12\"` + "`" + `",
                     "type": "string"
                 },
                 "fullname": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 6
+                    "maxLength": 30
                 },
                 "groupId": {
                     "type": "integer"
@@ -697,11 +744,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 12,
-                    "minLength": 10
                 },
                 "status": {
                     "type": "string"
@@ -744,6 +786,19 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AdminUpdatePassword": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 8
+                }
+            }
+        },
         "model.CreateAdmin": {
             "type": "object",
             "required": [
@@ -766,13 +821,11 @@ const docTemplate = `{
                 },
                 "fullname": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 6
+                    "maxLength": 30
                 },
                 "password": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 6
+                    "maxLength": 30
                 },
                 "permissionIds": {
                     "type": "array",
@@ -793,8 +846,7 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 6
+                    "maxLength": 30
                 }
             }
         },
@@ -835,8 +887,7 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 6
+                    "maxLength": 30
                 },
                 "username": {
                     "type": "string",

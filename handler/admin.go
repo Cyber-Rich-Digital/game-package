@@ -35,11 +35,12 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	r.GET("/detail/:id", middleware.Authorize, handler.GetAdmin)
 	r.GET("/", middleware.Authorize, handler.getAdminList)
 	r.POST("/create", middleware.Authorize, handler.create)
-	r.PUT("/:id", middleware.Authorize, handler.updateAdmin)
+	r.PUT("/update/:id", middleware.Authorize, handler.updateAdmin)
+	r.PUT("/password/:id", middleware.Authorize, handler.resetPassword)
 
 	r.GET("/group", middleware.Authorize, handler.groupList)
 	r.GET("/group/:id", middleware.Authorize, handler.getGroup)
-	r.POST("/creategroup", middleware.Authorize, handler.createGroup)
+	r.POST("/group", middleware.Authorize, handler.createGroup)
 	r.PUT("/group/:id", middleware.Authorize, handler.updateGroup)
 	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
 	r.DELETE("/permission/:id", middleware.Authorize, handler.deletePermission)
@@ -201,7 +202,7 @@ func (h adminController) create(c *gin.Context) {
 // @Param register body model.AdminCreateGroup true "Create Group"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /admins/creategroup [post]
+// @Router /admins/group [post]
 func (h adminController) createGroup(c *gin.Context) {
 
 	data := &model.AdminCreateGroup{}
@@ -276,7 +277,7 @@ func (h adminController) updateGroup(c *gin.Context) {
 // @Param register body model.AdminBody true "Update Admin"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /admins/{id} [put]
+// @Router /admins/update/{id} [put]
 func (h adminController) updateAdmin(c *gin.Context) {
 
 	data := model.AdminBody{}
@@ -304,6 +305,45 @@ func (h adminController) updateAdmin(c *gin.Context) {
 	}
 
 	c.JSON(201, model.Success{Message: "Updated success"})
+}
+
+// @Summary Update Admin Password
+// @Description Update Admin Password
+// @Tags Admins
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Admin ID"
+// @Param register body model.AdminUpdatePassword true "Update Admin Password"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /admins/password/{id} [put]
+func (h adminController) resetPassword(c *gin.Context) {
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data := model.AdminUpdatePassword{}
+	if err := c.ShouldBindJSON(&data); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := validator.New().Struct(data); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.adminService.ResetPassword(int64(toInt), data); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Reset password success"})
 }
 
 // @Summary Delete Group
