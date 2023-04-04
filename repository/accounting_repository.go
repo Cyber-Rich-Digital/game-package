@@ -374,8 +374,8 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 	if req.FromCreatedDate != "" {
 		count = count.Where("transactions.created_at >= ?", req.FromCreatedDate)
 	}
-	if req.TocreatedDate != "" {
-		count = count.Where("transactions.created_at <= ?", req.TocreatedDate)
+	if req.ToCreatedDate != "" {
+		count = count.Where("transactions.created_at <= ?", req.ToCreatedDate)
 	}
 	if req.TransferType != "" {
 		count = count.Where("transactions.transfer_type = ?", req.TransferType)
@@ -408,8 +408,8 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 		if req.FromCreatedDate != "" {
 			query = query.Where("transactions.created_at >= ?", req.FromCreatedDate)
 		}
-		if req.TocreatedDate != "" {
-			query = query.Where("transactions.created_at <= ?", req.TocreatedDate)
+		if req.ToCreatedDate != "" {
+			query = query.Where("transactions.created_at <= ?", req.ToCreatedDate)
 		}
 		if req.TransferType != "" {
 			query = query.Where("transactions.transfer_type = ?", req.TransferType)
@@ -507,8 +507,8 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Suc
 	if req.FromCreatedDate != "" {
 		count = count.Where("transfers.created_at >= ?", req.FromCreatedDate)
 	}
-	if req.TocreatedDate != "" {
-		count = count.Where("transfers.created_at <= ?", req.TocreatedDate)
+	if req.ToCreatedDate != "" {
+		count = count.Where("transfers.created_at <= ?", req.ToCreatedDate)
 	}
 	if req.ToAccountId != 0 {
 		count = count.Where("transfers.to_account_id = ?", req.ToAccountId)
@@ -544,8 +544,8 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Suc
 		if req.FromCreatedDate != "" {
 			query = query.Where("transfers.created_at >= ?", req.FromCreatedDate)
 		}
-		if req.TocreatedDate != "" {
-			query = query.Where("transfers.created_at <= ?", req.TocreatedDate)
+		if req.ToCreatedDate != "" {
+			query = query.Where("transfers.created_at <= ?", req.ToCreatedDate)
 		}
 		if req.ToAccountId != 0 {
 			query = query.Where("transfers.to_account_id = ?", req.ToAccountId)
