@@ -165,3 +165,42 @@ type BankTransactionResponse struct {
 	UpdatedAt         *time.Time     `json:"updateAt"`
 	DeletedAt         gorm.DeletedAt `json:"deleteAt"`
 }
+
+type PendingDepositTransactionListRequest struct {
+	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:3"`
+	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:4"`
+	Search           string `form:"search" extensions:"x-order:5"`
+	Page             int    `form:"page" extensions:"x-order:6" default:"1" min:"1"`
+	Limit            int    `form:"limit" extensions:"x-order:7" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol" extensions:"x-order:8"`
+	SortAsc          string `form:"sortAsc" extensions:"x-order:9"`
+}
+
+type PendingWithdrawTransactionListRequest struct {
+	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:3"`
+	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:4"`
+	Search           string `form:"search" extensions:"x-order:5"`
+	Page             int    `form:"page" extensions:"x-order:6" default:"1" min:"1"`
+	Limit            int    `form:"limit" extensions:"x-order:7" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol" extensions:"x-order:8"`
+	SortAsc          string `form:"sortAsc" extensions:"x-order:9"`
+}
+
+type FinishedTransactionListRequest struct {
+	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:1"`
+	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:2"`
+	AccountId        string `form:"accountId" extensions:"x-order:3"`
+	TransferType     string `form:"transferType" extensions:"x-order:4"`
+	Search           string `form:"search" extensions:"x-order:5"`
+	Page             int    `form:"page" extensions:"x-order:6" default:"1" min:"1"`
+	Limit            int    `form:"limit" extensions:"x-order:7" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol" extensions:"x-order:8"`
+	SortAsc          string `form:"sortAsc" extensions:"x-order:9"`
+}
+
+type BankTransactionRemoveBody struct {
+	Status            string    `json:"-" validate:"required"`
+	RemovedAt         time.Time `json:"removedAt"`
+	RemovedByUserId   int64     `json:"removedByUserId"`
+	RemovedByUsername string    `json:"removedByUsername"`
+}

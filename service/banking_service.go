@@ -17,6 +17,11 @@ type BankingService interface {
 	GetBankTransactions(req model.BankTransactionListRequest) (*model.SuccessWithPagination, error)
 	CreateBankTransaction(data model.BankTransactionCreateBody) error
 	DeleteBankTransaction(id int64) error
+
+	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
+	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
+	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
+	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 }
 
 var bankStatementferNotFound = "Statement not found"
@@ -143,6 +148,60 @@ func (s *bankingService) DeleteBankTransaction(id int64) error {
 	}
 
 	if err := s.repoBanking.DeleteBankTransaction(id); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *bankingService) GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+	banking, err := s.repoBanking.GetPendingDepositTransactions(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return banking, nil
+}
+
+func (s *bankingService) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+	banking, err := s.repoBanking.GetPendingWithdrawTransactions(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return banking, nil
+}
+
+func (s *bankingService) GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+	banking, err := s.repoBanking.GetFinishedTransactions(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return banking, nil
+}
+func (s *bankingService) RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error {
+
+	record, err := s.repoBanking.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "finished" {
+		return badRequest("Transaction is not finished")
+	}
+	if record.Status == "removed" {
+		return badRequest("Transaction is already removed")
+	}
+
+	if err := s.repoBanking.RemoveFinishedTransaction(id, data); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil

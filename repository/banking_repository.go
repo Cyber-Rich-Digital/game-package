@@ -24,6 +24,11 @@ type BankingRepository interface {
 	CreateBankTransaction(data model.BankTransactionCreateBody) error
 	UpdateBankTransaction(id int64, data model.BankTransactionUpdateBody) error
 	DeleteBankTransaction(id int64) error
+
+	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
+	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
+	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
+	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 }
 
 func (r repo) GetBankStatementById(id int64) (*model.BankStatement, error) {
@@ -274,6 +279,253 @@ func (r repo) UpdateBankTransaction(id int64, data model.BankTransactionUpdateBo
 
 func (r repo) DeleteBankTransaction(id int64) error {
 	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Delete(&model.BankTransaction{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BankTransactionResponse
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Bank_transactions as transactions")
+	count = count.Select("transactions.id")
+
+	if req.FromTransferDate != "" {
+		count = count.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+	}
+	if req.ToTransferDate != "" {
+		count = count.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+	}
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where("transactions.from_account_name LIKE ?", search_like)
+		count = count.Or("transactions.from_account_number LIKE ?", search_like)
+		count = count.Or("transactions.to_account_name LIKE ?", search_like)
+		count = count.Or("transactions.to_account_number LIKE ?", search_like)
+	}
+
+	if err = count.
+		Where("transactions.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.is_auto_credit"
+		selectedFields += ", transactions.created_at, transactions.updated_at"
+		query := r.db.Table("Bank_transactions as transactions")
+		query = query.Select(selectedFields)
+
+		if req.FromTransferDate != "" {
+			query = query.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+		}
+		if req.ToTransferDate != "" {
+			query = query.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+		}
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where("transactions.from_account_name LIKE ?", search_like)
+			query = query.Or("transactions.from_account_number LIKE ?", search_like)
+			query = query.Or("transactions.to_account_name LIKE ?", search_like)
+			query = query.Or("transactions.to_account_number LIKE ?", search_like)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("transactions.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
+func (r repo) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BankTransactionResponse
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Bank_transactions as transactions")
+	count = count.Select("transactions.id")
+
+	if req.FromTransferDate != "" {
+		count = count.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+	}
+	if req.ToTransferDate != "" {
+		count = count.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+	}
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where("transactions.from_account_name LIKE ?", search_like)
+		count = count.Or("transactions.from_account_number LIKE ?", search_like)
+		count = count.Or("transactions.to_account_name LIKE ?", search_like)
+		count = count.Or("transactions.to_account_number LIKE ?", search_like)
+	}
+
+	if err = count.
+		Where("transactions.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.is_auto_credit"
+		selectedFields += ", transactions.created_at, transactions.updated_at"
+		query := r.db.Table("Bank_transactions as transactions")
+		query = query.Select(selectedFields)
+
+		if req.FromTransferDate != "" {
+			query = query.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+		}
+		if req.ToTransferDate != "" {
+			query = query.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+		}
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where("transactions.from_account_name LIKE ?", search_like)
+			query = query.Or("transactions.from_account_number LIKE ?", search_like)
+			query = query.Or("transactions.to_account_name LIKE ?", search_like)
+			query = query.Or("transactions.to_account_number LIKE ?", search_like)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("transactions.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
+func (r repo) GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BankTransactionResponse
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Bank_transactions as transactions")
+	count = count.Select("transactions.id")
+
+	if req.FromTransferDate != "" {
+		count = count.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+	}
+	if req.ToTransferDate != "" {
+		count = count.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+	}
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where("transactions.from_account_name LIKE ?", search_like)
+		count = count.Or("transactions.from_account_number LIKE ?", search_like)
+		count = count.Or("transactions.to_account_name LIKE ?", search_like)
+		count = count.Or("transactions.to_account_number LIKE ?", search_like)
+	}
+
+	if err = count.
+		Where("transactions.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.is_auto_credit"
+		selectedFields += ", transactions.created_at, transactions.updated_at"
+		query := r.db.Table("Bank_transactions as transactions")
+		query = query.Select(selectedFields)
+
+		if req.FromTransferDate != "" {
+			query = query.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+		}
+		if req.ToTransferDate != "" {
+			query = query.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+		}
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where("transactions.from_account_name LIKE ?", search_like)
+			query = query.Or("transactions.from_account_number LIKE ?", search_like)
+			query = query.Or("transactions.to_account_name LIKE ?", search_like)
+			query = query.Or("transactions.to_account_number LIKE ?", search_like)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("transactions.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
+func (r repo) RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error {
+	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
 	return nil
