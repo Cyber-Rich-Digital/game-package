@@ -155,6 +155,9 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 	bank, err := s.repo.GetBankById(data.BankId)
 	if err != nil {
 		fmt.Println(err)
+		if err.Error() == recordNotFound {
+			return notFound(bankNotFound)
+		}
 		return badRequest("Invalid Bank")
 	}
 
@@ -207,8 +210,10 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 	if data.BankId != 0 && account.BankId != data.BankId {
 		bank, err := s.repo.GetBankById(data.BankId)
 		if err != nil {
-			fmt.Println(data)
 			fmt.Println(err)
+			if err.Error() == recordNotFound {
+				return notFound(bankNotFound)
+			}
 			return badRequest("Invalid Bank")
 		}
 		data.BankId = bank.Id

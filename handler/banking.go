@@ -36,10 +36,17 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	// root.GET("/autocreditflags/list", middleware.Authorize, handler.getAutoCreditFlags)
 
 	statementRoute := root.Group("/statements")
-	statementRoute.GET("/list", middleware.Authorize, handler.getStatements)
-	statementRoute.GET("/detail/:id", middleware.Authorize, handler.getStatementById)
-	statementRoute.POST("", middleware.Authorize, handler.createStatement)
-	statementRoute.DELETE("/:id", middleware.Authorize, handler.deleteStatement)
+	statementRoute.GET("/list", middleware.Authorize, handler.getBankStatements)
+	statementRoute.GET("/detail/:id", middleware.Authorize, handler.getBankStatementById)
+	statementRoute.POST("", middleware.Authorize, handler.createBankStatement)
+	statementRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankStatement)
+
+	transactionRoute := root.Group("/transactions")
+	transactionRoute.GET("/list", middleware.Authorize, handler.getBankTransactions)
+	transactionRoute.GET("/detail/:id", middleware.Authorize, handler.getBankTransactionById)
+	transactionRoute.POST("", middleware.Authorize, handler.createBankTransaction)
+	transactionRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankTransaction)
+
 }
 
 // @Summary GetStatementList
@@ -48,20 +55,11 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param accountId query string false "accountId"
-// @Param amount query string false "amount"
-// @Param fromTransferDate query string false "fromTransferDate"
-// @Param toTransferDate query string false "toTransferDate"
-// @Param status query string false "status"
-// @Param search query string false "search"
-// @Param page query int false "page"
-// @Param limit query int false "limit"
-// @Param sortCol query string false "sortCol"
-// @Param sortAsc query string false "sortAsc"
+// @Param _ query model.BankStatementListRequest true "BankStatementListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/statements/list [get]
-func (h bankingController) getStatements(c *gin.Context) {
+func (h bankingController) getBankStatements(c *gin.Context) {
 
 	var query model.BankStatementListRequest
 	if err := c.ShouldBind(&query); err != nil {
@@ -73,7 +71,7 @@ func (h bankingController) getStatements(c *gin.Context) {
 		return
 	}
 
-	data, err := h.bankingService.GetStatements(query)
+	data, err := h.bankingService.GetBankStatements(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -92,7 +90,7 @@ func (h bankingController) getStatements(c *gin.Context) {
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/statements/detail/{id} [get]
-func (h bankingController) getStatementById(c *gin.Context) {
+func (h bankingController) getBankStatementById(c *gin.Context) {
 
 	var req model.BankStatementGetRequest
 
@@ -101,7 +99,7 @@ func (h bankingController) getStatementById(c *gin.Context) {
 		return
 	}
 
-	data, err := h.bankingService.GetStatementById(req)
+	data, err := h.bankingService.GetBankStatementById(req)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -120,7 +118,7 @@ func (h bankingController) getStatementById(c *gin.Context) {
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/statements [post]
-func (h bankingController) createStatement(c *gin.Context) {
+func (h bankingController) createBankStatement(c *gin.Context) {
 
 	var banking model.BankStatementCreateBody
 	if err := c.ShouldBindJSON(&banking); err != nil {
@@ -132,7 +130,7 @@ func (h bankingController) createStatement(c *gin.Context) {
 		return
 	}
 
-	if err := h.bankingService.CreateStatement(banking); err != nil {
+	if err := h.bankingService.CreateBankStatement(banking); err != nil {
 		HandleError(c, err)
 		return
 	}
@@ -146,17 +144,10 @@ func (h bankingController) createStatement(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Param body body model.ConfirmRequest true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/statements/{id} [delete]
-func (h bankingController) deleteStatement(c *gin.Context) {
-
-	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
-	if err != nil {
-		HandleError(c, err)
-		return
-	}
+func (h bankingController) deleteBankStatement(c *gin.Context) {
 
 	id := c.Param("id")
 	identifier, err := strconv.ParseInt(id, 10, 64)
@@ -165,22 +156,122 @@ func (h bankingController) deleteStatement(c *gin.Context) {
 		return
 	}
 
-	var confirmation model.ConfirmRequest
-	confirmation.UserId = *adminId
-	if err := c.ShouldBindJSON(&confirmation); err != nil {
+	delErr := h.bankingService.DeleteBankStatement(identifier)
+	if delErr != nil {
+		HandleError(c, delErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Deleted success"})
+}
+
+// @Summary GetTransactionList
+// @Description ดึงข้อมูลลิสการฝากถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.BankTransactionListRequest true "BankTransactionListRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/list [get]
+func (h bankingController) getBankTransactions(c *gin.Context) {
+
+	var query model.BankTransactionListRequest
+	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
 	}
-	if err := validator.New().Struct(confirmation); err != nil {
-		HandleError(c, err)
-		return
-	}
-	if _, err := h.accountingService.CheckConfirmationPassword(confirmation); err != nil {
+	if err := validator.New().Struct(query); err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	delErr := h.bankingService.DeleteStatement(identifier)
+	data, err := h.bankingService.GetBankTransactions(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetTransactionByID
+// @Description ดึงข้อมูลการฝากถอน ด้วย id
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/detail/{id} [get]
+func (h bankingController) getBankTransactionById(c *gin.Context) {
+
+	var req model.BankTransactionGetRequest
+
+	if err := c.ShouldBindUri(&req); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetBankTransactionById(req)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary CreateTransaction
+// @Description สร้างข้อมูลการฝากถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.BankTransactionCreateBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions [post]
+func (h bankingController) createBankTransaction(c *gin.Context) {
+
+	var banking model.BankTransactionCreateBody
+	if err := c.ShouldBindJSON(&banking); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(banking); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.bankingService.CreateBankTransaction(banking); err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary DeleteTransaction
+// @Description ลบข้อมูลการฝากถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/{id} [delete]
+func (h bankingController) deleteBankTransaction(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	delErr := h.bankingService.DeleteBankTransaction(identifier)
 	if delErr != nil {
 		HandleError(c, delErr)
 		return
