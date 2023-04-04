@@ -174,7 +174,7 @@ type BankAccountTransactionParam struct {
 type BankAccountTransactionListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
-	TocreatedDate   string `form:"toCreatedDate"`
+	ToCreatedDate   string `form:"toCreatedDate"`
 	TransferType    string `form:"transferType"`
 	Search          string `form:"search"`
 	Page            int    `form:"page" default:"1" min:"1"`
@@ -217,7 +217,7 @@ type BankAccountTransfer struct {
 	FromAccountNumber string         `json:"fromAccountNumber"`
 	ToAccountId       int64          `json:"toAccountId"`
 	ToBankId          int64          `json:"toBankId"`
-	TobankName        string         `json:"toBankName"`
+	ToBankName        string         `json:"toBankName"`
 	ToAccountName     string         `json:"toAccountName"`
 	ToAccountNumber   string         `json:"toAccountNumber"`
 	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
@@ -238,7 +238,7 @@ type BankAccountTransferParam struct {
 type BankAccountTransferListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
-	TocreatedDate   string `form:"toCreatedDate"`
+	ToCreatedDate   string `form:"toCreatedDate"`
 	ToAccountId     int    `form:"toAccountId"`
 	Search          string `form:"search"`
 	Page            int    `form:"page" default:"1" min:"1"`

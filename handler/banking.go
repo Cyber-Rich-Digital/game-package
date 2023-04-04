@@ -33,7 +33,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newBankingController(service1, service2)
 
 	root := r.Group("/banking")
-	// root.GET("/autocreditflags/list", middleware.Authorize, handler.getAutoCreditFlags)
+	root.GET("/transactiontypes/list", middleware.Authorize, handler.getTransactionTypes)
 
 	statementRoute := root.Group("/statements")
 	statementRoute.GET("/list", middleware.Authorize, handler.getBankStatements)
@@ -47,6 +47,35 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	transactionRoute.POST("", middleware.Authorize, handler.createBankTransaction)
 	transactionRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankTransaction)
 
+}
+
+// @Summary get Transaction Type List
+// @Description ดึงข้อมูลตัวเลือก ประเภทรายการ
+// @Tags Banking - Options
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.SuccessWithPagination
+// @Router /banking/transactiontypes/list [get]
+func (h bankingController) getTransactionTypes(c *gin.Context) {
+
+	var query model.AccountTypeListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetAccountTypes(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary GetStatementList
