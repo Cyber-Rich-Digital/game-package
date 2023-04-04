@@ -1,0 +1,10 @@
+ALTER TABLE `Users` 
+ADD COLUMN `partner` VARCHAR(10) DEFAULT NULL BEFORE `member_code`;
+ADD COLUMN `promotion` VARCHAR(10) DEFAULT 'ไม่รับโปรโมชั่น' AFTER `phone`;
+ADD COLUMN `bankname` VARCHAR(50) DEFAULT NULL AFTER `fullname`;
+ADD COLUMN `bank_account` VARCHAR(15) DEFAULT NULL AFTER `bankname`;
+ADD COLUMN `channel` VARCHAR(20) DEFAULT NULL AFTER `bank_account`;
+ADD COLUMN `true_wallet` VARCHAR(20) DEFAULT NULL AFTER `channel`;
+ADD COLUMN `contact` VARCHAR(255) DEFAULT NULL AFTER `true_wallet`;
+ADD COLUMN `note` VARCHAR(255) DEFAULT NULL AFTER `contact`;
+ADD COLUMN `course` VARCHAR(50) DEFAULT NULL AFTER `note`;
