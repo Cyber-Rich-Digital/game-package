@@ -46,6 +46,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	transactionRoute.GET("/list", middleware.Authorize, handler.getBankTransactions)
 	transactionRoute.GET("/detail/:id", middleware.Authorize, handler.getBankTransactionById)
 	transactionRoute.POST("", middleware.Authorize, handler.createBankTransaction)
+	transactionRoute.POST("/bonus", middleware.Authorize, handler.createBonusTransaction)
 
 	transactionRoute.GET("/pendingdepositlist", middleware.Authorize, handler.getPendingDepositTransactions)
 	transactionRoute.GET("/pendingwithdrawlist", middleware.Authorize, handler.getPendingWithdrawTransactions)
@@ -54,7 +55,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 }
 
 // @Summary get Transaction Type List
-// @Description ดึงข้อมูลตัวเลือก ประเภทรายการ
+// @Description ดึงข้อมูลตัวเลือก ประเภทการทำรายการ
 // @Tags Banking - Options
 // @Security BearerAuth
 // @Accept json
@@ -62,24 +63,12 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 // @Success 200 {object} model.SuccessWithPagination
 // @Router /banking/transactiontypes/list [get]
 func (h bankingController) getTransactionTypes(c *gin.Context) {
-
-	var query model.AccountTypeListRequest
-	if err := c.ShouldBind(&query); err != nil {
-		HandleError(c, err)
-		return
+	var data = []model.SimpleOption{
+		{Key: "deposit", Name: "ฝาก"},
+		{Key: "withdraw", Name: "ถอน"},
+		{Key: "getcreditback", Name: "ดึงเครดิตกลับ"},
 	}
-	if err := validator.New().Struct(query); err != nil {
-		HandleError(c, err)
-		return
-	}
-
-	data, err := h.accountingService.GetAccountTypes(query)
-	if err != nil {
-		HandleError(c, err)
-		return
-	}
-
-	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
 // @Summary GetStatementList
@@ -257,12 +246,12 @@ func (h bankingController) getBankTransactionById(c *gin.Context) {
 }
 
 // @Summary CreateTransaction
-// @Description สร้างข้อมูลการฝากถอน
+// @Description สร้างข้อมูล บันทึกรายการฝาก-ถอน
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body model.BankTransactionCreateBody true "body"
+// @Param body body model.BankTransactionCreateBody true "*บังคับกรอก memberCode และ creditAmount และ transferType"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions [post]
@@ -279,6 +268,35 @@ func (h bankingController) createBankTransaction(c *gin.Context) {
 	}
 
 	if err := h.bankingService.CreateBankTransaction(banking); err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary CreateTransaction
+// @Description สร้างข้อมูล บันทึกแจกโบนัส
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.BonusTransactionCreateBody true "body description"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/bonus [post]
+func (h bankingController) createBonusTransaction(c *gin.Context) {
+
+	var banking model.BonusTransactionCreateBody
+	if err := c.ShouldBindJSON(&banking); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(banking); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.bankingService.CreateBonusTransaction(banking); err != nil {
 		HandleError(c, err)
 		return
 	}

@@ -22,6 +22,7 @@ type BankingRepository interface {
 	GetBankTransactionById(id int64) (*model.BankTransaction, error)
 	GetBankTransactions(req model.BankTransactionListRequest) (*model.SuccessWithPagination, error)
 	CreateBankTransaction(data model.BankTransactionCreateBody) error
+	CreateBonusTransaction(data model.BonusTransactionCreateBody) error
 	UpdateBankTransaction(id int64, data model.BankTransactionUpdateBody) error
 	DeleteBankTransaction(id int64) error
 
@@ -264,6 +265,13 @@ func (r repo) GetBankTransactions(req model.BankTransactionListRequest) (*model.
 }
 
 func (r repo) CreateBankTransaction(data model.BankTransactionCreateBody) error {
+	if err := r.db.Table("Bank_transactions").Create(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) CreateBonusTransaction(data model.BonusTransactionCreateBody) error {
 	if err := r.db.Table("Bank_transactions").Create(&data).Error; err != nil {
 		return err
 	}

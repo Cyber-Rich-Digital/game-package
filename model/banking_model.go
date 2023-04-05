@@ -6,6 +6,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type TempUser struct {
+	Id            int64  `json:"id" gorm:"primaryKey"`
+	MemberCode    string `json:"memberCode"`
+	BankId        int64  `json:"bankId"`
+	AccountName   string `json:"accountName"`
+	AccountNumber string `json:"accountNumber"`
+}
+
 type BankStatement struct {
 	Id         int64          `json:"id" gorm:"primaryKey"`
 	AccountId  int64          `json:"accountId"`
@@ -71,7 +79,10 @@ type BankTransaction struct {
 	ToAccountNumber   string         `json:"toAccountNumber"`
 	CreditAmount      float32        `json:"creditAmount" sql:"type:decimal(14,2);"`
 	PaidAmount        float32        `json:"paidAmount" sql:"type:decimal(14,2);"`
+	DepositChannel    string         `json:"depositChannel"`
 	OverAmount        float32        `json:"overAmount" sql:"type:decimal(14,2);"`
+	BonusAmount       float32        `json:"bonusAmount" sql:"type:decimal(14,2);"`
+	BonusReason       float32        `json:"bonusReason"`
 	BeforeAmount      float32        `json:"beforeAmount" sql:"type:decimal(14,2);"`
 	AfterAmount       float32        `json:"afterAmount" sql:"type:decimal(14,2);"`
 	TransferAt        time.Time      `json:"transferAt"`
@@ -106,7 +117,7 @@ type BankTransactionListRequest struct {
 type BankTransactionCreateBody struct {
 	MemberCode        string    `json:"memberCode" validate:"required"`
 	UserId            int64     `json:"-"`
-	TransferType      string    `json:"transferType" validate:"required"`
+	TransferType      string    `json:"transferType" validate:"required" example:"deposit"`
 	PromotionId       int64     `json:"promotionId"`
 	FromAccountId     int64     `json:"fromAccountId"`
 	FromBankId        int64     `json:"-"`
@@ -116,21 +127,41 @@ type BankTransactionCreateBody struct {
 	ToBankId          int64     `json:"-"`
 	ToAccountName     string    `json:"-"`
 	ToAccountNumber   string    `json:"-"`
-	CreditAmount      float32   `json:"creditAmount"`
-	PaidAmount        float32   `json:"paidAmount"`
+	CreditAmount      float32   `json:"creditAmount" validate:"required"`
+	PaidAmount        float32   `json:"-"`
+	DepositChannel    string    `json:"depositChannel"`
 	OverAmount        float32   `json:"overAmount"`
-	BeforeAmount      float32   `json:"beforeAmount"`
-	AfterAmount       float32   `json:"afterAmount"`
-	TransferAt        time.Time `json:"transferAt"`
+	BonusAmount       float32   `json:"bonusAmount"`
+	BeforeAmount      float32   `json:"-"`
+	AfterAmount       float32   `json:"-"`
+	TransferAt        time.Time `json:"transferAt" example:"2023-05-31T22:33:44+07:00"`
 	CreatedByUserId   int64     `json:"-"`
 	CreatedByUsername string    `json:"-"`
 	Status            string    `json:"-"`
-	IsAutoCredit      bool      `json:"isAutoCredit" validate:"required"`
+	IsAutoCredit      bool      `json:"isAutoCredit"`
+}
+
+type BonusTransactionCreateBody struct {
+	MemberCode        string    `json:"memberCode" validate:"required"`
+	UserId            int64     `json:"-"`
+	TransferType      string    `json:"-"`
+	ToAccountId       int64     `json:"-"`
+	ToBankId          int64     `json:"-"`
+	ToAccountName     string    `json:"-"`
+	ToAccountNumber   string    `json:"-"`
+	BonusAmount       float32   `json:"bonusAmount" validate:"required"`
+	BonusReason       string    `json:"bonusReason"`
+	BeforeAmount      float32   `json:"-"`
+	AfterAmount       float32   `json:"-"`
+	TransferAt        time.Time `json:"transferAt" validate:"required" example:"2023-05-31T22:33:44+07:00"`
+	CreatedByUserId   int64     `json:"-"`
+	CreatedByUsername string    `json:"-"`
+	Status            string    `json:"-"`
 }
 
 type BankTransactionUpdateBody struct {
 	Status            string    `json:"-" validate:"required"`
-	RemovedAt         time.Time `json:"removedAt"`
+	RemovedAt         time.Time `json:"removedAt" example:"2023-05-31T22:33:44+07:00"`
 	RemovedByUserId   int64     `json:"removedByUserId"`
 	RemovedByUsername string    `json:"removedByUsername"`
 }
@@ -151,6 +182,7 @@ type BankTransactionResponse struct {
 	ToAccountNumber   string         `json:"toAccountNumber"`
 	CreditAmount      float32        `json:"creditAmount" sql:"type:decimal(14,2);"`
 	PaidAmount        float32        `json:"paidAmount" sql:"type:decimal(14,2);"`
+	DepositChannel    string         `json:"depositChannel"`
 	OverAmount        float32        `json:"overAmount" sql:"type:decimal(14,2);"`
 	BeforeAmount      float32        `json:"beforeAmount" sql:"type:decimal(14,2);"`
 	AfterAmount       float32        `json:"afterAmount" sql:"type:decimal(14,2);"`

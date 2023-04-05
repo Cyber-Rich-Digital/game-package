@@ -23,6 +23,8 @@ type AccountingRepository interface {
 	GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 	GetAccounTypeById(id int64) (*model.AccountType, error)
 
+	GetUserByMemberCode(memberCode string) (*model.TempUser, error)
+
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
@@ -219,6 +221,18 @@ func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 		return nil, errors.New("Account type not found")
 	}
 	return result, nil
+}
+
+func (r repo) GetUserByMemberCode(memberCode string) (*model.TempUser, error) {
+
+	var user model.TempUser
+	user.Id = 88
+	user.MemberCode = memberCode
+	user.BankId = 2
+	user.AccountName = "MOCK TEMP ACCOUNT NAME"
+	user.AccountNumber = "000-111-222-333"
+
+	return &user, nil
 }
 
 func (r repo) HasBankAccount(accountNumber string) (bool, error) {
