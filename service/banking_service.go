@@ -22,6 +22,7 @@ type BankingService interface {
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
 	ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error
+	CancelTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
@@ -279,6 +280,22 @@ func (s *bankingService) GetPendingWithdrawTransactions(req model.PendingWithdra
 		return nil, internalServerError(err.Error())
 	}
 	return banking, nil
+}
+
+func (s *bankingService) CancelTransaction(id int64, data model.BankTransactionCancelBody) error {
+
+	record, err := s.repoBanking.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+
+	if err := s.repoBanking.CancelTransaction(id, data); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
 }
 
 func (s *bankingService) ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error {

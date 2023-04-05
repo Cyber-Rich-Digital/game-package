@@ -50,6 +50,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 
 	transactionRoute.GET("/pendingdepositlist", middleware.Authorize, handler.getPendingDepositTransactions)
 	transactionRoute.GET("/pendingwithdrawlist", middleware.Authorize, handler.getPendingWithdrawTransactions)
+	transactionRoute.POST("/cancel/:id", middleware.Authorize, handler.cancelFinishedTransaction)
 	transactionRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmFinishedTransaction)
 	transactionRoute.GET("/finishedlist", middleware.Authorize, handler.getFinishedTransactions)
 	transactionRoute.POST("/remove/:id", middleware.Authorize, handler.removeFinishedTransaction)
@@ -391,6 +392,44 @@ func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
 	}
 
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary CancelFinishedTransaction
+// @Description ยกเลิก ข้อมูลการฝากถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/cancel/{id} [post]
+func (h bankingController) cancelFinishedTransaction(c *gin.Context) {
+
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var data model.BankTransactionCancelBody
+	data.Status = "canceled"
+	data.CanceledAt = time.Now()
+	data.CanceledByUserId = *adminId
+
+	actionErr := h.bankingService.CancelTransaction(identifier, data)
+	if actionErr != nil {
+		HandleError(c, actionErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Cancel success"})
 }
 
 // @Summary ConfirmFinishedTransaction

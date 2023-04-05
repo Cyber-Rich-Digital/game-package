@@ -36,6 +36,8 @@ CREATE Table
         transfer_at DATETIME NOT NULL,
         created_by_user_id BIGINT NOT NULL,
         created_by_username VARCHAR(255) NOT NULL,
+        canceled_at DATETIME NULL,
+        canceled_by_user_id BIGINT NULL,
         confirmed_at DATETIME NULL,
         confirmed_by_user_id BIGINT NULL,
         confirmed_by_username VARCHAR(255) NULL,

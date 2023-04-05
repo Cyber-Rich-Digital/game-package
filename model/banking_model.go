@@ -90,6 +90,8 @@ type BankTransaction struct {
 	TransferAt          time.Time      `json:"transferAt"`
 	CreatedByUserId     int64          `json:"createdByUserId"`
 	CreatedByUsername   string         `json:"createdByUsername"`
+	CanceledAt          time.Time      `json:"canceledAt"`
+	CanceledByUserId    int64          `json:"canceledByUserId"`
 	ConfirmedAt         *time.Time     `json:"confirmedAt"`
 	ConfirmedByUserId   int64          `json:"confirmedByUserId"`
 	ConfirmedByUsername string         `json:"confirmedByUsername"`
@@ -199,6 +201,8 @@ type BankTransactionResponse struct {
 	TransferAt          time.Time      `json:"transferAt"`
 	CreatedByUserId     int64          `json:"createdByUserId"`
 	CreatedByUsername   string         `json:"createdByUsername"`
+	CanceledAt          time.Time      `json:"canceledAt"`
+	CanceledByUserId    int64          `json:"canceledByUserId"`
 	ConfirmedAt         time.Time      `json:"confirmedAt"`
 	ConfirmedByUserId   int64          `json:"confirmedByUserId"`
 	ConfirmedByUsername string         `json:"confirmedByUsername"`
@@ -254,6 +258,12 @@ type RemovedTransactionListRequest struct {
 	Limit            int    `form:"limit" extensions:"x-order:7" default:"10" min:"1" max:"100"`
 	SortCol          string `form:"sortCol" extensions:"x-order:8"`
 	SortAsc          string `form:"sortAsc" extensions:"x-order:9"`
+}
+
+type BankTransactionCancelBody struct {
+	Status           string    `json:"-" validate:"required"`
+	CanceledAt       time.Time `json:"canceledAt"`
+	CanceledByUserId int64     `json:"canceledByUserId"`
 }
 
 type BankTransactionConfirmBody struct {

@@ -29,6 +29,7 @@ type BankingRepository interface {
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
 	ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error
+	CancelTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
@@ -478,6 +479,13 @@ func (r repo) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactio
 	result.List = list
 	result.Total = total
 	return &result, nil
+}
+
+func (r repo) CancelTransaction(id int64, data model.BankTransactionCancelBody) error {
+	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Updates(&data).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r repo) ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error {
