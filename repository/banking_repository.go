@@ -345,8 +345,8 @@ func (r repo) GetPendingDepositTransactions(req model.PendingDepositTransactionL
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
-		query = query.Joins("LEFT JOIN banks as from_banks ON from_banks.id = transactions.from_bank_id")
-		query = query.Joins("LEFT JOIN banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
+		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
 		query = query.Where("transactions.transfer_type = ?", "deposit")
 		query = query.Where("transactions.status = ?", "pending")
 		query = query.Where("transactions.removed_at IS NULL")
@@ -433,8 +433,8 @@ func (r repo) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactio
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
-		query = query.Joins("LEFT JOIN banks as from_banks ON from_banks.id = transactions.from_bank_id")
-		query = query.Joins("LEFT JOIN banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
+		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
 		query = query.Where("transactions.transfer_type = ?", "withdraw")
 		query = query.Where("transactions.status = ?", "pending")
 		query = query.Where("transactions.removed_at IS NULL")
@@ -527,8 +527,8 @@ func (r repo) GetFinishedTransactions(req model.FinishedTransactionListRequest) 
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
-		query = query.Joins("LEFT JOIN banks as from_banks ON from_banks.id = transactions.from_bank_id")
-		query = query.Joins("LEFT JOIN banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
+		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
 		query = query.Where("transactions.status = ?", "finished")
 		query = query.Where("transactions.removed_at IS NULL")
 		if req.FromTransferDate != "" {
@@ -619,8 +619,8 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
-		query = query.Joins("LEFT JOIN banks as from_banks ON from_banks.id = transactions.from_bank_id")
-		query = query.Joins("LEFT JOIN banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
+		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
 		query = query.Where("transactions.removed_at IS NOT NULL")
 		if req.FromTransferDate != "" {
 			query = query.Where("transactions.transfer_at >= ?", req.FromTransferDate)
