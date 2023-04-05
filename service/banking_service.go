@@ -21,8 +21,10 @@ type BankingService interface {
 
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
+	ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
+	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
 }
 
 var bankStatementferNotFound = "Statement not found"
@@ -222,7 +224,7 @@ func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreat
 	var body model.BonusTransactionCreateBody
 	body.MemberCode = member.MemberCode
 	body.UserId = member.Id
-	body.TransferType = "bonus"
+	body.TransferType = "deposit"
 	body.ToAccountId = 0
 	body.ToBankId = member.BankId
 	body.ToAccountName = member.AccountName
@@ -279,6 +281,22 @@ func (s *bankingService) GetPendingWithdrawTransactions(req model.PendingWithdra
 	return banking, nil
 }
 
+func (s *bankingService) ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error {
+
+	record, err := s.repoBanking.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+
+	if err := s.repoBanking.ConfirmTransaction(id, data); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
 func (s *bankingService) GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
@@ -290,6 +308,7 @@ func (s *bankingService) GetFinishedTransactions(req model.FinishedTransactionLi
 	}
 	return banking, nil
 }
+
 func (s *bankingService) RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error {
 
 	record, err := s.repoBanking.GetBankTransactionById(id)
@@ -299,12 +318,21 @@ func (s *bankingService) RemoveFinishedTransaction(id int64, data model.BankTran
 	if record.Status != "finished" {
 		return badRequest("Transaction is not finished")
 	}
-	if record.Status == "removed" {
-		return badRequest("Transaction is already removed")
-	}
 
 	if err := s.repoBanking.RemoveFinishedTransaction(id, data); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
+}
+
+func (s *bankingService) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+	banking, err := s.repoBanking.GetRemovedTransactions(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return banking, nil
 }

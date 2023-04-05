@@ -50,8 +50,10 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 
 	transactionRoute.GET("/pendingdepositlist", middleware.Authorize, handler.getPendingDepositTransactions)
 	transactionRoute.GET("/pendingwithdrawlist", middleware.Authorize, handler.getPendingWithdrawTransactions)
+	transactionRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmFinishedTransaction)
 	transactionRoute.GET("/finishedlist", middleware.Authorize, handler.getFinishedTransactions)
 	transactionRoute.POST("/remove/:id", middleware.Authorize, handler.removeFinishedTransaction)
+	transactionRoute.GET("/removedlist", middleware.Authorize, handler.getRemovedTransactions)
 }
 
 // @Summary get Transaction Type List
@@ -178,9 +180,9 @@ func (h bankingController) deleteBankStatement(c *gin.Context) {
 		return
 	}
 
-	delErr := h.bankingService.DeleteBankStatement(identifier)
-	if delErr != nil {
-		HandleError(c, delErr)
+	actionErr := h.bankingService.DeleteBankStatement(identifier)
+	if actionErr != nil {
+		HandleError(c, actionErr)
 		return
 	}
 	c.JSON(201, model.Success{Message: "Deleted success"})
@@ -257,6 +259,17 @@ func (h bankingController) getBankTransactionById(c *gin.Context) {
 // @Router /banking/transactions [post]
 func (h bankingController) createBankTransaction(c *gin.Context) {
 
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
 	var banking model.BankTransactionCreateBody
 	if err := c.ShouldBindJSON(&banking); err != nil {
 		HandleError(c, err)
@@ -266,6 +279,8 @@ func (h bankingController) createBankTransaction(c *gin.Context) {
 		HandleError(c, err)
 		return
 	}
+	banking.CreatedByUserId = *adminId
+	banking.CreatedByUsername = *username
 
 	if err := h.bankingService.CreateBankTransaction(banking); err != nil {
 		HandleError(c, err)
@@ -286,6 +301,17 @@ func (h bankingController) createBankTransaction(c *gin.Context) {
 // @Router /banking/transactions/bonus [post]
 func (h bankingController) createBonusTransaction(c *gin.Context) {
 
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
 	var banking model.BonusTransactionCreateBody
 	if err := c.ShouldBindJSON(&banking); err != nil {
 		HandleError(c, err)
@@ -295,6 +321,8 @@ func (h bankingController) createBonusTransaction(c *gin.Context) {
 		HandleError(c, err)
 		return
 	}
+	banking.CreatedByUserId = *adminId
+	banking.CreatedByUsername = *username
 
 	if err := h.bankingService.CreateBonusTransaction(banking); err != nil {
 		HandleError(c, err)
@@ -365,6 +393,50 @@ func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
+// @Summary ConfirmFinishedTransaction
+// @Description ยืนยัน ข้อมูลการฝากถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/confirm/{id} [post]
+func (h bankingController) confirmFinishedTransaction(c *gin.Context) {
+
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var data model.BankTransactionConfirmBody
+	data.Status = "finished"
+	data.ConfirmedAt = time.Now()
+	data.ConfirmedByUserId = *adminId
+	data.ConfirmedByUsername = *username
+
+	actionErr := h.bankingService.ConfirmTransaction(identifier, data)
+	if actionErr != nil {
+		HandleError(c, actionErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Confirm success"})
+}
+
 // @Summary GetFinishedTransactions
 // @Description ดึงข้อมูลลิสการถอน ที่รออนุมัติ
 // @Tags Banking - Bank Transaction
@@ -397,7 +469,7 @@ func (h bankingController) getFinishedTransactions(c *gin.Context) {
 }
 
 // @Summary RemoveFinishedTransaction
-// @Description ลบข้อมูลการฝากถอนเสร็จสิ้น
+// @Description ลบข้อมูลการฝากถอน ที่เสร็จสิ้นไปแล้ว
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
 // @Accept json
@@ -432,10 +504,41 @@ func (h bankingController) removeFinishedTransaction(c *gin.Context) {
 	data.RemovedByUserId = *adminId
 	data.RemovedByUsername = *username
 
-	delErr := h.bankingService.RemoveFinishedTransaction(identifier, data)
-	if delErr != nil {
-		HandleError(c, delErr)
+	actionErr := h.bankingService.RemoveFinishedTransaction(identifier, data)
+	if actionErr != nil {
+		HandleError(c, actionErr)
 		return
 	}
-	c.JSON(201, model.Success{Message: "Deleted success"})
+	c.JSON(201, model.Success{Message: "Remove success"})
+}
+
+// @Summary GetRemovedTransactions
+// @Description ดึงข้อมูลลิสการฝากถอนที่ถูกลบ
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.RemovedTransactionListRequest true "query"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/removedlist [get]
+func (h bankingController) getRemovedTransactions(c *gin.Context) {
+
+	var query model.RemovedTransactionListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetRemovedTransactions(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
