@@ -90,7 +90,7 @@ func (s *accountingService) CheckConfirmationPassword(data model.ConfirmRequest)
 	if user == nil {
 		return nil, badRequest(invalidConfirmation)
 	}
-	if err := helper.ComparePassword(data.Password, user.Password); err != nil {
+	if err := helper.CompareAdminPassword(data.Password, user.Password); err != nil {
 		return nil, badRequest(invalidConfirmation)
 	}
 	token := true

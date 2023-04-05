@@ -17,7 +17,7 @@ type adminController struct {
 	adminService service.AdminService
 }
 
-func newUserController(
+func newAdminController(
 	adminService service.AdminService,
 ) adminController {
 	return adminController{adminService}
@@ -29,7 +29,7 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	perRepo := repository.NewPermissionRepository(db)
 	groupRepo := repository.NewGroupRepository(db)
 	service := service.NewAdminService(repo, perRepo, groupRepo)
-	handler := newUserController(service)
+	handler := newAdminController(service)
 
 	role := middleware.Role(db)
 

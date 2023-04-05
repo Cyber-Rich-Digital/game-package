@@ -143,11 +143,11 @@ func (s *adminService) Login(data model.LoginAdmin) (*string, error) {
 		return nil, badRequest(AdminloginFailed)
 	}
 
-	if err := helper.ComparePassword(data.Password, user.Password); err != nil {
+	if err := helper.CompareAdminPassword(data.Password, user.Password); err != nil {
 		return nil, badRequest(AdminloginFailed)
 	}
 
-	token, err := helper.CreateJWT(*user)
+	token, err := helper.CreateJWTAdmin(*user)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
@@ -209,7 +209,7 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 		return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
 	}
 
-	hashedPassword, err := helper.GenPassword(data.Password)
+	hashedPassword, err := helper.GenAdminPassword(data.Password)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -450,7 +450,7 @@ func (s *adminService) ResetPassword(adminId int64, body model.AdminUpdatePasswo
 		return notFound(AdminNotFound)
 	}
 
-	newPasword, err := helper.GenPassword(body.Password)
+	newPasword, err := helper.GenAdminPassword(body.Password)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
