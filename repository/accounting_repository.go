@@ -23,6 +23,8 @@ type AccountingRepository interface {
 	GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 	GetAccounTypeById(id int64) (*model.AccountType, error)
 
+	GetUserByMemberCode(memberCode string) (*model.TempUser, error)
+
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
@@ -221,6 +223,18 @@ func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 	return result, nil
 }
 
+func (r repo) GetUserByMemberCode(memberCode string) (*model.TempUser, error) {
+
+	var user model.TempUser
+	user.Id = 88
+	user.MemberCode = memberCode
+	user.BankId = 2
+	user.AccountName = "MOCK TEMP ACCOUNT NAME"
+	user.AccountNumber = "000-111-222-333"
+
+	return &user, nil
+}
+
 func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 	var count int64
 	if err := r.db.Table("Bank_accounts").
@@ -374,8 +388,8 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 	if req.FromCreatedDate != "" {
 		count = count.Where("transactions.created_at >= ?", req.FromCreatedDate)
 	}
-	if req.TocreatedDate != "" {
-		count = count.Where("transactions.created_at <= ?", req.TocreatedDate)
+	if req.ToCreatedDate != "" {
+		count = count.Where("transactions.created_at <= ?", req.ToCreatedDate)
 	}
 	if req.TransferType != "" {
 		count = count.Where("transactions.transfer_type = ?", req.TransferType)
@@ -408,8 +422,8 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 		if req.FromCreatedDate != "" {
 			query = query.Where("transactions.created_at >= ?", req.FromCreatedDate)
 		}
-		if req.TocreatedDate != "" {
-			query = query.Where("transactions.created_at <= ?", req.TocreatedDate)
+		if req.ToCreatedDate != "" {
+			query = query.Where("transactions.created_at <= ?", req.ToCreatedDate)
 		}
 		if req.TransferType != "" {
 			query = query.Where("transactions.transfer_type = ?", req.TransferType)
@@ -507,8 +521,8 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Suc
 	if req.FromCreatedDate != "" {
 		count = count.Where("transfers.created_at >= ?", req.FromCreatedDate)
 	}
-	if req.TocreatedDate != "" {
-		count = count.Where("transfers.created_at <= ?", req.TocreatedDate)
+	if req.ToCreatedDate != "" {
+		count = count.Where("transfers.created_at <= ?", req.ToCreatedDate)
 	}
 	if req.ToAccountId != 0 {
 		count = count.Where("transfers.to_account_id = ?", req.ToAccountId)
@@ -544,8 +558,8 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Suc
 		if req.FromCreatedDate != "" {
 			query = query.Where("transfers.created_at >= ?", req.FromCreatedDate)
 		}
-		if req.TocreatedDate != "" {
-			query = query.Where("transfers.created_at <= ?", req.TocreatedDate)
+		if req.ToCreatedDate != "" {
+			query = query.Where("transfers.created_at <= ?", req.ToCreatedDate)
 		}
 		if req.ToAccountId != 0 {
 			query = query.Where("transfers.to_account_id = ?", req.ToAccountId)

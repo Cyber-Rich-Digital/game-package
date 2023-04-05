@@ -55,6 +55,7 @@ func main() {
 	handler.GroupController(backRoute, db)
 	handler.AccountingController(backRoute, db)
 	handler.UserController(backRoute, db)
+	handler.BankingController(backRoute, db)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
