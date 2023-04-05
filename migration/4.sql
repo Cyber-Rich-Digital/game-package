@@ -19,10 +19,7 @@ CREATE Table
         url VARCHAR
 (255) NULL,
         opt INT NOT NULL,
-          created_at DATETIME DEFAULT NOW
-(),
-        updated_at DATETIME NULL ON
-UPDATE NOW(),
+          created_at DATETIME,
+        updated_at DATETIME,
         deleted_at DATETIME
-NULL
     );

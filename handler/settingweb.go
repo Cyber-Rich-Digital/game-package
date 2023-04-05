@@ -21,6 +21,16 @@ func newSettingwebController(
 	return settingwebController{settingebService}
 }
 
+// @Summary CreateSettingWeb
+// @Description ตั้งค่าหน้าเว็บไซต์
+// @Tags Settingweb
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.SettingwebCreateBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /settingweb/create [post]
 func SettingwebController(r *gin.RouterGroup, db *gorm.DB) {
 
 	repo := repository.NewSettingWebRepository(db)
