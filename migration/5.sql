@@ -1,0 +1,13 @@
+ALTER TABLE `Users` 
+ADD COLUMN `partner` VARCHAR(20) DEFAULT NULL AFTER `id`,
+ADD COLUMN `promotion` VARCHAR(20) DEFAULT 'ไม่รับโปรโมชั่น' AFTER `phone`,
+ADD COLUMN `bankname` VARCHAR(50) DEFAULT NULL AFTER `fullname`,
+ADD COLUMN `bank_account` VARCHAR(15) DEFAULT NULL AFTER `bankname`,
+ADD COLUMN `channel` VARCHAR(20) DEFAULT NULL AFTER `bank_account`,
+ADD COLUMN `true_wallet` VARCHAR(20) DEFAULT NULL AFTER `channel`,
+ADD COLUMN `contact` VARCHAR(255) DEFAULT NULL AFTER `true_wallet`,
+ADD COLUMN `note` VARCHAR(255) DEFAULT NULL AFTER `contact`,
+ADD COLUMN `course` VARCHAR(50) DEFAULT NULL AFTER `note`,
+ADD COLUMN `turnover_limit` INT(11) DEFAULT 0 AFTER `credit`,
+ADD COLUMN `ip_registered` VARCHAR(20) DEFAULT NULL AFTER `ip`,
+CHANGE COLUMN `updated_at` `updated_at` DATETIME NULL ON UPDATE NOW();
