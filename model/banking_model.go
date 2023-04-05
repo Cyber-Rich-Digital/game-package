@@ -192,6 +192,8 @@ type BankTransactionResponse struct {
 	PaidAmount          float32        `json:"paidAmount" sql:"type:decimal(14,2);"`
 	DepositChannel      string         `json:"depositChannel"`
 	OverAmount          float32        `json:"overAmount" sql:"type:decimal(14,2);"`
+	BonusAmount         float32        `json:"bonusAmount" sql:"type:decimal(14,2);"`
+	BonusReason         string         `json:"bonusReason"`
 	BeforeAmount        float32        `json:"beforeAmount" sql:"type:decimal(14,2);"`
 	AfterAmount         float32        `json:"afterAmount" sql:"type:decimal(14,2);"`
 	TransferAt          time.Time      `json:"transferAt"`
