@@ -23,7 +23,18 @@ func NewGroupService(
 
 func (s *groupService) Create(data *model.CreateGroup) error {
 
-	if err := s.repo.Create(data); err != nil {
+	var group model.Group
+	group.Name = data.Name
+
+	var perms []model.Permission
+
+	for _, permission := range data.Permissions {
+		perms = append(perms, model.Permission{
+			Name: permission.Name,
+		})
+	}
+
+	if err := s.repo.Create(group, perms); err != nil {
 		return err
 	}
 

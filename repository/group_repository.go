@@ -11,9 +11,33 @@ func NewGroupRepository(db *gorm.DB) GroupRepository {
 }
 
 type GroupRepository interface {
+	CheckGroupByName(name string) (bool, error)
 	CheckGroupExist(id int64) (bool, error)
-	Create(data *model.CreateGroup) error
+	Create(group model.Group, data []model.Permission) error
 	DeleteGroup(id int64) error
+}
+
+func (r repo) CheckGroupByName(name string) (bool, error) {
+
+	var count int64
+
+	if err := r.db.Table("Admin_groups").
+		Where("name = ?", name).
+		Count(&count).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	if count == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (r repo) CheckGroupExist(id int64) (bool, error) {
@@ -39,11 +63,41 @@ func (r repo) CheckGroupExist(id int64) (bool, error) {
 	return true, nil
 }
 
-func (r repo) Create(data *model.CreateGroup) error {
+func (r repo) Create(group model.Group, Permissions []model.Permission) error {
 
-	if err := r.db.Table("Admin_groups").
-		Create(&data).
+	tx := r.db.Begin()
+
+	if err := tx.Table("Admin_groups").
+		Create(&group).
 		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := r.db.Table("Permissions").
+		Create(&Permissions).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var adminGroupPerms []model.AdminGroupPermission
+
+	for _, perm := range Permissions {
+		adminGroupPerms = append(adminGroupPerms, model.AdminGroupPermission{
+			GroupId:      group.Id,
+			PermissionId: perm.Id,
+		})
+	}
+
+	if err := tx.Table("Admin_group_permissions").
+		Create(&adminGroupPerms).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 
