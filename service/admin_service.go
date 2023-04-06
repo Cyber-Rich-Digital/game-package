@@ -20,7 +20,7 @@ type AdminService interface {
 	UpdateGroup(data *model.AdminUpdateGroup) error
 	ResetPassword(adminId int64, body model.AdminUpdatePassword) error
 	DeleteGroup(id int64) error
-	DeletePermission(id int64) error
+	DeletePermission(perm model.DeletePermission) error
 }
 
 const AdminloginFailed = "Phone Or Password is incorrect"
@@ -473,9 +473,9 @@ func (s *adminService) DeleteGroup(id int64) error {
 	return nil
 }
 
-func (s *adminService) DeletePermission(id int64) error {
+func (s *adminService) DeletePermission(perm model.DeletePermission) error {
 
-	if err := s.perRepo.DeletePermission(id); err != nil {
+	if err := s.perRepo.DeletePermission(perm); err != nil {
 		return err
 	}
 

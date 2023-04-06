@@ -26,5 +26,5 @@ type PermissionList struct {
 }
 
 type DeletePermission struct {
-	Id int64 `json:"id" validate:"required"`
+	PermissionIds []int64 `json:"permissionIds" validate:"required"`
 }

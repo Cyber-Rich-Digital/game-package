@@ -45,7 +45,7 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	r.POST("/group", middleware.Authorize, handler.createGroup)
 	r.PUT("/group/:id", middleware.Authorize, handler.updateGroup)
 	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
-	r.DELETE("/permission/:id", middleware.Authorize, handler.deletePermission)
+	r.DELETE("/permission", middleware.Authorize, handler.deletePermission)
 
 }
 
@@ -384,23 +384,24 @@ func (h adminController) deleteGroup(c *gin.Context) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param id path int true "Permission ID"
+// @Param delete body model.DeletePermission true "Delete Permission"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /admins/permission/{id} [delete]
+// @Router /admins/permission [delete]
 func (h adminController) deletePermission(c *gin.Context) {
 
-	id := c.Param("id")
-	toInt, err := strconv.Atoi(id)
-	if err != nil {
+	var body model.DeletePermission
+	if err := c.ShouldBindJSON(&body); err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	var param model.DeletePermission
-	param.Id = int64(toInt)
+	if err := validator.New().Struct(body); err != nil {
+		HandleError(c, err)
+		return
+	}
 
-	if err := h.adminService.DeletePermission(param.Id); err != nil {
+	if err := h.adminService.DeletePermission(body); err != nil {
 		HandleError(c, err)
 		return
 	}
