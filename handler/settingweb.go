@@ -54,5 +54,5 @@ func (h settingwebController) create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, model.Success{Message: "Created settingweb success"})
+	c.JSON(201, model.Success{Message: "Created success"})
 }
