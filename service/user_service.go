@@ -11,8 +11,8 @@ type UserService interface {
 	GetUser(id int64) (*model.UserDetail, error)
 	GetUserList(query model.UserListQuery) (*model.SuccessWithPagination, error)
 	Create(user *model.CreateUser) error
-	UpdateUser(adminId int64, body model.UpdateUser) error
-	ResetPassword(adminId int64, body model.UserUpdatePassword) error
+	UpdateUser(userId int64, body model.UpdateUser) error
+	ResetPassword(userId int64, body model.UserUpdatePassword) error
 	DeleteUser(id int64) error
 }
 
@@ -116,9 +116,9 @@ func (s *userService) Create(data *model.CreateUser) error {
 	return s.repo.CreateUser(newUser)
 }
 
-func (s *userService) UpdateUser(adminId int64, body model.UpdateUser) error {
+func (s *userService) UpdateUser(userId int64, body model.UpdateUser) error {
 
-	checkUser, err := s.repo.CheckUserById(adminId)
+	checkUser, err := s.repo.CheckUserById(userId)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -127,12 +127,12 @@ func (s *userService) UpdateUser(adminId int64, body model.UpdateUser) error {
 		return notFound(UserNotFound)
 	}
 
-	return s.repo.UpdateUser(adminId, body)
+	return s.repo.UpdateUser(userId, body)
 }
 
-func (s *userService) ResetPassword(adminId int64, body model.UserUpdatePassword) error {
+func (s *userService) ResetPassword(userId int64, body model.UserUpdatePassword) error {
 
-	checkUser, err := s.repo.CheckUserById(adminId)
+	checkUser, err := s.repo.CheckUserById(userId)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -148,7 +148,7 @@ func (s *userService) ResetPassword(adminId int64, body model.UserUpdatePassword
 
 	body.Password = newPasword
 
-	if err := s.repo.UpdateUserPassword(adminId, body); err != nil {
+	if err := s.repo.UpdateUserPassword(userId, body); err != nil {
 		return err
 	}
 
