@@ -7,9 +7,14 @@ import (
 
 	"cybergame-api/repository"
 
+	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
+)
+
+var (
+	storageClient *storage.Client
 )
 
 type settingwebController struct {
@@ -54,10 +59,11 @@ func (h settingwebController) createsettingweb(c *gin.Context) {
 		return
 	}
 
-	err := h.settingebService.CreateSettingWeb(settingweb)
-	if err != nil {
-		HandleError(c, err)
+	errsettingweb := h.settingebService.CreateSettingWeb(settingweb)
+	if errsettingweb != nil {
+		HandleError(c, errsettingweb)
 		return
 	}
 	c.JSON(201, model.Success{Message: "Created success"})
+
 }
