@@ -35,14 +35,14 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 
 	r = r.Group("/admins")
 	r.GET("/detail/:id", middleware.Authorize, role.CheckAdmin("test1"), handler.GetAdmin)
-	r.GET("/", middleware.Authorize, handler.getAdminList)
+	r.GET("/list", middleware.Authorize, handler.getAdminList)
 	r.POST("/create", middleware.Authorize, handler.create)
 	r.PUT("/update/:id", middleware.Authorize, handler.updateAdmin)
 	r.PUT("/password/:id", middleware.Authorize, handler.resetPassword)
 
 	r.GET("/group", middleware.Authorize, handler.groupList)
 	r.GET("/group/:id", middleware.Authorize, handler.getGroup)
-	r.POST("/group", middleware.Authorize, handler.createGroup)
+	// r.POST("/group", middleware.Authorize, handler.createGroup)
 	r.PUT("/group/:id", middleware.Authorize, handler.updateGroup)
 	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
 	r.DELETE("/permission", middleware.Authorize, handler.deletePermission)
@@ -145,7 +145,7 @@ func (h adminController) GetAdmin(c *gin.Context) {
 // @Param status query string false "Status"
 // @Success 200 {object} model.SuccessWithList
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /admins [get]
+// @Router /admins/list [get]
 func (h adminController) getAdminList(c *gin.Context) {
 
 	query := model.AdminListQuery{}
@@ -169,7 +169,7 @@ func (h adminController) getAdminList(c *gin.Context) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param register body model.CreateAdmin true "Create Admin"
+// @Param Body body model.CreateAdmin true "Create Admin"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/create [post]
@@ -195,37 +195,37 @@ func (h adminController) create(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Register success"})
 }
 
-// @Summary Create Group
-// @Description Create Group
-// @Tags Admins
-// @Security BearerAuth
-// @Accept  json
-// @Produce  json
-// @Param register body model.AdminCreateGroup true "Create Group"
-// @Success 201 {object} model.Success
-// @Failure 400 {object} handler.ErrorResponse
-// @Router /admins/group [post]
-func (h adminController) createGroup(c *gin.Context) {
+// // @Summary Create Group
+// // @Description Create Group
+// // @Tags Admins
+// // @Security BearerAuth
+// // @Accept  json
+// // @Produce  json
+// // @Param Body body model.AdminCreateGroup true "Create Group"
+// // @Success 201 {object} model.Success
+// // @Failure 400 {object} handler.ErrorResponse
+// // @Router /admins/group [post]
+// func (h adminController) createGroup(c *gin.Context) {
 
-	data := &model.AdminCreateGroup{}
-	if err := c.ShouldBindJSON(data); err != nil {
-		HandleError(c, err)
-		return
-	}
+// 	data := &model.AdminCreateGroup{}
+// 	if err := c.ShouldBindJSON(data); err != nil {
+// 		HandleError(c, err)
+// 		return
+// 	}
 
-	if err := validator.New().Struct(data); err != nil {
-		HandleError(c, err)
-		return
-	}
+// 	if err := validator.New().Struct(data); err != nil {
+// 		HandleError(c, err)
+// 		return
+// 	}
 
-	err := h.adminService.CreateGroup(data)
-	if err != nil {
-		HandleError(c, err)
-		return
-	}
+// 	err := h.adminService.CreateGroup(data)
+// 	if err != nil {
+// 		HandleError(c, err)
+// 		return
+// 	}
 
-	c.JSON(201, model.Success{Message: "Created success"})
-}
+// 	c.JSON(201, model.Success{Message: "Created success"})
+// }
 
 // @Summary Update Group
 // @Description Update Group
@@ -234,7 +234,7 @@ func (h adminController) createGroup(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Group ID"
-// @Param register body model.AdminUpdateGroup true "Update Group"
+// @Param Body body model.AdminUpdateGroup true "Update Group"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/group/{id} [put]
@@ -276,7 +276,7 @@ func (h adminController) updateGroup(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Admin ID"
-// @Param register body model.AdminBody true "Update Admin"
+// @Param Body body model.AdminBody true "Update Admin"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/update/{id} [put]
@@ -316,7 +316,7 @@ func (h adminController) updateAdmin(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Admin ID"
-// @Param register body model.AdminUpdatePassword true "Update Admin Password"
+// @Param Body body model.AdminUpdatePassword true "Update Admin Password"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/password/{id} [put]
