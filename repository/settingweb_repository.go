@@ -92,7 +92,7 @@ func (r repo) GetSettingWeb(req model.SettingwebListRequest) (*model.SuccessWith
 }
 func (r repo) CreateSettingWeb(data model.SettingwebCreateBody) error {
 	if err := r.db.Table("setting_web").Create(&data).Error; err != nil {
-		fmt.Println(err)
+		fmt.Println(data)
 		return err
 	}
 

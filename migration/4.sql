@@ -14,6 +14,5 @@ CREATE Table
                 url VARCHAR(255) NULL,
                 opt INT NOT NULL,
                 created_at DATETIME,
-                updated_at DATETIME,
-                deleted_at DATETIME
+                updated_at DATETIME
         );

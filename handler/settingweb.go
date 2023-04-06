@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
 
@@ -37,22 +38,26 @@ func SettingwebController(r *gin.RouterGroup, db *gorm.DB) {
 	service := service.NewSettingWebService(repo)
 	handler := newSettingwebController(service)
 
-	r = r.Group("/settingweb")
-	r.POST("/create", handler.create)
+	settingWebRoute := r.Group("/settingweb")
+	settingWebRoute.POST("/create", middleware.Authorize, handler.createsettingweb)
 
 }
-func (h settingwebController) create(c *gin.Context) {
+func (h settingwebController) createsettingweb(c *gin.Context) {
 
-	data := &model.SettingwebCreateBody{}
-	if err := c.ShouldBindJSON(data); err != nil {
+	var settingweb model.SettingwebCreateBody
+	if err := c.ShouldBindJSON(&settingweb); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(settingweb); err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	if err := validator.New().Struct(data); err != nil {
+	err := h.settingebService.CreateSettingWeb(settingweb)
+	if err != nil {
 		HandleError(c, err)
 		return
 	}
-
 	c.JSON(201, model.Success{Message: "Created success"})
 }
