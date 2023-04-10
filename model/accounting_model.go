@@ -290,3 +290,60 @@ type BankAccountTransferResponse struct {
 	UpdatedAt         *time.Time     `json:"updatedAt"`
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
+
+type ExternalBankAccount struct {
+	BankId           int64   `json:"bankId"`
+	BankCode         string  `json:"bankCode"`
+	ClientName       string  `json:"clientName"`
+	LastConnected    *int64  `json:"lastConnected"`
+	CustomerId       int64   `json:"customerId"`
+	DeviceId         string  `json:"deviceId"`
+	WebhookUrl       *string `json:"webhookUrl"`
+	WalletId         *int64  `json:"walletId"`
+	Enable           bool    `json:"enable"`
+	AccountNo        string  `json:"accountNo"`
+	BankAccountId    *int64  `json:"bankAccountId"`
+	VerifyLogin      bool    `json:"verifyLogin"`
+	WebhookNotifyUrl *string `json:"webhookNotifyUrl"`
+	Username         *string `json:"username"`
+}
+
+type ExternalBankAccountStatusRequest struct {
+	AccountNumber string `json:"accountNumber"`
+}
+
+type ExternalBankAccountStatus struct {
+	Success bool   `json:"success"`
+	Enable  bool   `json:"enable"`
+	Status  string `json:"status"`
+}
+
+type ExternalBankAccountCreateBody struct {
+	AccountNo        string `json:"accountNo"`
+	BankCode         string `json:"bankCode"`
+	DeviceId         string `json:"deviceId"`
+	Password         string `json:"password"`
+	Pin              string `json:"pin"`
+	Username         string `json:"username"`
+	WebhookNotifyUrl string `json:"webhookNotifyUrl"`
+	WebhookUrl       string `json:"webhookUrl"`
+}
+
+type ExternalBankAccountCreateResponse struct {
+	Id               int64  `json:"id"`
+	CustomerId       int64  `json:"customerId"`
+	ApiKey           string `json:"apiKey"`
+	BankId           int64  `json:"bankId"`
+	BankCode         string `json:"bankCode"`
+	DeviceId         string `json:"deviceId"`
+	AccountNo        string `json:"accountNo"`
+	Pin              string `json:"pin"`
+	Username         string `json:"username"`
+	Password         string `json:"password"`
+	WebhookUrl       string `json:"webhookUrl"`
+	WebhookNotifyUrl string `json:"webhookNotifyUrl"`
+	WalletId         int64  `json:"walletId"`
+	Enable           bool   `json:"enable"`
+	VerifyLogin      bool   `json:"verifyLogin"`
+	Deleted          bool   `json:"deleted"`
+}

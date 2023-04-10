@@ -1,10 +1,16 @@
 package service
 
 import (
+	"bytes"
 	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 	"time"
 )
 
@@ -33,6 +39,12 @@ type AccountingService interface {
 	CreateTransfer(data model.BankAccountTransferBody) error
 	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
+
+	GetExternalBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetExternalBankAccountStatus(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountStatus, error)
+	CreateExternalBankAccount(data model.ExternalBankAccountCreateBody) error
+	UpdateExternalBankAccount(data model.ExternalBankAccountCreateBody) error
+	DeleteExternalBankAccount(query model.ExternalBankAccountStatusRequest) error
 }
 
 type accountingService struct {
@@ -415,5 +427,141 @@ func (s *accountingService) DeleteTransfer(id int64) error {
 	if err := s.repo.DeleteTransfer(id); err != nil {
 		return internalServerError(err.Error())
 	}
+	return nil
+}
+
+func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", nil)
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(responseData))
+	var list []model.ExternalBankAccount
+	json.Unmarshal(responseData, &list)
+	fmt.Println(list)
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = int64(len(list))
+	return &result, nil
+}
+
+func (s *accountingService) GetExternalBankAccountStatus(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountStatus, error) {
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bank-status?accountNo="+query.AccountNumber, nil)
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, notFound("Bank account not found")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var result model.ExternalBankAccountStatus
+	json.Unmarshal(responseData, &result)
+	return &result, nil
+}
+
+func (s *accountingService) CreateExternalBankAccount(body model.ExternalBankAccountCreateBody) error {
+
+	client := &http.Client{}
+	data, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", bytes.NewBuffer(data))
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result model.ExternalBankAccountCreateResponse
+	json.Unmarshal(responseData, &result)
+	fmt.Println("response", result)
+
+	return nil
+}
+
+func (s *accountingService) UpdateExternalBankAccount(body model.ExternalBankAccountCreateBody) error {
+
+	client := &http.Client{}
+	data, _ := json.Marshal(body)
+	req, _ := http.NewRequest("PUT", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", bytes.NewBuffer(data))
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result model.ExternalBankAccountCreateResponse
+	json.Unmarshal(responseData, &result)
+	fmt.Println("response", result)
+
+	return nil
+}
+
+func (s *accountingService) DeleteExternalBankAccount(query model.ExternalBankAccountStatusRequest) error {
+
+	// fmt.Println("ep", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bank-status?accountNo="+query.AccountNumber)
+	// return errors.New("not implemented")
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("DELETE", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bank-status?accountNo="+query.AccountNumber, nil)
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("response", responseData)
+
 	return nil
 }

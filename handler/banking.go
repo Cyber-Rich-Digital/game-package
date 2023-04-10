@@ -420,7 +420,7 @@ func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Param _ body model.BankTransactionCancelBody true "body"
+// @Param body body model.BankTransactionCancelBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/cancel/{id} [post]
