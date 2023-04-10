@@ -35,6 +35,8 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 
 	root := r.Group("/banking")
 	root.GET("/transactiontypes/list", middleware.Authorize, handler.getTransactionTypes)
+	root.GET("/transactionstatuses/list", middleware.Authorize, handler.getTransactionStatuses)
+	// root.GET("/cancelremarks/list", middleware.Authorize, handler.getCancelRemarks)
 
 	statementRoute := root.Group("/statements")
 	statementRoute.GET("/list", middleware.Authorize, handler.getBankStatements)
@@ -50,7 +52,8 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 
 	transactionRoute.GET("/pendingdepositlist", middleware.Authorize, handler.getPendingDepositTransactions)
 	transactionRoute.GET("/pendingwithdrawlist", middleware.Authorize, handler.getPendingWithdrawTransactions)
-	transactionRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmFinishedTransaction)
+	transactionRoute.POST("/cancel/:id", middleware.Authorize, handler.cancelPendingTransaction)
+	transactionRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmPendingTransaction)
 	transactionRoute.GET("/finishedlist", middleware.Authorize, handler.getFinishedTransactions)
 	transactionRoute.POST("/remove/:id", middleware.Authorize, handler.removeFinishedTransaction)
 	transactionRoute.GET("/removedlist", middleware.Authorize, handler.getRemovedTransactions)
@@ -69,6 +72,23 @@ func (h bankingController) getTransactionTypes(c *gin.Context) {
 		{Key: "deposit", Name: "ฝาก"},
 		{Key: "withdraw", Name: "ถอน"},
 		{Key: "getcreditback", Name: "ดึงเครดิตกลับ"},
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+}
+
+// @Summary get Transaction Status List
+// @Description ดึงข้อมูลตัวเลือก สถานะรายการฝากถอน
+// @Tags Banking - Options
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.SuccessWithPagination
+// @Router /banking/transactionstatuses/list [get]
+func (h bankingController) getTransactionStatuses(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "pending", Name: "รอดำเนินการ"},
+		{Key: "canceled", Name: "ยกเลิกแล้ว"},
+		{Key: "finished", Name: "อนุมัติแล้ว"},
 	}
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
@@ -393,7 +413,62 @@ func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary ConfirmFinishedTransaction
+// @Summary CancelPendingTransaction
+// @Description ยกเลิก ไม่ยืนยัน ข้อมูลการฝากถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Param _ body model.BankTransactionCancelBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/cancel/{id} [post]
+func (h bankingController) cancelPendingTransaction(c *gin.Context) {
+
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var data model.BankTransactionCancelBody
+	if err := c.ShouldBind(&data); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(data); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data.Status = "canceled"
+	// data.CancelRemark = data.CancelRemark
+	data.CanceledAt = time.Now()
+	data.CanceledByUserId = *adminId
+	data.CanceledByUsername = *username
+
+	actionErr := h.bankingService.CancelPendingTransaction(identifier, data)
+	if actionErr != nil {
+		HandleError(c, actionErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Cancel success"})
+}
+
+// @Summary ConfirmPendingTransaction
 // @Description ยืนยัน ข้อมูลการฝากถอน
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
@@ -403,7 +478,7 @@ func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/confirm/{id} [post]
-func (h bankingController) confirmFinishedTransaction(c *gin.Context) {
+func (h bankingController) confirmPendingTransaction(c *gin.Context) {
 
 	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
 	if err != nil {
@@ -429,7 +504,7 @@ func (h bankingController) confirmFinishedTransaction(c *gin.Context) {
 	data.ConfirmedByUserId = *adminId
 	data.ConfirmedByUsername = *username
 
-	actionErr := h.bankingService.ConfirmTransaction(identifier, data)
+	actionErr := h.bankingService.ConfirmPendingTransaction(identifier, data)
 	if actionErr != nil {
 		HandleError(c, actionErr)
 		return
