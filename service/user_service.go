@@ -8,6 +8,7 @@ import (
 )
 
 type UserService interface {
+	GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error)
 	GetUser(id int64) (*model.UserDetail, error)
 	GetUserList(query model.UserListQuery) (*model.SuccessWithPagination, error)
 	Create(user *model.CreateUser) error
@@ -33,6 +34,16 @@ func NewUserService(
 	groupRepo repository.GroupRepository,
 ) UserService {
 	return &userService{repo, perRepo, groupRepo}
+}
+
+func (s *userService) GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error) {
+
+	logs, err := s.repo.GetUserLoginLogs(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return logs, nil
 }
 
 func (s *userService) GetUser(id int64) (*model.UserDetail, error) {

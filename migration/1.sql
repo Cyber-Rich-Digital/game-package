@@ -131,8 +131,6 @@ CREATE INDEX `idx_created_at` ON `Admin_groups` (`created_at`);
 
 CREATE INDEX `idx_deleted_at` ON `Admin_groups` (`deleted_at`);
 
-CREATE UNIQUE INDEX `uni_name` ON `Permissions` (`name`);
-
 CREATE INDEX `idx_created_at` ON `Permissions` (`created_at`);
 
 CREATE INDEX `idx_deleted_at` ON `Permissions` (`deleted_at`);

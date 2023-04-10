@@ -34,7 +34,7 @@ func (s *groupService) Create(data *model.CreateGroup) error {
 		})
 	}
 
-	if err := s.repo.Create(group, perms); err != nil {
+	if err := s.repo.CreateGroup(group, perms); err != nil {
 		return err
 	}
 
