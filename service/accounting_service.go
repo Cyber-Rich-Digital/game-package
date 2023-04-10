@@ -434,7 +434,6 @@ func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRe
 
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", nil)
-	req.Header.Set("Accept", "*/*")
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
 
@@ -451,10 +450,8 @@ func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRe
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(responseData))
 	var list []model.ExternalBankAccount
 	json.Unmarshal(responseData, &list)
-	fmt.Println(list)
 
 	// End count total records for pagination purposes (without limit and offset) //
 	var result model.SuccessWithPagination
@@ -520,6 +517,7 @@ func (s *accountingService) UpdateExternalBankAccount(body model.ExternalBankAcc
 	data, _ := json.Marshal(body)
 	req, _ := http.NewRequest("PUT", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", bytes.NewBuffer(data))
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
 	response, err := client.Do(req)
 	if err != nil {
 		fmt.Print(err.Error())
@@ -542,11 +540,8 @@ func (s *accountingService) UpdateExternalBankAccount(body model.ExternalBankAcc
 
 func (s *accountingService) DeleteExternalBankAccount(query model.ExternalBankAccountStatusRequest) error {
 
-	// fmt.Println("ep", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bank-status?accountNo="+query.AccountNumber)
-	// return errors.New("not implemented")
-
 	client := &http.Client{}
-	req, _ := http.NewRequest("DELETE", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bank-status?accountNo="+query.AccountNumber, nil)
+	req, _ := http.NewRequest("DELETE", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount/"+query.AccountNumber, nil)
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
 	if err != nil {
@@ -561,7 +556,7 @@ func (s *accountingService) DeleteExternalBankAccount(query model.ExternalBankAc
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("response", responseData)
+	fmt.Println("response", string(responseData))
 
 	return nil
 }

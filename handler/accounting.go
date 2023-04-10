@@ -54,7 +54,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	account2Route.GET("/list", middleware.Authorize, handler.getExternalBankAccounts)
 	account2Route.GET("/status/:account", middleware.Authorize, handler.getExternalBankAccountStatus)
 	account2Route.POST("", middleware.Authorize, handler.createExternalBankAccount)
-	account2Route.PUT("/:account", middleware.Authorize, handler.updateExternalBankAccount)
+	account2Route.PUT("", middleware.Authorize, handler.updateExternalBankAccount)
 	account2Route.DELETE("/:account", middleware.Authorize, handler.deleteExternalBankAccount)
 
 	transactionRoute := root.Group("/transactions")
@@ -846,7 +846,7 @@ func (h accountingController) createExternalBankAccount(c *gin.Context) {
 // @Param body body model.ExternalBankAccountCreateBody true "body"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /accounting/bankaccounts2/{string} [put]
+// @Router /accounting/bankaccounts2/ [put]
 func (h accountingController) updateExternalBankAccount(c *gin.Context) {
 
 	var query model.ExternalBankAccountCreateBody
@@ -869,26 +869,19 @@ func (h accountingController) updateExternalBankAccount(c *gin.Context) {
 }
 
 // @Summary DeleteExternalBankAccount
-// @Description ดึงข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
+// @Description ลบข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param string path string true "accountNumber"
+// @Param account path string true "accountNumber"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /accounting/bankaccounts2/{string} [put]
+// @Router /accounting/bankaccounts2/{account} [delete]
 func (h accountingController) deleteExternalBankAccount(c *gin.Context) {
 
 	var query model.ExternalBankAccountStatusRequest
-	if err := c.ShouldBind(&query); err != nil {
-		HandleError(c, err)
-		return
-	}
-	if err := validator.New().Struct(query); err != nil {
-		HandleError(c, err)
-		return
-	}
+	query.AccountNumber = c.Param("account")
 
 	err := h.accountingService.DeleteExternalBankAccount(query)
 	if err != nil {
