@@ -21,8 +21,8 @@ type BankingService interface {
 
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
-	ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error
-	CancelTransaction(id int64, data model.BankTransactionCancelBody) error
+	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
+	CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
@@ -142,20 +142,20 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.OverAmount = data.OverAmount
 		body.IsAutoCredit = data.IsAutoCredit
 
-		body.FromAccountId = 0
-		body.FromBankId = member.BankId
-		body.FromAccountName = member.AccountName
-		body.FromAccountNumber = member.AccountNumber
-		toAccount, err := s.repoAccounting.GetBankAccountById(data.ToAccountId)
+		// body.FromAccountId = 0
+		body.FromBankId = &member.BankId
+		body.FromAccountName = &member.AccountName
+		body.FromAccountNumber = &member.AccountNumber
+		toAccount, err := s.repoAccounting.GetBankAccountById(*data.ToAccountId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
 		}
-		body.ToAccountId = toAccount.Id
-		body.ToBankId = toAccount.BankId
-		body.ToAccountName = toAccount.AccountName
-		body.ToAccountNumber = toAccount.AccountNumber
-		// body.PromotionId = data.PromotionId
+		body.ToAccountId = &toAccount.Id
+		body.ToBankId = &toAccount.BankId
+		body.ToAccountName = &toAccount.AccountName
+		body.ToAccountNumber = &toAccount.AccountNumber
+		body.PromotionId = data.PromotionId
 
 	} else if data.TransferType == "withdraw" {
 		member, err := s.repoAccounting.GetUserByMemberCode(data.MemberCode)
@@ -168,22 +168,23 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		fromAccount, err := s.repoAccounting.GetBankAccountById(data.FromAccountId)
+		fromAccount, err := s.repoAccounting.GetBankAccountById(*data.FromAccountId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
 		}
-		body.FromAccountId = fromAccount.Id
-		body.FromBankId = fromAccount.BankId
-		body.FromAccountName = fromAccount.AccountName
-		body.FromAccountNumber = fromAccount.AccountNumber
+		body.FromAccountId = &fromAccount.Id
+		body.FromBankId = &fromAccount.BankId
+		body.FromAccountName = &fromAccount.AccountName
+		body.FromAccountNumber = &fromAccount.AccountNumber
 
-		body.ToAccountId = 0
-		body.ToBankId = member.BankId
-		body.ToAccountName = member.AccountName
-		body.ToAccountNumber = member.AccountNumber
+		// body.ToAccountId = 0
+		body.ToBankId = &member.BankId
+		body.ToAccountName = &member.AccountName
+		body.ToAccountNumber = &member.AccountNumber
 
 	} else if data.TransferType == "getcreditback" {
+		// ดึงยอดสลายไปเลย
 		member, err := s.repoAccounting.GetUserByMemberCode(data.MemberCode)
 		if err != nil {
 			fmt.Println(err)
@@ -194,10 +195,10 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		// body.ToAccountId = 0
-		// body.ToBankId = member.BankId
-		// body.ToAccountName = member.AccountName
-		// body.ToAccountNumber = member.AccountNumber
+		// body.FromAccountId = 0
+		body.FromBankId = &member.BankId
+		body.FromAccountName = &member.AccountName
+		body.FromAccountNumber = &member.AccountNumber
 
 	} else {
 		return badRequest("Invalid Transfer Type")
@@ -282,7 +283,7 @@ func (s *bankingService) GetPendingWithdrawTransactions(req model.PendingWithdra
 	return banking, nil
 }
 
-func (s *bankingService) CancelTransaction(id int64, data model.BankTransactionCancelBody) error {
+func (s *bankingService) CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error {
 
 	record, err := s.repoBanking.GetBankTransactionById(id)
 	if err != nil {
@@ -292,13 +293,13 @@ func (s *bankingService) CancelTransaction(id int64, data model.BankTransactionC
 		return badRequest("Transaction is not pending")
 	}
 
-	if err := s.repoBanking.CancelTransaction(id, data); err != nil {
+	if err := s.repoBanking.CancelPendingTransaction(id, data); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
 }
 
-func (s *bankingService) ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error {
+func (s *bankingService) ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error {
 
 	record, err := s.repoBanking.GetBankTransactionById(id)
 	if err != nil {
@@ -308,7 +309,7 @@ func (s *bankingService) ConfirmTransaction(id int64, data model.BankTransaction
 		return badRequest("Transaction is not pending")
 	}
 
-	if err := s.repoBanking.ConfirmTransaction(id, data); err != nil {
+	if err := s.repoBanking.ConfirmPendingTransaction(id, data); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
