@@ -286,7 +286,7 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 		})
 	}
 
-	if err := s.repo.CreateGroup(list); err != nil {
+	if err := s.repo.CreateGroupAdmin(list); err != nil {
 		return err
 	}
 

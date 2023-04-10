@@ -34,12 +34,41 @@ func UserController(r *gin.RouterGroup, db *gorm.DB) {
 	// role := middleware.Role(db)
 
 	r = r.Group("/users")
+	r.GET("/loginlogs/:id", middleware.Authorize, handler.getLoginLogs)
 	r.GET("/detail/:id", middleware.Authorize, handler.GetUser)
 	r.GET("/", middleware.Authorize, handler.getUserList)
 	r.POST("/create", middleware.Authorize, handler.create)
 	r.PUT("/update/:id", middleware.Authorize, handler.updateUser)
 	r.PUT("/password/:id", middleware.Authorize, handler.resetPassword)
 	r.DELETE("/:id", middleware.Authorize, handler.deleteUser)
+}
+
+// @Summary แสดงลิสประวัติการเข้าสู่ระบบของ User
+// @Description Login Logs
+// @Tags Users
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {object} model.SuccessWithList
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /users/loginlogs/{id} [get]
+func (h userController) getLoginLogs(c *gin.Context) {
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	list, err := h.userService.GetUserLoginLogs(int64(toInt))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithList{Message: "Success", List: list})
 }
 
 // @Summary Get User
