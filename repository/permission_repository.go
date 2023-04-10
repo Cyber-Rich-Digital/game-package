@@ -14,7 +14,7 @@ type PermissionRepository interface {
 	CheckPerListExist(ids []int64) ([]int64, error)
 	CheckPerListAndGroupId(groupId int64, perIds []int64) ([]int64, error)
 	CreatePermission(data *model.CreatePermission) error
-	DeletePermission(id int64) error
+	DeletePermission(perm model.DeletePermission) error
 }
 
 func (r repo) CheckPerListExist(ids []int64) ([]int64, error) {
@@ -54,12 +54,12 @@ func (r repo) CreatePermission(data *model.CreatePermission) error {
 	return nil
 }
 
-func (r repo) DeletePermission(id int64) error {
+func (r repo) DeletePermission(perm model.DeletePermission) error {
 
 	tx := r.db.Begin()
 
 	if err := tx.Table("Permissions").
-		Where("id = ?", id).
+		Where("id IN (?)", perm.PermissionIds).
 		Delete(&model.Permission{}).
 		Error; err != nil {
 		tx.Rollback()
@@ -67,7 +67,7 @@ func (r repo) DeletePermission(id int64) error {
 	}
 
 	if err := tx.Table("Admin_group_permissions").
-		Where("permission_id = ?", id).
+		Where("permission_id IN (?)", perm.PermissionIds).
 		Delete(&model.AdminGroupPermission{}).
 		Error; err != nil {
 		tx.Rollback()

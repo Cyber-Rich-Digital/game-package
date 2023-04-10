@@ -62,12 +62,12 @@ type AdminPermissionList struct {
 }
 
 type AdminGroupPermission struct {
-	Id           int64     `json:"id"`
-	GroupId      int64     `json:"groupId"`
-	PermissionId int64     `json:"permissionId"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
-	DeletedAt    time.Time `json:"deletedAt"`
+	Id           int64      `json:"id"`
+	GroupId      int64      `json:"groupId"`
+	PermissionId int64      `json:"permissionId"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+	DeletedAt    *time.Time `json:"deletedAt"`
 }
 
 type AdminGroupPermissionResponse struct {
