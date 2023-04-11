@@ -27,3 +27,12 @@ CREATE INDEX `idx_fullname` ON `Scammers` (`fullname`);
 CREATE INDEX `idx_bankname` ON `Scammers` (`bankname`);
 CREATE INDEX `idx_phone` ON `Scammers` (`phone`);
 CREATE INDEX `idx_created_at` ON `Scammers` (`created_at`);
+
+CREATE TABLE `Recomment_channels` (
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT 255,
+  `status` ENUM ('ACTIVE', 'DEACTIVE') DEFAULT "ACTIVE",
+  `url` varchar(255) DEFAULT 255,
+  `created_at` datetime DEFAULT (now()),
+  `updated_at` datetime DEFAULT NULL ON UPDATE NOW()
+);
