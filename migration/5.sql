@@ -11,3 +11,28 @@ ADD COLUMN `course` VARCHAR(50) DEFAULT NULL AFTER `note`,
 ADD COLUMN `turnover_limit` INT(11) DEFAULT 0 AFTER `credit`,
 ADD COLUMN `ip_registered` VARCHAR(20) DEFAULT NULL AFTER `ip`,
 CHANGE COLUMN `updated_at` `updated_at` DATETIME NULL ON UPDATE NOW();
+
+CREATE TABLE `Scammers` (
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
+  `fullname` varchar(255),
+  `firstname` varchar(255) DEFAULT NULL,
+  `lastname` varchar(255) DEFAULT NULL,
+  `bankname` varchar(50) DEFAULT NULL,
+  `bank_account` varchar(15) DEFAULT NULL,
+  `phone` varchar(12) DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT (now())
+);
+CREATE INDEX `idx_fullname` ON `Scammers` (`fullname`);
+CREATE INDEX `idx_bankname` ON `Scammers` (`bankname`);
+CREATE INDEX `idx_phone` ON `Scammers` (`phone`);
+CREATE INDEX `idx_created_at` ON `Scammers` (`created_at`);
+
+CREATE TABLE `Recomment_channels` (
+  `id` bigint PRIMARY KEY AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT 255,
+  `status` ENUM ('ACTIVE', 'DEACTIVE') DEFAULT "ACTIVE",
+  `url` varchar(255) DEFAULT 255,
+  `created_at` datetime DEFAULT (now()),
+  `updated_at` datetime DEFAULT NULL ON UPDATE NOW()
+);

@@ -22,7 +22,7 @@ type AdminRepository interface {
 	CheckAdminById(id int64) (bool, error)
 	CheckPhone(phone string) (bool, error)
 	CreateAdmin(admin model.Admin, permissionIds *[]int64) error
-	CreateGroup(data []model.AdminPermissionList) error
+	CreateGroupAdmin(data []model.AdminPermissionList) error
 	UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error
 	UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error
 	UpdatePassword(adminId int64, data model.AdminUpdatePassword) error
@@ -314,7 +314,7 @@ func (r repo) CreateAdmin(admin model.Admin, permissionIds *[]int64) error {
 	return nil
 }
 
-func (r repo) CreateGroup(data []model.AdminPermissionList) error {
+func (r repo) CreateGroupAdmin(data []model.AdminPermissionList) error {
 
 	if err := r.db.Table("Admin_group_permissions").
 		Create(&data).
