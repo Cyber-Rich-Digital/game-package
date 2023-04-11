@@ -1,6 +1,7 @@
 package service
 
 import (
+	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
 	"strings"
@@ -22,6 +23,11 @@ func NewScammerService(
 }
 
 func (s *scammerService) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, error) {
+
+	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
+		return nil, err
+	}
+
 	return s.repo.GetScammerList(query)
 }
 
