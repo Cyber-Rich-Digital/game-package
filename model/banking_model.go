@@ -84,9 +84,10 @@ type BankTransaction struct {
 	DepositChannel      string         `json:"depositChannel"`
 	OverAmount          float32        `json:"overAmount" sql:"type:decimal(14,2);"`
 	BonusAmount         float32        `json:"bonusAmount" sql:"type:decimal(14,2);"`
-	BonusReason         float32        `json:"bonusReason"`
+	BonusReason         string         `json:"bonusReason"`
 	BeforeAmount        float32        `json:"beforeAmount" sql:"type:decimal(14,2);"`
 	AfterAmount         float32        `json:"afterAmount" sql:"type:decimal(14,2);"`
+	BankChargeAmount    float32        `json:"bankChargeAmount" sql:"type:decimal(14,2);"`
 	TransferAt          time.Time      `json:"transferAt"`
 	CreatedByUserId     int64          `json:"createdByUserId"`
 	CreatedByUsername   string         `json:"createdByUsername"`
@@ -202,6 +203,7 @@ type BankTransactionResponse struct {
 	BonusReason         string         `json:"bonusReason"`
 	BeforeAmount        float32        `json:"beforeAmount" sql:"type:decimal(14,2);"`
 	AfterAmount         float32        `json:"afterAmount" sql:"type:decimal(14,2);"`
+	BankChargeAmount    float32        `json:"bankChargeAmount" sql:"type:decimal(14,2);"`
 	TransferAt          time.Time      `json:"transferAt"`
 	CreatedByUserId     int64          `json:"createdByUserId"`
 	CreatedByUsername   string         `json:"createdByUsername"`
@@ -286,4 +288,69 @@ type BankTransactionRemoveBody struct {
 	RemovedAt         time.Time `json:"removedAt"`
 	RemovedByUserId   int64     `json:"removedByUserId"`
 	RemovedByUsername string    `json:"removedByUsername"`
+}
+
+type MemberTransactionListRequest struct {
+	UserId           string `form:"userId" extensions:"x-order:1"`
+	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:2"`
+	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:3"`
+	TransferType     string `form:"transferType" extensions:"x-order:4"`
+	Search           string `form:"search" extensions:"x-order:5"`
+	Page             int    `form:"page" extensions:"x-order:6" default:"1" min:"1"`
+	Limit            int    `form:"limit" extensions:"x-order:7" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol" extensions:"x-order:8"`
+	SortAsc          string `form:"sortAsc" extensions:"x-order:9"`
+}
+
+type MemberTransactionSummary struct {
+	TotalDepositAmount  float32 `json:"totalDepositAmount"`
+	TotalWithdrawAmount float32 `json:"totalWithdrawAmount"`
+	TotalBonusAmount    float32 `json:"totalBonusAmount"`
+}
+
+type MemberTransaction struct {
+	Id                  int64          `json:"id" gorm:"primaryKey"`
+	MemberCode          string         `json:"memberCode"`
+	UserId              int64          `json:"userId"`
+	UserFullname        string         `json:"userFullname"`
+	TransferType        string         `json:"transferType"`
+	PromotionId         int64          `json:"promotionId"`
+	FromAccountId       int64          `json:"fromAccountId"`
+	FromBankId          int64          `json:"fromBankId"`
+	FromBankName        string         `json:"fromBankName"`
+	FromAccountName     string         `json:"fromAccountName"`
+	FromAccountNumber   string         `json:"fromAccountNumber"`
+	ToAccountId         int64          `json:"toAccountId"`
+	ToBankId            int64          `json:"toBankId"`
+	ToBankName          string         `json:"toBankName"`
+	ToAccountName       string         `json:"toAccountName"`
+	ToAccountNumber     string         `json:"toAccountNumber"`
+	CreditAmount        float32        `json:"creditAmount" sql:"type:decimal(14,2);"`
+	PaidAmount          float32        `json:"paidAmount" sql:"type:decimal(14,2);"`
+	DepositChannel      string         `json:"depositChannel"`
+	OverAmount          float32        `json:"overAmount" sql:"type:decimal(14,2);"`
+	BonusAmount         float32        `json:"bonusAmount" sql:"type:decimal(14,2);"`
+	BonusReason         string         `json:"bonusReason"`
+	BeforeAmount        float32        `json:"beforeAmount" sql:"type:decimal(14,2);"`
+	AfterAmount         float32        `json:"afterAmount" sql:"type:decimal(14,2);"`
+	BankChargeAmount    float32        `json:"bankChargeAmount" sql:"type:decimal(14,2);"`
+	TransferAt          time.Time      `json:"transferAt"`
+	CreatedByUserId     int64          `json:"createdByUserId"`
+	CreatedByUsername   string         `json:"createdByUsername"`
+	CancelRemark        string         `json:"cancelRemark"`
+	CanceledAt          time.Time      `json:"canceledAt"`
+	CanceledByUserId    int64          `json:"canceledByUserId"`
+	CanceledByUsername  string         `json:"canceledByUsername"`
+	ConfirmedAt         *time.Time     `json:"confirmedAt"`
+	ConfirmedByUserId   int64          `json:"confirmedByUserId"`
+	ConfirmedByUsername string         `json:"confirmedByUsername"`
+	RemovedAt           time.Time      `json:"removedAt"`
+	RemovedByUserId     int64          `json:"removedByUserId"`
+	RemovedByUsername   string         `json:"removedByUsername"`
+	Status              string         `json:"status"`
+	StatusDetail        string         `json:"statusDetail"`
+	IsAutoCredit        bool           `json:"isAutoCredit"`
+	CreatedAt           time.Time      `json:"createAt"`
+	UpdatedAt           *time.Time     `json:"updateAt"`
+	DeletedAt           gorm.DeletedAt `json:"deleteAt"`
 }

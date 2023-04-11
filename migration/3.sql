@@ -33,6 +33,7 @@ CREATE Table
         bonus_reason VARCHAR(255) NULL,
         before_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
         after_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+        bank_charge_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
         transfer_at DATETIME NOT NULL,
         created_by_user_id BIGINT NOT NULL,
         created_by_username VARCHAR(255) NOT NULL,

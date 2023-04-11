@@ -26,6 +26,9 @@ type BankingService interface {
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
+
+	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
+	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
 }
 
 var bankStatementferNotFound = "Statement not found"
@@ -45,14 +48,14 @@ func NewBankingService(
 
 func (s *bankingService) GetBankStatementById(req model.BankStatementGetRequest) (*model.BankStatement, error) {
 
-	banking, err := s.repoBanking.GetBankStatementById(req.Id)
+	record, err := s.repoBanking.GetBankStatementById(req.Id)
 	if err != nil {
 		if err.Error() == recordNotFound {
 			return nil, notFound(bankStatementferNotFound)
 		}
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return record, nil
 }
 
 func (s *bankingService) GetBankStatements(req model.BankStatementListRequest) (*model.SuccessWithPagination, error) {
@@ -60,11 +63,11 @@ func (s *bankingService) GetBankStatements(req model.BankStatementListRequest) (
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	banking, err := s.repoBanking.GetBankStatements(req)
+	records, err := s.repoBanking.GetBankStatements(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return records, nil
 }
 
 func (s *bankingService) CreateBankStatement(data model.BankStatementCreateBody) error {
@@ -102,14 +105,14 @@ func (s *bankingService) DeleteBankStatement(id int64) error {
 
 func (s *bankingService) GetBankTransactionById(req model.BankTransactionGetRequest) (*model.BankTransaction, error) {
 
-	banking, err := s.repoBanking.GetBankTransactionById(req.Id)
+	record, err := s.repoBanking.GetBankTransactionById(req.Id)
 	if err != nil {
 		if err.Error() == recordNotFound {
 			return nil, notFound(bankTransactionferNotFound)
 		}
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return record, nil
 }
 
 func (s *bankingService) GetBankTransactions(req model.BankTransactionListRequest) (*model.SuccessWithPagination, error) {
@@ -117,11 +120,11 @@ func (s *bankingService) GetBankTransactions(req model.BankTransactionListReques
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	banking, err := s.repoBanking.GetBankTransactions(req)
+	records, err := s.repoBanking.GetBankTransactions(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return records, nil
 }
 
 func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateBody) error {
@@ -264,11 +267,11 @@ func (s *bankingService) GetPendingDepositTransactions(req model.PendingDepositT
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	banking, err := s.repoBanking.GetPendingDepositTransactions(req)
+	records, err := s.repoBanking.GetPendingDepositTransactions(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return records, nil
 }
 
 func (s *bankingService) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error) {
@@ -276,11 +279,11 @@ func (s *bankingService) GetPendingWithdrawTransactions(req model.PendingWithdra
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	banking, err := s.repoBanking.GetPendingWithdrawTransactions(req)
+	records, err := s.repoBanking.GetPendingWithdrawTransactions(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return records, nil
 }
 
 func (s *bankingService) CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error {
@@ -320,11 +323,11 @@ func (s *bankingService) GetFinishedTransactions(req model.FinishedTransactionLi
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	banking, err := s.repoBanking.GetFinishedTransactions(req)
+	records, err := s.repoBanking.GetFinishedTransactions(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return records, nil
 }
 
 func (s *bankingService) RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error {
@@ -348,9 +351,30 @@ func (s *bankingService) GetRemovedTransactions(req model.RemovedTransactionList
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	banking, err := s.repoBanking.GetRemovedTransactions(req)
+	records, err := s.repoBanking.GetRemovedTransactions(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return banking, nil
+	return records, nil
+}
+
+func (s *bankingService) GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+	records, err := s.repoBanking.GetMemberTransactions(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
+func (s *bankingService) GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error) {
+
+	result, err := s.repoBanking.GetMemberTransactionSummary(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return result, nil
 }
