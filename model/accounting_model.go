@@ -95,11 +95,12 @@ type BankAccountParam struct {
 }
 
 type BankAccountListRequest struct {
-	Page    int    `form:"page" default:"1" min:"1"`
-	Limit   int    `form:"limit" default:"10" min:"1" max:"100"`
-	Search  string `form:"search"`
-	SortCol string `form:"sortCol"`
-	SortAsc string `form:"sortAsc"`
+	AccountNumber string `json:"accountNumber"`
+	Page          int    `form:"page" default:"1" min:"1"`
+	Limit         int    `form:"limit" default:"10" min:"1" max:"100"`
+	Search        string `form:"search"`
+	SortCol       string `form:"sortCol"`
+	SortAsc       string `form:"sortAsc"`
 }
 
 type BankAccountCreateBody struct {
@@ -311,7 +312,31 @@ type ExternalBankAccount struct {
 type ExternalBankAccountStatusRequest struct {
 	AccountNumber string `json:"accountNumber"`
 }
+type ExternalBankAccountEnableRequest struct {
+	AccountNo string `json:"accountNo"`
+	Enable    bool   `json:"enable"`
+}
 
+type ExternalBankAccountBalance struct {
+	LimitUsed            float32 `json:"limitUsed"`
+	BranchId             string  `json:"branchId"`
+	AccountName          string  `json:"accountName"`
+	DailyLimitOtherBanks float32 `json:"dailyLimitOtherBanks"`
+	DailyLimitPromptPay  float32 `json:"dailyLimitPromptPay"`
+	AccruedInterest      float32 `json:"accruedInterest"`
+	OverdraftLimit       float32 `json:"overdraftLimit"`
+	DailyLimitSCBOther   float32 `json:"dailyLimitSCBOther"`
+	DailyLimitSCBOwn     float32 `json:"dailyLimitSCBOwn"`
+	AvailableBalance     string  `json:"availableBalance"`
+	AccountNo            string  `json:"accountNo"`
+	Currency             string  `json:"currency"`
+	AccountBalance       string  `json:"accountBalance"`
+	Status               struct {
+		Code        int    `json:"code"`
+		Header      string `json:"header"`
+		Description string `json:"description"`
+	} `json:"status"`
+}
 type ExternalBankAccountStatus struct {
 	Success bool   `json:"success"`
 	Enable  bool   `json:"enable"`

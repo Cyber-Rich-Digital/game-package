@@ -41,10 +41,15 @@ type AccountingService interface {
 	DeleteTransfer(id int64) error
 
 	GetExternalBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetExternalBankAccountBalance(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountBalance, error)
 	GetExternalBankAccountStatus(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountStatus, error)
 	CreateExternalBankAccount(data model.ExternalBankAccountCreateBody) error
 	UpdateExternalBankAccount(data model.ExternalBankAccountCreateBody) error
+	EnableExternalBankAccount(query model.ExternalBankAccountEnableRequest) (*model.ExternalBankAccountStatus, error)
 	DeleteExternalBankAccount(query model.ExternalBankAccountStatusRequest) error
+
+	GetExternalBankAccountsLogs(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetExternalBankStatements(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 }
 
 type accountingService struct {
@@ -460,6 +465,36 @@ func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRe
 	return &result, nil
 }
 
+func (s *accountingService) GetExternalBankAccountBalance(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountBalance, error) {
+
+	client := &http.Client{}
+	// curl -X GET "https://api.fastbankapi.com/api/v2/statement/balance?accountNo=4281243019" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
+	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement/balance?accountNo="+query.AccountNumber, nil)
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result model.ExternalBankAccountBalance
+	json.Unmarshal(responseData, &result)
+	if result.AccountNo != query.AccountNumber {
+		fmt.Println("response", string(responseData))
+		return nil, notFound("Bank account not found")
+	}
+	return &result, nil
+}
+
 func (s *accountingService) GetExternalBankAccountStatus(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountStatus, error) {
 
 	client := &http.Client{}
@@ -559,4 +594,99 @@ func (s *accountingService) DeleteExternalBankAccount(query model.ExternalBankAc
 	fmt.Println("response", string(responseData))
 
 	return nil
+}
+
+func (s *accountingService) EnableExternalBankAccount(body model.ExternalBankAccountEnableRequest) (*model.ExternalBankAccountStatus, error) {
+
+	client := &http.Client{}
+	// curl -X POST "https://api.fastbankapi.com/api/v2/site/enable-bank" -H "accept: */*" -H "apiKey: 123" -H "Content-Type: application/json" -d "{ \"accountNo\": \"string\", \"enable\": true}"
+	data, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/enable-bank", bytes.NewBuffer(data))
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("EnableExternalBankAccount:", string(responseData))
+	// {"success":true,"enable":true,"status":"online"}
+	// {"success":true,"enable":false,"status":"offline"}
+	var result model.ExternalBankAccountStatus
+	json.Unmarshal(responseData, &result)
+	return &result, nil
+}
+
+func (s *accountingService) GetExternalBankAccountsLogs(query model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+
+	client := &http.Client{}
+	// curl -X GET "https://api.fastbankapi.com/api/v2/site/bankAccount/logs?accountNo=123&page=0&size=10" -H "accept: */*" -H "apiKey: 123"
+	queryString := fmt.Sprintf("&page=%d&size=%d", query.Page, query.Limit)
+	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount/logs?accountNo="+query.AccountNumber+queryString, nil)
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var list []model.ExternalBankAccount
+	// json.Unmarshal(responseData, &list)
+	fmt.Println("response", string(responseData))
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = int64(len(list))
+	return &result, nil
+}
+
+func (s *accountingService) GetExternalBankStatements(query model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+
+	client := &http.Client{}
+	// curl -X GET "https://api.fastbankapi.com/api/v2/statement?accountNo=4281243019&page=0&size=10&txnCode=all" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
+	queryString := fmt.Sprintf("&page=%d&size=%d&txnCode=all", query.Page, query.Limit)
+	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement?accountNo="+query.Search+queryString, nil)
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	response, err := client.Do(req)
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var list []model.ExternalBankAccount
+	// json.Unmarshal(responseData, &list)
+	fmt.Println("response", string(responseData))
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = int64(len(list))
+	return &result, nil
 }
