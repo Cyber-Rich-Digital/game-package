@@ -134,3 +134,10 @@ type UserByPhone struct {
 	Id    int64  `json:"id"`
 	Phone string `json:"phone"`
 }
+
+type UserLoginLog struct {
+	Id        int64     `json:"id"`
+	UserId    int64     `json:"userId"`
+	Ip        string    `json:"ip"`
+	CreatedAt time.Time `json:"createdAt"`
+}

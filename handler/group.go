@@ -32,13 +32,13 @@ func GroupController(r *gin.RouterGroup, db *gorm.DB) {
 
 }
 
-// @Summary Create Group
+// @Summary Create Group And Permission
 // @Description Create Group
 // @Tags Groups
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param register body model.CreateGroup true "Create Group"
+// @Param Body body model.CreateGroup true "Create Group"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /groups/create [post]

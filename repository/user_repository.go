@@ -11,6 +11,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 type UserRepository interface {
+	GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error)
 	GetUser(id int64) (*model.UserDetail, error)
 	GetUserList(query model.UserListQuery) (*[]model.UserList, *int64, error)
 	CheckUser(username string) (bool, error)
@@ -21,6 +22,21 @@ type UserRepository interface {
 	UpdateUser(userId int64, data model.UpdateUser) error
 	UpdateUserPassword(userId int64, data model.UserUpdatePassword) error
 	DeleteUser(id int64) error
+}
+
+func (r repo) GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error) {
+
+	var logs []model.UserLoginLog
+
+	if err := r.db.Table("User_login_logs").
+		Where("user_id = ?", id).
+		Find(&logs).
+		Order("created_at DESC").
+		Error; err != nil {
+		return nil, err
+	}
+
+	return &logs, nil
 }
 
 func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64, error) {

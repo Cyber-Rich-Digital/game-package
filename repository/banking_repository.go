@@ -28,7 +28,8 @@ type BankingRepository interface {
 
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
-	ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error
+	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
+	CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
@@ -202,12 +203,15 @@ func (r repo) GetBankTransactions(req model.BankTransactionListRequest) (*model.
 	if req.ToTransferDate != "" {
 		count = count.Where("transactions.transfer_at <= ?", req.ToTransferDate)
 	}
+	if req.TransferType != "" {
+		count = count.Where("transactions.transfer_type = ?", req.TransferType)
+	}
+	if req.TransferStatus != "" {
+		count = count.Where("transactions.status = ?", req.TransferStatus)
+	}
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where("transactions.from_account_name LIKE ?", search_like)
-		count = count.Or("transactions.from_account_number LIKE ?", search_like)
-		count = count.Or("transactions.to_account_name LIKE ?", search_like)
-		count = count.Or("transactions.to_account_number LIKE ?", search_like)
+		count = count.Where(r.db.Where("transactions.from_account_name LIKE ?", search_like).Or("transactions.from_account_number LIKE ?", search_like).Or("transactions.to_account_name LIKE ?", search_like).Or("transactions.to_account_number LIKE ?", search_like))
 	}
 
 	if err = count.
@@ -240,12 +244,16 @@ func (r repo) GetBankTransactions(req model.BankTransactionListRequest) (*model.
 		if req.ToTransferDate != "" {
 			query = query.Where("transactions.transfer_at <= ?", req.ToTransferDate)
 		}
+		if req.TransferType != "" {
+			query = query.Where("transactions.transfer_type = ?", req.TransferType)
+		}
+		if req.TransferStatus != "" {
+			query = query.Where("transactions.status = ?", req.TransferStatus)
+		}
+
 		if req.Search != "" {
 			search_like := fmt.Sprintf("%%%s%%", req.Search)
-			query = query.Where("transactions.from_account_name LIKE ?", search_like)
-			query = query.Or("transactions.from_account_number LIKE ?", search_like)
-			query = query.Or("transactions.to_account_name LIKE ?", search_like)
-			query = query.Or("transactions.to_account_number LIKE ?", search_like)
+			query = query.Where(r.db.Where("transactions.from_account_name LIKE ?", search_like).Or("transactions.from_account_number LIKE ?", search_like).Or("transactions.to_account_name LIKE ?", search_like).Or("transactions.to_account_number LIKE ?", search_like))
 		}
 
 		// Sort by ANY //
@@ -480,8 +488,15 @@ func (r repo) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactio
 	return &result, nil
 }
 
-func (r repo) ConfirmTransaction(id int64, data model.BankTransactionConfirmBody) error {
-	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Updates(&data).Error; err != nil {
+func (r repo) CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error {
+	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Where("status = ?", "pending").Updates(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error {
+	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Where("status = ?", "pending").Updates(&data).Error; err != nil {
 		return err
 	}
 	return nil
@@ -498,11 +513,17 @@ func (r repo) GetFinishedTransactions(req model.FinishedTransactionListRequest) 
 	count = count.Select("transactions.id")
 	count = count.Where("transactions.status = ?", "finished")
 	count = count.Where("transactions.removed_at IS NULL")
+	if req.AccountId != "" {
+		count = count.Where(r.db.Where("transactions.from_account_id = ?", req.AccountId).Or("transactions.to_account_id = ?", req.AccountId))
+	}
 	if req.FromTransferDate != "" {
 		count = count.Where("transactions.transfer_at >= ?", req.FromTransferDate)
 	}
 	if req.ToTransferDate != "" {
 		count = count.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+	}
+	if req.TransferType != "" {
+		count = count.Where("transactions.transfer_type = ?", req.TransferType)
 	}
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
@@ -531,11 +552,17 @@ func (r repo) GetFinishedTransactions(req model.FinishedTransactionListRequest) 
 		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
 		query = query.Where("transactions.status = ?", "finished")
 		query = query.Where("transactions.removed_at IS NULL")
+		if req.AccountId != "" {
+			query = query.Where(r.db.Where("transactions.from_account_id = ?", req.AccountId).Or("transactions.to_account_id = ?", req.AccountId))
+		}
 		if req.FromTransferDate != "" {
 			query = query.Where("transactions.transfer_at >= ?", req.FromTransferDate)
 		}
 		if req.ToTransferDate != "" {
 			query = query.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+		}
+		if req.TransferType != "" {
+			query = query.Where("transactions.transfer_type = ?", req.TransferType)
 		}
 		if req.Search != "" {
 			search_like := fmt.Sprintf("%%%s%%", req.Search)
@@ -596,6 +623,9 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 	if req.ToTransferDate != "" {
 		count = count.Where("transactions.transfer_at <= ?", req.ToTransferDate)
 	}
+	if req.TransferType != "" {
+		count = count.Where("transactions.transfer_type = ?", req.TransferType)
+	}
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
 		count = count.Where("transactions.from_account_name LIKE ?", search_like)
@@ -627,6 +657,9 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 		}
 		if req.ToTransferDate != "" {
 			query = query.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+		}
+		if req.TransferType != "" {
+			query = query.Where("transactions.transfer_type = ?", req.TransferType)
 		}
 		if req.Search != "" {
 			search_like := fmt.Sprintf("%%%s%%", req.Search)

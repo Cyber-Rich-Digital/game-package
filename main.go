@@ -56,6 +56,7 @@ func main() {
 	handler.AccountingController(backRoute, db)
 	handler.UserController(backRoute, db)
 	handler.BankingController(backRoute, db)
+	handler.ScammerController(backRoute, db)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
@@ -104,7 +105,7 @@ func initDatabase() *gorm.DB {
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_NAME"),
 	)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
 	if err != nil {
 		panic(err)
 	}
