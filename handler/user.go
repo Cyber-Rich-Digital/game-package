@@ -135,7 +135,7 @@ func (h userController) getUserList(c *gin.Context) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param register body model.CreateUser false "Create User"
+// @Param body body model.CreateUser false "Create User"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /users/create [post]
@@ -168,7 +168,7 @@ func (h userController) create(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "User ID"
-// @Param register body model.UpdateUser true "Update User"
+// @Param body body model.UpdateUser true "Update User"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /users/update/{id} [put]
@@ -208,7 +208,7 @@ func (h userController) updateUser(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "User ID"
-// @Param register body model.UserUpdatePassword true "Update User Password"
+// @Param body body model.UserUpdatePassword true "Update User Password"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /users/password/{id} [put]
