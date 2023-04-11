@@ -57,6 +57,7 @@ func main() {
 	handler.UserController(backRoute, db)
 	handler.BankingController(backRoute, db)
 	handler.ScammerController(backRoute, db)
+	handler.RecommentController(backRoute, db)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
@@ -98,7 +99,7 @@ func initTimeZone() {
 
 func initDatabase() *gorm.DB {
 
-	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true&loc=Local",
+	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
 		os.Getenv("DB_HOST"),

@@ -40,6 +40,8 @@ type ScammerDetail struct {
 }
 
 type ScammerQuery struct {
+	Page      int        `form:"page" example:"1"`
+	Limit     int        `form:"limit" example:"10"`
 	DateStart *time.Time `form:"dateStart" example:"2020-01-01 00:00:00"`
 	DateEnd   *time.Time `form:"dateEnd" example:"2020-01-01 00:00:00"`
 	BankName  *string    `form:"bankName" example:"-"`

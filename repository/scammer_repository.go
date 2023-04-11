@@ -2,7 +2,6 @@ package repository
 
 import (
 	"cybergame-api/model"
-	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -17,7 +16,7 @@ type ScammerRepository interface {
 }
 
 func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, error) {
-	fmt.Println(query)
+
 	var scammers []model.ScammertList
 
 	db := r.db.Table("Scammers")
@@ -25,7 +24,7 @@ func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, er
 	if query.DateStart != nil && query.DateEnd != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", query.DateStart, query.DateEnd)
 	}
-	fmt.Println(query.BankName)
+
 	if query.BankName != nil {
 		db = db.Where("bankname = ?", query.BankName)
 	}
@@ -35,6 +34,8 @@ func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, er
 	}
 
 	if err := db.
+		Limit(query.Limit).
+		Offset(query.Limit * query.Page).
 		Find(&scammers).
 		Order("id desc").
 		Error; err != nil {
