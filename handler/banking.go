@@ -36,7 +36,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	root := r.Group("/banking")
 	root.GET("/transactiontypes/list", middleware.Authorize, handler.getTransactionTypes)
 	root.GET("/transactionstatuses/list", middleware.Authorize, handler.getTransactionStatuses)
-	// root.GET("/cancelremarks/list", middleware.Authorize, handler.getCancelRemarks)
+	root.GET("/statementtypes/list", middleware.Authorize, handler.getStatementTypes)
 
 	statementRoute := root.Group("/statements")
 	statementRoute.GET("/list", middleware.Authorize, handler.getBankStatements)
@@ -94,6 +94,22 @@ func (h bankingController) getTransactionStatuses(c *gin.Context) {
 		{Key: "pending", Name: "รอดำเนินการ"},
 		{Key: "canceled", Name: "ยกเลิกแล้ว"},
 		{Key: "finished", Name: "อนุมัติแล้ว"},
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+}
+
+// @Summary get Statement type List
+// @Description ดึงข้อมูลตัวเลือก ประเภทรายการเดินบัญชี
+// @Tags Banking - Options
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.SuccessWithPagination
+// @Router /banking/transactionstatuses/list [get]
+func (h bankingController) getStatementTypes(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "transfer_in", Name: "โอนเข้า"},
+		{Key: "transfer_out", Name: "โอนออก"},
 	}
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }

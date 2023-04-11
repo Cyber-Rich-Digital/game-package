@@ -15,14 +15,16 @@ type TempUser struct {
 }
 
 type BankStatement struct {
-	Id         int64          `json:"id" gorm:"primaryKey"`
-	AccountId  int64          `json:"accountId"`
-	Amount     float32        `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt time.Time      `json:"transferAt"`
-	Status     string         `json:"status"`
-	CreatedAt  time.Time      `json:"createAt"`
-	UpdatedAt  *time.Time     `json:"updateAt"`
-	DeletedAt  gorm.DeletedAt `json:"deleteAt"`
+	Id            int64          `json:"id" gorm:"primaryKey"`
+	AccountId     int64          `json:"accountId"`
+	Amount        float32        `json:"amount" sql:"type:decimal(14,2);"`
+	Detail        string         `json:"detail"`
+	StatementType string         `json:"statementType"`
+	TransferAt    time.Time      `json:"transferAt"`
+	Status        string         `json:"status"`
+	CreatedAt     time.Time      `json:"createAt"`
+	UpdatedAt     *time.Time     `json:"updateAt"`
+	DeletedAt     gorm.DeletedAt `json:"deleteAt"`
 }
 
 type BankStatementGetRequest struct {
@@ -31,7 +33,7 @@ type BankStatementGetRequest struct {
 
 type BankStatementListRequest struct {
 	AccountId        string `form:"accountId" extensions:"x-order:1"`
-	Amount           string `form:"amount" extensions:"x-order:2"`
+	StatementType    string `form:"statementType" extensions:"x-order:2"`
 	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:3"`
 	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:4"`
 	Search           string `form:"search" extensions:"x-order:5"`
@@ -42,10 +44,12 @@ type BankStatementListRequest struct {
 }
 
 type BankStatementCreateBody struct {
-	AccountId  int64     `json:"accountId"`
-	Amount     float32   `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt time.Time `json:"transferAt"`
-	Status     string    `json:"-"`
+	AccountId     int64     `json:"accountId"`
+	Amount        float32   `json:"amount" sql:"type:decimal(14,2);"`
+	Detail        string    `json:"detail"`
+	StatementType string    `json:"statementType"`
+	TransferAt    time.Time `json:"transferAt"`
+	Status        string    `json:"-"`
 }
 
 type BankStatementUpdateBody struct {
@@ -53,14 +57,16 @@ type BankStatementUpdateBody struct {
 }
 
 type BankStatementResponse struct {
-	Id         int64          `json:"id" gorm:"primaryKey"`
-	AccountId  int64          `json:"accountId"`
-	Amount     float32        `json:"amount" sql:"type:decimal(14,2);"`
-	TransferAt time.Time      `json:"transferAt"`
-	Status     string         `json:"status"`
-	CreatedAt  time.Time      `json:"createAt"`
-	UpdatedAt  *time.Time     `json:"updateAt"`
-	DeletedAt  gorm.DeletedAt `json:"deleteAt"`
+	Id            int64          `json:"id" gorm:"primaryKey"`
+	AccountId     int64          `json:"accountId"`
+	Amount        float32        `json:"amount" sql:"type:decimal(14,2);"`
+	Detail        string         `json:"detail"`
+	StatementType string         `json:"statementType"`
+	TransferAt    time.Time      `json:"transferAt"`
+	Status        string         `json:"status"`
+	CreatedAt     time.Time      `json:"createAt"`
+	UpdatedAt     *time.Time     `json:"updateAt"`
+	DeletedAt     gorm.DeletedAt `json:"deleteAt"`
 }
 
 type BankTransaction struct {

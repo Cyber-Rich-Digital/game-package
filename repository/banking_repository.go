@@ -40,7 +40,7 @@ type BankingRepository interface {
 
 func (r repo) GetBankStatementById(id int64) (*model.BankStatement, error) {
 	var record model.BankStatement
-	selectedFields := "statements.id, statements.account_id, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
+	selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
 	selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id, banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
 	if err := r.db.Table("Bank_statements as statements").
 		Select(selectedFields).
@@ -68,8 +68,8 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	if req.AccountId != "" {
 		count = count.Where("statements.account_id = ?", req.AccountId)
 	}
-	if req.Amount != "" {
-		count = count.Where("statements.amount = ?", req.Amount)
+	if req.StatementType != "" {
+		count = count.Where("statements.statement_type = ?", req.StatementType)
 	}
 	if req.FromTransferDate != "" {
 		count = count.Where("statements.transfer_at >= ?", req.FromTransferDate)
@@ -91,7 +91,7 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "statements.id, statements.account_id, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
+		selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
 		selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id, banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
 		query := r.db.Table("Bank_statements as statements")
 		query = query.Select(selectedFields)
@@ -100,8 +100,8 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 		if req.AccountId != "" {
 			query = query.Where("statements.account_id = ?", req.AccountId)
 		}
-		if req.Amount != "" {
-			query = query.Where("statements.amount = ?", req.Amount)
+		if req.StatementType != "" {
+			query = query.Where("statements.statement_type = ?", req.StatementType)
 		}
 		if req.FromTransferDate != "" {
 			query = query.Where("statements.transfer_at >= ?", req.FromTransferDate)

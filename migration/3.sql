@@ -3,6 +3,8 @@ CREATE Table
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         account_id BIGINT NOT NULL,
         amount DECIMAL(14,2) NOT NULL,
+        detail VARCHAR(255) NOT NULL,
+        statement_type VARCHAR(255) NOT NULL,
         transfer_at DATETIME NOT NULL,
         status VARCHAR(255) NOT NULL,
         created_at DATETIME DEFAULT NOW(),

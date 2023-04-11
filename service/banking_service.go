@@ -77,10 +77,17 @@ func (s *bankingService) CreateBankStatement(data model.BankStatementCreateBody)
 		fmt.Println(err)
 		return badRequest("Invalid Bank Account")
 	}
-
 	var body model.BankStatementCreateBody
 	body.AccountId = toAccount.Id
-	body.Amount = data.Amount
+	if data.StatementType == "transfer_in" {
+		body.Amount = data.Amount
+	} else if data.StatementType == "transfer_out" {
+		body.Amount = data.Amount * -1
+	} else {
+		return badRequest("Invalid Transfer Type")
+	}
+	body.Detail = data.Detail
+	body.StatementType = data.StatementType
 	body.TransferAt = data.TransferAt
 	body.Status = "pending"
 
