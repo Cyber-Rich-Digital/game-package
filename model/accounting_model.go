@@ -95,11 +95,12 @@ type BankAccountParam struct {
 }
 
 type BankAccountListRequest struct {
-	Page    int    `form:"page" default:"1" min:"1"`
-	Limit   int    `form:"limit" default:"10" min:"1" max:"100"`
-	Search  string `form:"search"`
-	SortCol string `form:"sortCol"`
-	SortAsc string `form:"sortAsc"`
+	AccountNumber string `json:"accountNumber"`
+	Page          int    `form:"page" default:"1" min:"1"`
+	Limit         int    `form:"limit" default:"10" min:"1" max:"100"`
+	Search        string `form:"search"`
+	SortCol       string `form:"sortCol"`
+	SortAsc       string `form:"sortAsc"`
 }
 
 type BankAccountCreateBody struct {
@@ -174,7 +175,7 @@ type BankAccountTransactionParam struct {
 type BankAccountTransactionListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
-	TocreatedDate   string `form:"toCreatedDate"`
+	ToCreatedDate   string `form:"toCreatedDate"`
 	TransferType    string `form:"transferType"`
 	Search          string `form:"search"`
 	Page            int    `form:"page" default:"1" min:"1"`
@@ -217,7 +218,7 @@ type BankAccountTransfer struct {
 	FromAccountNumber string         `json:"fromAccountNumber"`
 	ToAccountId       int64          `json:"toAccountId"`
 	ToBankId          int64          `json:"toBankId"`
-	TobankName        string         `json:"toBankName"`
+	ToBankName        string         `json:"toBankName"`
 	ToAccountName     string         `json:"toAccountName"`
 	ToAccountNumber   string         `json:"toAccountNumber"`
 	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
@@ -238,7 +239,7 @@ type BankAccountTransferParam struct {
 type BankAccountTransferListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
-	TocreatedDate   string `form:"toCreatedDate"`
+	ToCreatedDate   string `form:"toCreatedDate"`
 	ToAccountId     int    `form:"toAccountId"`
 	Search          string `form:"search"`
 	Page            int    `form:"page" default:"1" min:"1"`
@@ -289,4 +290,85 @@ type BankAccountTransferResponse struct {
 	CreatedAt         time.Time      `json:"createdAt"`
 	UpdatedAt         *time.Time     `json:"updatedAt"`
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
+}
+
+type ExternalBankAccount struct {
+	BankId           int64   `json:"bankId"`
+	BankCode         string  `json:"bankCode"`
+	ClientName       string  `json:"clientName"`
+	LastConnected    *int64  `json:"lastConnected"`
+	CustomerId       int64   `json:"customerId"`
+	DeviceId         string  `json:"deviceId"`
+	WebhookUrl       *string `json:"webhookUrl"`
+	WalletId         *int64  `json:"walletId"`
+	Enable           bool    `json:"enable"`
+	AccountNo        string  `json:"accountNo"`
+	BankAccountId    *int64  `json:"bankAccountId"`
+	VerifyLogin      bool    `json:"verifyLogin"`
+	WebhookNotifyUrl *string `json:"webhookNotifyUrl"`
+	Username         *string `json:"username"`
+}
+
+type ExternalBankAccountStatusRequest struct {
+	AccountNumber string `json:"accountNumber"`
+}
+type ExternalBankAccountEnableRequest struct {
+	AccountNo string `json:"accountNo"`
+	Enable    bool   `json:"enable"`
+}
+
+type ExternalBankAccountBalance struct {
+	LimitUsed            float32 `json:"limitUsed"`
+	BranchId             string  `json:"branchId"`
+	AccountName          string  `json:"accountName"`
+	DailyLimitOtherBanks float32 `json:"dailyLimitOtherBanks"`
+	DailyLimitPromptPay  float32 `json:"dailyLimitPromptPay"`
+	AccruedInterest      float32 `json:"accruedInterest"`
+	OverdraftLimit       float32 `json:"overdraftLimit"`
+	DailyLimitSCBOther   float32 `json:"dailyLimitSCBOther"`
+	DailyLimitSCBOwn     float32 `json:"dailyLimitSCBOwn"`
+	AvailableBalance     string  `json:"availableBalance"`
+	AccountNo            string  `json:"accountNo"`
+	Currency             string  `json:"currency"`
+	AccountBalance       string  `json:"accountBalance"`
+	Status               struct {
+		Code        int    `json:"code"`
+		Header      string `json:"header"`
+		Description string `json:"description"`
+	} `json:"status"`
+}
+type ExternalBankAccountStatus struct {
+	Success bool   `json:"success"`
+	Enable  bool   `json:"enable"`
+	Status  string `json:"status"`
+}
+
+type ExternalBankAccountCreateBody struct {
+	AccountNo        string `json:"accountNo"`
+	BankCode         string `json:"bankCode"`
+	DeviceId         string `json:"deviceId"`
+	Password         string `json:"password"`
+	Pin              string `json:"pin"`
+	Username         string `json:"username"`
+	WebhookNotifyUrl string `json:"webhookNotifyUrl"`
+	WebhookUrl       string `json:"webhookUrl"`
+}
+
+type ExternalBankAccountCreateResponse struct {
+	Id               int64  `json:"id"`
+	CustomerId       int64  `json:"customerId"`
+	ApiKey           string `json:"apiKey"`
+	BankId           int64  `json:"bankId"`
+	BankCode         string `json:"bankCode"`
+	DeviceId         string `json:"deviceId"`
+	AccountNo        string `json:"accountNo"`
+	Pin              string `json:"pin"`
+	Username         string `json:"username"`
+	Password         string `json:"password"`
+	WebhookUrl       string `json:"webhookUrl"`
+	WebhookNotifyUrl string `json:"webhookNotifyUrl"`
+	WalletId         int64  `json:"walletId"`
+	Enable           bool   `json:"enable"`
+	VerifyLogin      bool   `json:"verifyLogin"`
+	Deleted          bool   `json:"deleted"`
 }

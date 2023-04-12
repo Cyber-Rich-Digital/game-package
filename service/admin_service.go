@@ -20,7 +20,7 @@ type AdminService interface {
 	UpdateGroup(data *model.AdminUpdateGroup) error
 	ResetPassword(adminId int64, body model.AdminUpdatePassword) error
 	DeleteGroup(id int64) error
-	DeletePermission(id int64) error
+	DeletePermission(perm model.DeletePermission) error
 }
 
 const AdminloginFailed = "Phone Or Password is incorrect"
@@ -143,11 +143,11 @@ func (s *adminService) Login(data model.LoginAdmin) (*string, error) {
 		return nil, badRequest(AdminloginFailed)
 	}
 
-	if err := helper.ComparePassword(data.Password, user.Password); err != nil {
+	if err := helper.CompareAdminPassword(data.Password, user.Password); err != nil {
 		return nil, badRequest(AdminloginFailed)
 	}
 
-	token, err := helper.CreateJWT(*user)
+	token, err := helper.CreateJWTAdmin(*user)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
@@ -209,7 +209,7 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 		return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
 	}
 
-	hashedPassword, err := helper.GenPassword(data.Password)
+	hashedPassword, err := helper.GenAdminPassword(data.Password)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -286,7 +286,7 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 		})
 	}
 
-	if err := s.repo.CreateGroup(list); err != nil {
+	if err := s.repo.CreateGroupAdmin(list); err != nil {
 		return err
 	}
 
@@ -450,7 +450,7 @@ func (s *adminService) ResetPassword(adminId int64, body model.AdminUpdatePasswo
 		return notFound(AdminNotFound)
 	}
 
-	newPasword, err := helper.GenPassword(body.Password)
+	newPasword, err := helper.GenAdminPassword(body.Password)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -473,9 +473,9 @@ func (s *adminService) DeleteGroup(id int64) error {
 	return nil
 }
 
-func (s *adminService) DeletePermission(id int64) error {
+func (s *adminService) DeletePermission(perm model.DeletePermission) error {
 
-	if err := s.perRepo.DeletePermission(id); err != nil {
+	if err := s.perRepo.DeletePermission(perm); err != nil {
 		return err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ var (
 
 // HandleFileUploadToBucket uploads file to bucket
 func HandleFileUploadToBucket(c *gin.Context) {
-	bucket := "cybergame-dev"            //your bucket name
+	bucket := os.Getenv("NAME_BUCKET")   //your bucket name
 	var maxBytes int64 = 1024 * 1024 * 2 // 2MB
 	var err error
 	var w http.ResponseWriter = c.Writer

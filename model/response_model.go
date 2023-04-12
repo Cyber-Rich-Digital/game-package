@@ -15,7 +15,12 @@ type SuccessWithList struct {
 }
 
 type SuccessWithPagination struct {
-	Message string      `json:"message"`
+	Message string      `json:"message" validate:"required,min=1,max=255"`
 	List    interface{} `json:"list"`
 	Total   int64       `json:"total"`
+}
+
+type SuccessWithToken struct {
+	Message string `json:"message"`
+	Token   string `json:"token"`
 }
