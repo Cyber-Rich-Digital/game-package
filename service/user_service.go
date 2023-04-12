@@ -4,6 +4,8 @@ import (
 	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
+	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -12,7 +14,7 @@ type UserService interface {
 	GetUser(id int64) (*model.UserDetail, error)
 	GetUserList(query model.UserListQuery) (*model.SuccessWithPagination, error)
 	Create(user *model.CreateUser) error
-	UpdateUser(userId int64, body model.UpdateUser) error
+	UpdateUser(userId int64, body model.UpdateUser, adminName string) error
 	ResetPassword(userId int64, body model.UserUpdatePassword) error
 	DeleteUser(id int64) error
 }
@@ -127,18 +129,53 @@ func (s *userService) Create(data *model.CreateUser) error {
 	return s.repo.CreateUser(newUser)
 }
 
-func (s *userService) UpdateUser(userId int64, body model.UpdateUser) error {
+func (s *userService) UpdateUser(userId int64, body model.UpdateUser, adminName string) error {
 
-	checkUser, err := s.repo.CheckUserById(userId)
+	user, err := s.repo.GetUser(userId)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	if !checkUser {
+	if user == nil {
 		return notFound(UserNotFound)
 	}
 
-	return s.repo.UpdateUser(userId, body)
+	var changeList []model.UserUpdateLogs
+
+	b := reflect.ValueOf(body)
+	u := reflect.ValueOf(user)
+
+	if b.Kind() == reflect.Ptr {
+		b = b.Elem()
+	}
+
+	if u.Kind() == reflect.Ptr {
+		u = u.Elem()
+	}
+
+	// loop user fields
+	for j := 0; j < b.NumField(); j++ {
+		for k := 0; k < u.NumField(); k++ {
+
+			bField := b.Type().Field(j).Name
+			bValue := b.Field(j).Interface()
+			uField := u.Type().Field(k).Name
+			uValue := u.Field(k).Interface()
+
+			if bField == uField {
+				if uValue != bValue {
+					changeList = append(changeList, model.UserUpdateLogs{
+						UserId:            userId,
+						Description:       fmt.Sprintf("%s changed from %s to %s", bField, uValue, bValue),
+						CreatedByUsername: adminName,
+						Ip:                body.Ip,
+					})
+				}
+			}
+		}
+	}
+
+	return s.repo.UpdateUser(userId, body, changeList)
 }
 
 func (s *userService) ResetPassword(userId int64, body model.UserUpdatePassword) error {

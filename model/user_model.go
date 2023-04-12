@@ -83,6 +83,7 @@ type UpdateUser struct {
 	Contact     string `json:"contact" validate:"max=255"`
 	Note        string `json:"note" validate:"max=255"`
 	Course      string `json:"course" validate:"max=50"`
+	Ip          string `json:"ip" validate:"max=20" example:"1.1.1.1"`
 }
 
 type UserBody struct {
@@ -140,4 +141,11 @@ type UserLoginLog struct {
 	UserId    int64     `json:"userId"`
 	Ip        string    `json:"ip"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+type UserUpdateLogs struct {
+	UserId            int64  `json:"userId"`
+	Description       string `json:"description"`
+	CreatedByUsername string `json:"createdByUsername"`
+	Ip                string `json:"ip"`
 }
