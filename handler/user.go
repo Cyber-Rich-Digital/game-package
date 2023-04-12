@@ -174,6 +174,8 @@ func (h userController) create(c *gin.Context) {
 // @Router /users/update/{id} [put]
 func (h userController) updateUser(c *gin.Context) {
 
+	adminName := c.MustGet("username").(string)
+
 	data := model.UpdateUser{}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		HandleError(c, err)
@@ -192,7 +194,7 @@ func (h userController) updateUser(c *gin.Context) {
 		return
 	}
 
-	err = h.userService.UpdateUser(int64(toInt), data)
+	err = h.userService.UpdateUser(int64(toInt), data, adminName)
 	if err != nil {
 		HandleError(c, err)
 		return
