@@ -36,7 +36,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	root := r.Group("/banking")
 	root.GET("/transactiontypes/list", middleware.Authorize, handler.getTransactionTypes)
 	root.GET("/transactionstatuses/list", middleware.Authorize, handler.getTransactionStatuses)
-	// root.GET("/cancelremarks/list", middleware.Authorize, handler.getCancelRemarks)
+	root.GET("/statementtypes/list", middleware.Authorize, handler.getStatementTypes)
 
 	statementRoute := root.Group("/statements")
 	statementRoute.GET("/list", middleware.Authorize, handler.getBankStatements)
@@ -57,6 +57,11 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	transactionRoute.GET("/finishedlist", middleware.Authorize, handler.getFinishedTransactions)
 	transactionRoute.POST("/remove/:id", middleware.Authorize, handler.removeFinishedTransaction)
 	transactionRoute.GET("/removedlist", middleware.Authorize, handler.getRemovedTransactions)
+
+	memberRoute := root.Group("/member")
+	memberRoute.GET("/transactionsummary", middleware.Authorize, handler.getMemberTransactionSummary)
+	memberRoute.GET("/transactions", middleware.Authorize, handler.getMemberTransactions)
+
 }
 
 // @Summary get Transaction Type List
@@ -93,6 +98,22 @@ func (h bankingController) getTransactionStatuses(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
+// @Summary get Statement type List
+// @Description ดึงข้อมูลตัวเลือก ประเภทรายการเดินบัญชี
+// @Tags Banking - Options
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.SuccessWithPagination
+// @Router /banking/transactionstatuses/list [get]
+func (h bankingController) getStatementTypes(c *gin.Context) {
+	var data = []model.SimpleOption{
+		{Key: "transfer_in", Name: "โอนเข้า"},
+		{Key: "transfer_out", Name: "โอนออก"},
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+}
+
 // @Summary GetStatementList
 // @Description ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
 // @Tags Banking - Bank Account Statements
@@ -100,7 +121,7 @@ func (h bankingController) getTransactionStatuses(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.BankStatementListRequest true "BankStatementListRequest"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/statements/list [get]
 func (h bankingController) getBankStatements(c *gin.Context) {
@@ -215,7 +236,7 @@ func (h bankingController) deleteBankStatement(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.BankTransactionListRequest true "BankTransactionListRequest"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/list [get]
 func (h bankingController) getBankTransactions(c *gin.Context) {
@@ -358,7 +379,7 @@ func (h bankingController) createBonusTransaction(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.PendingDepositTransactionListRequest true "query"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/pendingdepositlist [get]
 func (h bankingController) getPendingDepositTransactions(c *gin.Context) {
@@ -389,7 +410,7 @@ func (h bankingController) getPendingDepositTransactions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.PendingWithdrawTransactionListRequest true "query"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/pendingwithdrawlist [get]
 func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
@@ -420,7 +441,7 @@ func (h bankingController) getPendingWithdrawTransactions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Param _ body model.BankTransactionCancelBody true "body"
+// @Param body body model.BankTransactionCancelBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/cancel/{id} [post]
@@ -519,7 +540,7 @@ func (h bankingController) confirmPendingTransaction(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.FinishedTransactionListRequest true "query"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/finishedlist [get]
 func (h bankingController) getFinishedTransactions(c *gin.Context) {
@@ -594,7 +615,7 @@ func (h bankingController) removeFinishedTransaction(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.RemovedTransactionListRequest true "query"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/transactions/removedlist [get]
 func (h bankingController) getRemovedTransactions(c *gin.Context) {
@@ -610,6 +631,68 @@ func (h bankingController) getRemovedTransactions(c *gin.Context) {
 	}
 
 	data, err := h.bankingService.GetRemovedTransactions(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetMemberTransactionSummary
+// @Description ดึงข้อมูลสรุปการฝากถอนของสมาชิก
+// @Tags Banking - Member Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.MemberTransactionListRequest true "query"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/member/transactionsummary [get]
+func (h bankingController) getMemberTransactionSummary(c *gin.Context) {
+
+	var query model.MemberTransactionListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetMemberTransactionSummary(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary GetMemberTransactions
+// @Description ดึงข้อมูลลิสการฝากถอนของสมาชิก
+// @Tags Banking - Member Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.MemberTransactionListRequest true "query"
+// @Success 200 {object} model.SuccessWithPagination
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/member/transactions [get]
+func (h bankingController) getMemberTransactions(c *gin.Context) {
+
+	var query model.MemberTransactionListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetMemberTransactions(query)
 	if err != nil {
 		HandleError(c, err)
 		return
