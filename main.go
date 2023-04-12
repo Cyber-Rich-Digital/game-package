@@ -15,6 +15,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"cybergame-api/cloudbucket"
 )
 
 // @title CyberGame API
@@ -34,6 +36,8 @@ func main() {
 	db := initDatabase()
 
 	r := gin.Default()
+	r.POST("/api/cloud-storage-bucket", cloudbucket.HandleFileUploadToBucket)
+
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	// Register the middleware
@@ -54,6 +58,7 @@ func main() {
 	handler.PermissionController(backRoute, db)
 	handler.GroupController(backRoute, db)
 	handler.AccountingController(backRoute, db)
+	handler.SettingwebController(backRoute, db)
 	handler.UserController(backRoute, db)
 	handler.BankingController(backRoute, db)
 	handler.ScammerController(backRoute, db)
@@ -66,6 +71,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 }
 
 type ping struct {

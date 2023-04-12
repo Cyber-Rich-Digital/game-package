@@ -25,3 +25,6 @@ go.work
 # Environment file
 *.env
 firebase_account_key.json
+
+# Goolge file
+google_service_account.json
