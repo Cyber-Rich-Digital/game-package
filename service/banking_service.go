@@ -4,6 +4,7 @@ import (
 	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
+	"encoding/json"
 	"fmt"
 )
 
@@ -21,7 +22,8 @@ type BankingService interface {
 
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
-	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
+	ConfirmDepositTransaction(id int64, data model.BankConfirmDepositRequest) error
+	ConfirmWithdrawTransaction(id int64, data model.BankConfirmWithdrawRequest) error
 	CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
@@ -309,7 +311,7 @@ func (s *bankingService) CancelPendingTransaction(id int64, data model.BankTrans
 	return nil
 }
 
-func (s *bankingService) ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error {
+func (s *bankingService) ConfirmDepositTransaction(id int64, req model.BankConfirmDepositRequest) error {
 
 	record, err := s.repoBanking.GetBankTransactionById(id)
 	if err != nil {
@@ -318,8 +320,85 @@ func (s *bankingService) ConfirmPendingTransaction(id int64, data model.BankTran
 	if record.Status != "pending" {
 		return badRequest("Transaction is not pending")
 	}
+	if record.TransferType != "deposit" {
+		return badRequest("Transaction is not deposit")
+	}
+	jsonBefore, _ := json.Marshal(record)
 
-	if err := s.repoBanking.ConfirmPendingTransaction(id, data); err != nil {
+	var updateData model.BankTransactionConfirmBody
+	updateData.Status = "finished"
+	updateData.ConfirmedAt = req.ConfirmedAt
+	updateData.ConfirmedByUserId = req.ConfirmedByUserId
+	updateData.ConfirmedByUsername = req.ConfirmedByUsername
+	updateData.BonusAmount = req.BonusAmount
+
+	var createData model.BankTransactionCreateConfirmBody
+	createData.TransactionId = record.Id
+	createData.UserId = record.UserId
+	createData.TransferType = record.TransferType
+	createData.FromAccountId = record.FromAccountId
+	createData.ToAccountId = record.ToAccountId
+	createData.JsonBefore = string(jsonBefore)
+	if req.TransferAt == nil {
+		createData.TransferAt = record.TransferAt
+	} else {
+		TransferAt := req.TransferAt
+		createData.TransferAt = *TransferAt
+		updateData.TransferAt = *TransferAt
+	}
+	createData.SlipUrl = req.SlipUrl
+	createData.BonusAmount = req.BonusAmount
+	createData.ConfirmedAt = req.ConfirmedAt
+	createData.ConfirmedByUserId = req.ConfirmedByUserId
+	createData.ConfirmedByUsername = req.ConfirmedByUsername
+	if err := s.repoBanking.CreateConfirmTransaction(createData); err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := s.repoBanking.ConfirmPendingTransaction(id, updateData); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *bankingService) ConfirmWithdrawTransaction(id int64, req model.BankConfirmWithdrawRequest) error {
+
+	record, err := s.repoBanking.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+	if record.TransferType != "withdraw" {
+		return badRequest("Transaction is not withdraw")
+	}
+	jsonBefore, _ := json.Marshal(record)
+
+	var updateData model.BankTransactionConfirmBody
+	updateData.Status = "finished"
+	updateData.ConfirmedAt = req.ConfirmedAt
+	updateData.ConfirmedByUserId = req.ConfirmedByUserId
+	updateData.ConfirmedByUsername = req.ConfirmedByUsername
+	updateData.BankChargeAmount = req.BankChargeAmount
+	updateData.CreditAmount = req.CreditAmount
+
+	var createData model.BankTransactionCreateConfirmBody
+	createData.TransactionId = record.Id
+	createData.UserId = record.UserId
+	createData.TransferType = record.TransferType
+	createData.FromAccountId = record.FromAccountId
+	createData.ToAccountId = record.ToAccountId
+	createData.JsonBefore = string(jsonBefore)
+	createData.TransferAt = record.TransferAt
+	createData.CreditAmount = req.CreditAmount
+	createData.BankChargeAmount = req.BankChargeAmount
+	createData.ConfirmedAt = req.ConfirmedAt
+	createData.ConfirmedByUserId = req.ConfirmedByUserId
+	createData.ConfirmedByUsername = req.ConfirmedByUsername
+	if err := s.repoBanking.CreateConfirmTransaction(createData); err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := s.repoBanking.ConfirmPendingTransaction(id, updateData); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
