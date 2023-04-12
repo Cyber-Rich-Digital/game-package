@@ -17,9 +17,12 @@ var (
 
 // HandleFileUploadToBucket uploads file to bucket
 func HandleFileUploadToBucket(c *gin.Context) {
-	bucket := "cybergame-dev" //your bucket name
-
+	bucket := "cybergame-dev"            //your bucket name
+	var maxBytes int64 = 1024 * 1024 * 2 // 2MB
 	var err error
+	var w http.ResponseWriter = c.Writer
+
+	c.Request.Body = http.MaxBytesReader(w, c.Request.Body, maxBytes)
 
 	ctx := appengine.NewContext(c.Request)
 
@@ -43,7 +46,7 @@ func HandleFileUploadToBucket(c *gin.Context) {
 
 	defer f.Close()
 
-	sw := storageClient.Bucket(bucket).Object(uploadedFile.Filename).NewWriter(ctx)
+	sw := storageClient.Bucket(bucket).Object("logo/" + uploadedFile.Filename).NewWriter(ctx)
 
 	if _, err := io.Copy(sw, f); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -61,7 +64,7 @@ func HandleFileUploadToBucket(c *gin.Context) {
 		return
 	}
 
-	u, err := url.Parse("/" + bucket + "/" + "image/setting/" + sw.Attrs().Name)
+	u, err := url.Parse("/" + bucket + "/" + sw.Attrs().Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),

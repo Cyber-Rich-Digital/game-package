@@ -45,6 +45,7 @@ func SettingwebController(r *gin.RouterGroup, db *gorm.DB) {
 
 	settingWebRoute := r.Group("/settingweb")
 	settingWebRoute.POST("/create", middleware.Authorize, handler.createsettingweb)
+	settingWebRoute.GET("/detail/:id", middleware.Authorize, handler.getSettingWebById)
 
 }
 func (h settingwebController) createsettingweb(c *gin.Context) {
@@ -66,4 +67,32 @@ func (h settingwebController) createsettingweb(c *gin.Context) {
 	}
 	c.JSON(201, model.Success{Message: "Created success"})
 
+}
+
+// @Summary GetSettingWebById
+// @Description ดึงข้อมูลการตั้งค่า ด้วย id
+// @Tags Settingweb
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /settingweb/detail/{id} [get]
+func (h settingwebController) getSettingWebById(c *gin.Context) {
+
+	var settingweb model.SettingwebParam
+
+	if err := c.ShouldBindUri(&settingweb); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.settingebService.GetSettingWebById(settingweb)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
 
@@ -19,6 +20,8 @@ func NewSettingWebService(
 
 type SettingWebService interface {
 	CreateSettingWeb(data model.SettingwebCreateBody) error
+	GetSettingWeb(data model.SettingwebListRequest) (*model.SuccessWithPagination, error)
+	GetSettingWebById(data model.SettingwebParam) (*model.Settingweb, error)
 }
 
 type settingwebService struct {
@@ -46,4 +49,32 @@ func (s *settingwebService) CreateSettingWeb(data model.SettingwebCreateBody) er
 		return internalServerError(err.Error())
 	}
 	return nil
+}
+
+func (s *settingwebService) GetSettingWeb(params model.SettingwebListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&params.Page, &params.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+
+	records, err := s.repo.GetSettingWeb(params)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
+func (s *settingwebService) GetSettingWebById(data model.SettingwebParam) (*model.Settingweb, error) {
+
+	setting, err := s.repo.GetSettingWebById(data.Id)
+	if err != nil {
+		if err.Error() == "record not found" {
+			return nil, notFound("Setting NotFound")
+		}
+		if err.Error() == "Account not found" {
+			return nil, notFound("Setting NotFound")
+		}
+		return nil, internalServerError(err.Error())
+	}
+	return setting, nil
 }

@@ -29,10 +29,6 @@ func (r repo) GetSettingWebById(id int64) (*model.Settingweb, error) {
 		Error; err != nil {
 		return nil, err
 	}
-	// "record not found"
-	// if admin.Id == 0 {
-	// 	return nil, errors.New("Admin not found")
-	// }
 	return &settingweb, nil
 }
 
@@ -59,7 +55,7 @@ func (r repo) GetSettingWeb(req model.SettingwebListRequest) (*model.SuccessWith
 		query := r.db.Table("setting_web")
 		query = query.Select("id, logo, backgrond_color, user_auto, otp_register, tran_withdraw,register,deposit_first,deposit_next,withdraw,line,url,op")
 		if req.Search != "" {
-			query = query.Where("code = ?", req.Search)
+			query = query.Where("id = ?", req.Search)
 		}
 
 		// Sort by ANY //

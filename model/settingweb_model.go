@@ -20,7 +20,6 @@ type Settingweb struct {
 	Opt            string    `json:"opt"`
 	CreatedAt      time.Time `json:"createdAt"`
 	UpdatedAt      time.Time `json:"updatedAt"`
-	DeletedAt      time.Time `json:"deletedAt"`
 }
 type SettingwebResponse struct {
 	Id             int64  `json:"id"`
