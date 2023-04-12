@@ -10,6 +10,8 @@ ADD COLUMN `note` VARCHAR(255) DEFAULT NULL AFTER `contact`,
 ADD COLUMN `course` VARCHAR(50) DEFAULT NULL AFTER `note`,
 ADD COLUMN `turnover_limit` INT(11) DEFAULT 0 AFTER `credit`,
 ADD COLUMN `ip_registered` VARCHAR(20) DEFAULT NULL AFTER `ip`,
+CHANGE COLUMN `credit` `credit` DECIMAL(11,2) NULL DEFAULT 0.00,
+CHANGE COLUMN `ip` `ip` VARCHAR(20) NULL DEFAULT NULL,
 CHANGE COLUMN `updated_at` `updated_at` DATETIME NULL ON UPDATE NOW();
 
 CREATE TABLE `Scammers` (
@@ -36,3 +38,4 @@ CREATE TABLE `Recomment_channels` (
   `created_at` datetime DEFAULT (now()),
   `updated_at` datetime DEFAULT NULL ON UPDATE NOW()
 );
+
