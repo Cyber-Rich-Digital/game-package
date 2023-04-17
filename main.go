@@ -63,6 +63,7 @@ func main() {
 	handler.BankingController(backRoute, db)
 	handler.ScammerController(backRoute, db)
 	handler.RecommentController(backRoute, db)
+	handler.MenuController(backRoute, db)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
