@@ -20,7 +20,7 @@ func (r repo) GetRecommentList(query model.RecommentQuery) ([]model.RecommentLis
 
 	var recomments []model.RecommentList
 
-	db := r.db.Table("Recomment_channels").Select("id, title, status, url, created_at")
+	db := r.db.Table("Recommend_channels").Select("id, title, status, url, created_at")
 
 	if query.Status != "" {
 		db = db.Where("status = ?", query.Status)
@@ -41,7 +41,7 @@ func (r repo) GetRecommentList(query model.RecommentQuery) ([]model.RecommentLis
 
 	var total int64
 
-	if err := r.db.Table("Recomment_channels").
+	if err := r.db.Table("Recommend_channels").
 		Select("id").
 		Count(&total).
 		Error; err != nil {
@@ -53,7 +53,7 @@ func (r repo) GetRecommentList(query model.RecommentQuery) ([]model.RecommentLis
 
 func (r repo) CreateRecomment(recomment model.CreateRecomment) error {
 
-	if err := r.db.Table("Recomment_channels").
+	if err := r.db.Table("Recommend_channels").
 		Create(&recomment).
 		Error; err != nil {
 		return err
@@ -64,7 +64,7 @@ func (r repo) CreateRecomment(recomment model.CreateRecomment) error {
 
 func (r repo) UpdateRecomment(id int64, body model.CreateRecomment) error {
 
-	if err := r.db.Table("Recomment_channels").
+	if err := r.db.Table("Recommend_channels").
 		Where("id = ?", id).
 		Updates(&body).
 		Error; err != nil {

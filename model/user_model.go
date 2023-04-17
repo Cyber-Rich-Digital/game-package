@@ -25,7 +25,7 @@ type User struct {
 	Contact       string         `json:"contact"`
 	Note          string         `json:"note"`
 	Course        string         `json:"course"`
-	Credit        int            `json:"credit"`
+	Credit        float64        `json:"credit"`
 	TurnoverLimit int            `json:"turnoverLimit"`
 	Ip            string         `json:"ip"`
 	IpRegistered  string         `json:"ipRegistered"`
@@ -103,7 +103,7 @@ type UserList struct {
 	Bankname     string     `json:"bankname"`
 	BankAccount  string     `json:"bankAccount"`
 	Channel      string     `json:"channel"`
-	Credit       int        `json:"credit"`
+	Credit       float64    `json:"credit"`
 	Ip           string     `json:"ip"`
 	IpRegistered string     `json:"ipRegistered"`
 	CreatedAt    *time.Time `json:"createdAt"`

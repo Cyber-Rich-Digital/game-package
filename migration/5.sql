@@ -10,7 +10,7 @@ ADD COLUMN `note` VARCHAR(255) DEFAULT NULL AFTER `contact`,
 ADD COLUMN `course` VARCHAR(50) DEFAULT NULL AFTER `note`,
 ADD COLUMN `turnover_limit` INT(11) DEFAULT 0 AFTER `credit`,
 ADD COLUMN `ip_registered` VARCHAR(20) DEFAULT NULL AFTER `ip`,
-CHANGE COLUMN `credit` `credit` DECIMAL(11,2) NULL DEFAULT 0.00,
+CHANGE COLUMN `credit` `credit` DECIMAL(14,2) NULL DEFAULT 0.00,
 CHANGE COLUMN `ip` `ip` VARCHAR(20) NULL DEFAULT NULL,
 CHANGE COLUMN `updated_at` `updated_at` DATETIME NULL ON UPDATE NOW();
 
@@ -30,7 +30,7 @@ CREATE INDEX `idx_bankname` ON `Scammers` (`bankname`);
 CREATE INDEX `idx_phone` ON `Scammers` (`phone`);
 CREATE INDEX `idx_created_at` ON `Scammers` (`created_at`);
 
-CREATE TABLE `Recomment_channels` (
+CREATE TABLE `Recommend_channels` (
   `id` bigint PRIMARY KEY AUTO_INCREMENT,
   `title` varchar(255) DEFAULT 255,
   `status` ENUM ('ACTIVE', 'DEACTIVE') DEFAULT 'ACTIVE',
@@ -38,4 +38,3 @@ CREATE TABLE `Recomment_channels` (
   `created_at` datetime DEFAULT (now()),
   `updated_at` datetime DEFAULT NULL ON UPDATE NOW()
 );
-
