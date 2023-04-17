@@ -12,6 +12,9 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
+ALTER TABLE `Bank_statements`
+    ADD INDEX `idx_account_id` (`account_id`);
+
 CREATE Table
     Bank_transactions (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -57,3 +60,31 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
+ALTER TABLE `Bank_transactions`
+    ADD INDEX `idx_user_id` (`user_id`),
+    ADD INDEX `idx_from_account_id` (`from_account_id`),
+    ADD INDEX `idx_to_account_id` (`to_account_id`);
+
+CREATE Table 
+    Bank_confirm_transactions (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        transaction_id BIGINT NOT NULL,
+        user_id BIGINT NOT NULL,
+        transfer_type VARCHAR(255) NOT NULL,
+        from_account_id BIGINT NULL,
+        to_account_id BIGINT NULL,
+        json_before TEXT NULL,
+        transfer_at DATETIME NOT NULL,
+        slip_url VARCHAR(255) NULL,
+        bonus_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+        confirmed_at DATETIME NULL,
+        confirmed_by_user_id BIGINT NULL,
+        confirmed_by_username VARCHAR(255) NULL,
+        created_at DATETIME DEFAULT NOW(),
+        updated_at DATETIME NULL ON UPDATE NOW(),
+        deleted_at DATETIME NULL
+    );
+
+ALTER TABLE `bank_confirm_transactions`
+	ADD UNIQUE INDEX `uni_transaction_id` (`transaction_id`),
+    ADD INDEX `idx_user_id` (`user_id`);

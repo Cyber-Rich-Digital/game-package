@@ -53,7 +53,8 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	transactionRoute.GET("/pendingdepositlist", middleware.Authorize, handler.getPendingDepositTransactions)
 	transactionRoute.GET("/pendingwithdrawlist", middleware.Authorize, handler.getPendingWithdrawTransactions)
 	transactionRoute.POST("/cancel/:id", middleware.Authorize, handler.cancelPendingTransaction)
-	transactionRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmPendingTransaction)
+	transactionRoute.POST("/confirmdeposit/:id", middleware.Authorize, handler.confirmDepositTransaction)
+	transactionRoute.POST("/confirmwithdraw/:id", middleware.Authorize, handler.confirmWithdrawTransaction)
 	transactionRoute.GET("/finishedlist", middleware.Authorize, handler.getFinishedTransactions)
 	transactionRoute.POST("/remove/:id", middleware.Authorize, handler.removeFinishedTransaction)
 	transactionRoute.GET("/removedlist", middleware.Authorize, handler.getRemovedTransactions)
@@ -105,7 +106,7 @@ func (h bankingController) getTransactionStatuses(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} model.SuccessWithPagination
-// @Router /banking/transactionstatuses/list [get]
+// @Router /banking/statementtypes/list [get]
 func (h bankingController) getStatementTypes(c *gin.Context) {
 	var data = []model.SimpleOption{
 		{Key: "transfer_in", Name: "โอนเข้า"},
@@ -489,17 +490,18 @@ func (h bankingController) cancelPendingTransaction(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Cancel success"})
 }
 
-// @Summary ConfirmPendingTransaction
-// @Description ยืนยัน ข้อมูลการฝากถอน
+// @Summary ConfirmDepositTransaction
+// @Description ยืนยัน ข้อมูลการฝาก
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
+// @Param body body model.BankConfirmDepositRequest true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /banking/transactions/confirm/{id} [post]
-func (h bankingController) confirmPendingTransaction(c *gin.Context) {
+// @Router /banking/transactions/confirmdeposit/{id} [post]
+func (h bankingController) confirmDepositTransaction(c *gin.Context) {
 
 	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
 	if err != nil {
@@ -519,13 +521,72 @@ func (h bankingController) confirmPendingTransaction(c *gin.Context) {
 		return
 	}
 
-	var data model.BankTransactionConfirmBody
-	data.Status = "finished"
+	var data model.BankConfirmDepositRequest
+	if err := c.ShouldBind(&data); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(data); err != nil {
+		HandleError(c, err)
+		return
+	}
 	data.ConfirmedAt = time.Now()
 	data.ConfirmedByUserId = *adminId
 	data.ConfirmedByUsername = *username
 
-	actionErr := h.bankingService.ConfirmPendingTransaction(identifier, data)
+	actionErr := h.bankingService.ConfirmDepositTransaction(identifier, data)
+	if actionErr != nil {
+		HandleError(c, actionErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Confirm success"})
+}
+
+// @Summary ConfirmWithdrawTransaction
+// @Description ยืนยัน ข้อมูลการถอน
+// @Tags Banking - Bank Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Param body body model.BankConfirmWithdrawRequest true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/transactions/confirmwithdraw/{id} [post]
+func (h bankingController) confirmWithdrawTransaction(c *gin.Context) {
+
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var data model.BankConfirmWithdrawRequest
+	if err := c.ShouldBind(&data); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(data); err != nil {
+		HandleError(c, err)
+		return
+	}
+	data.ConfirmedAt = time.Now()
+	data.ConfirmedByUserId = *adminId
+	data.ConfirmedByUsername = *username
+
+	actionErr := h.bankingService.ConfirmWithdrawTransaction(identifier, data)
 	if actionErr != nil {
 		HandleError(c, actionErr)
 		return
