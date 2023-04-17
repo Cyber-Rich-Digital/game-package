@@ -85,6 +85,6 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
-ALTER TABLE `bank_confirm_transactions`
+ALTER TABLE `Bank_confirm_transactions`
 	ADD UNIQUE INDEX `uni_transaction_id` (`transaction_id`),
     ADD INDEX `idx_user_id` (`user_id`);
