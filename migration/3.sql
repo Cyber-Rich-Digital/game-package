@@ -63,9 +63,9 @@ CREATE Table
 ALTER TABLE `Bank_transactions`
     ADD INDEX `idx_user_id` (`user_id`),
     ADD INDEX `idx_from_account_id` (`from_account_id`),
-    ADD INDEX `idx_to_account_id` (`to_account_id`),
+    ADD INDEX `idx_to_account_id` (`to_account_id`);
 
-CREATE Table
+CREATE Table 
     Bank_confirm_transactions (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         transaction_id BIGINT NOT NULL,
