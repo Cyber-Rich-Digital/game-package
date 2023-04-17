@@ -19,7 +19,7 @@ type UserRepository interface {
 	CheckUserById(id int64) (bool, error)
 	GetUserByPhone(phone string) (*model.UserByPhone, error)
 	CreateUser(admin model.User) error
-	UpdateUser(userId int64, data model.UpdateUser) error
+	UpdateUser(userId int64, data model.UpdateUser, changes []model.UserUpdateLogs) error
 	UpdateUserPassword(userId int64, data model.UserUpdatePassword) error
 	DeleteUser(id int64) error
 }
@@ -93,6 +93,11 @@ func (r repo) GetUser(id int64) (*model.UserDetail, error) {
 		Where("id = ?", id).
 		First(&admin).
 		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
@@ -193,13 +198,29 @@ func (r repo) CreateUser(admin model.User) error {
 	return nil
 }
 
-func (r repo) UpdateUser(userId int64, data model.UpdateUser) error {
+func (r repo) UpdateUser(userId int64, data model.UpdateUser, changes []model.UserUpdateLogs) error {
 
-	if err := r.db.Table("Users").
+	tx := r.db.Begin()
+
+	if err := tx.Table("Users").
 		Where("id = ?", userId).
 		Updates(&data).
 		Error; err != nil {
-		r.db.Rollback()
+		tx.Rollback()
+		return err
+	}
+
+	if len(changes) > 0 {
+		if err := tx.Table("User_update_logs").
+			Create(&changes).
+			Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
