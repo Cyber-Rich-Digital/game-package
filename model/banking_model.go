@@ -282,8 +282,46 @@ type BankTransactionCancelBody struct {
 	CanceledByUsername string    `json:"-"`
 }
 
+type BankConfirmDepositRequest struct {
+	TransferAt          *time.Time `json:"transferAt" validate:"required"`
+	SlipUrl             string     `json:"slipUrl" validate:"required"`
+	BonusAmount         float32    `json:"bonusAmount" validate:"required"`
+	ConfirmedAt         time.Time  `json:"-"`
+	ConfirmedByUserId   int64      `json:"-"`
+	ConfirmedByUsername string     `json:"-"`
+}
+
+type BankConfirmWithdrawRequest struct {
+	CreditAmount        float32   `json:"creditAmount" validate:"required"`
+	BankChargeAmount    float32   `json:"bankChargeAmount" validate:"required"`
+	ConfirmedAt         time.Time `json:"-"`
+	ConfirmedByUserId   int64     `json:"-"`
+	ConfirmedByUsername string    `json:"-"`
+}
+
 type BankTransactionConfirmBody struct {
-	Status              string    `json:"-" validate:"required"`
+	TransferAt          time.Time `json:"transferAt"`
+	BonusAmount         float32   `json:"bonusAmount"`
+	CreditAmount        float32   `json:"creditAmount"`
+	BankChargeAmount    float32   `json:"bankChargeAmount"`
+	Status              string    `json:"-"`
+	ConfirmedAt         time.Time `json:"-"`
+	ConfirmedByUserId   int64     `json:"-"`
+	ConfirmedByUsername string    `json:"-"`
+}
+
+type BankTransactionCreateConfirmBody struct {
+	TransactionId       int64     `json:"transactionId"`
+	UserId              int64     `json:"userId"`
+	TransferType        string    `json:"transferType"`
+	FromAccountId       int64     `json:"fromAccountId"`
+	ToAccountId         int64     `json:"toAccountId"`
+	JsonBefore          string    `json:"jsonBefore"`
+	TransferAt          time.Time `json:"transferAt"`
+	SlipUrl             string    `json:"slipUrl"`
+	BonusAmount         float32   `json:"bonusAmount"`
+	CreditAmount        float32   `json:"creditAmount"`
+	BankChargeAmount    float32   `json:"bankChargeAmount"`
 	ConfirmedAt         time.Time `json:"confirmedAt"`
 	ConfirmedByUserId   int64     `json:"confirmedByUserId"`
 	ConfirmedByUsername string    `json:"confirmedByUsername"`
