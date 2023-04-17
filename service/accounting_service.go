@@ -11,6 +11,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -144,6 +146,8 @@ func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest)
 
 func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error) {
 
+	s.UpdateBankAccountBotStatus(data.Id)
+
 	accounting, err := s.repo.GetBankAccountById(data.Id)
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -186,7 +190,8 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 		return badRequest("Invalid Account Type")
 	}
 
-	exist, err := s.repo.HasBankAccount(data.AccountNumber)
+	acNo := helper.StripAllButNumbers(data.AccountNumber)
+	exist, err := s.repo.HasBankAccount(acNo)
 	if err != nil {
 		fmt.Println(err)
 		return internalServerError(err.Error())
@@ -199,7 +204,7 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 	account.BankId = bank.Id
 	account.AccountTypeId = accountType.Id
 	account.AccountName = data.AccountName
-	account.AccountNumber = data.AccountNumber
+	account.AccountNumber = acNo
 	account.AccountPriority = data.AccountPriority
 	account.AutoCreditFlag = data.AutoCreditFlag
 	account.AutoWithdrawFlag = data.AutoWithdrawFlag
@@ -210,11 +215,40 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 	account.QrWalletStatus = data.QrWalletStatus
 	account.AccountStatus = data.AccountStatus
 	account.AccountBalance = 0
-	account.ConectionStatus = "disconnected"
+	account.ConnectionStatus = "disconnected"
 
 	if err := s.repo.CreateBankAccount(account); err != nil {
 		return internalServerError(err.Error())
 	}
+
+	// FASTBANK
+	// fmt.Println(acNo)
+	if acNo == "5014327339" {
+		// AccountNo        string `json:"accountNo"`
+		// BankCode         string `json:"bankCode"`
+		// DeviceId         string `json:"deviceId"`
+		// Password         string `json:"password"`
+		// Pin              string `json:"pin"`
+		// Username         string `json:"username"`
+		// WebhookNotifyUrl string `json:"webhookNotifyUrl"`
+		// WebhookUrl       string `json:"webhookUrl"`
+		var body model.ExternalBankAccountCreateBody
+		body.AccountNo = acNo
+		body.BankCode = bank.Code
+		body.DeviceId = data.DeviceUid
+		// body.Password = data.Password
+		body.Pin = data.PinCode
+		// body.Username = data.Username
+		body.WebhookNotifyUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api//accounting/webhooks/noti"
+		body.WebhookUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api/accounting/webhooks/action"
+
+		if err := s.CreateExternalBankAccount(body); err != nil {
+			// todo: delete created account
+			return internalServerError(err.Error())
+		}
+		// fmt.Println(body)
+	}
+
 	return nil
 }
 
@@ -224,6 +258,7 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 	if err != nil {
 		return internalServerError(err.Error())
 	}
+	var updateExBody model.ExternalBankAccountCreateBody
 
 	// Validate
 	if data.BankId != 0 && account.BankId != data.BankId {
@@ -236,6 +271,7 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 			return badRequest("Invalid Bank")
 		}
 		data.BankId = bank.Id
+		updateExBody.BankCode = bank.Code
 	}
 	if account.AccountTypeId != data.AccountTypeId {
 		accountType, err := s.repo.GetAccounTypeById(data.AccountTypeId)
@@ -245,13 +281,14 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 		}
 		data.AccountTypeId = accountType.Id
 	}
-	if data.AccountNumber != "" && account.AccountNumber != data.AccountNumber {
-		check, err := s.repo.HasBankAccount(data.AccountNumber)
+	acNo := helper.StripAllButNumbers(data.AccountNumber)
+	if acNo != "" && account.AccountNumber != acNo {
+		check, err := s.repo.HasBankAccount(acNo)
 		if err != nil {
 			return internalServerError(err.Error())
 		}
 		if !check {
-			fmt.Println(data.AccountNumber)
+			fmt.Println(acNo)
 			return notFound("Account already exist")
 		}
 	}
@@ -259,6 +296,140 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 	if err := s.repo.UpdateBankAccount(id, data); err != nil {
 		return internalServerError(err.Error())
 	}
+
+	// FASTBANK
+	if acNo == "5014327339" {
+		// AccountNo        string `json:"accountNo"`
+		// BankCode         string `json:"bankCode"`
+		// DeviceId         string `json:"deviceId"`
+		// Password         string `json:"password"`
+		// Pin              string `json:"pin"`
+		// Username         string `json:"username"`
+		// WebhookNotifyUrl string `json:"webhookNotifyUrl"`
+		// WebhookUrl       string `json:"webhookUrl"`
+		// updateExBody.AccountNo = acNo
+		updateExBody.DeviceId = data.DeviceUid
+		// body.Password = data.Password
+		updateExBody.Pin = data.PinCode
+		// body.Username = data.Username
+		updateExBody.WebhookNotifyUrl = "http://143.198.211.247:3001/api/accounting/bankaccounts2/list"
+		updateExBody.WebhookUrl = "http://143.198.211.247:3001/api/accounting/bankaccounts2/list"
+		if err := s.UpdateExternalBankAccount(updateExBody); err != nil {
+			// todo: delete created account
+			return internalServerError(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (s *accountingService) UpdateBankAccountBotStatus(id int64) error {
+
+	account, err := s.repo.GetBankAccountById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	now := time.Now()
+	if account.LastConnUpdateAt != nil {
+		// fmt.Println(now.Sub(*account.LastConnUpdateAt).Seconds())
+		if now.Sub(*account.LastConnUpdateAt).Seconds() < 30 {
+			return nil
+		}
+	}
+
+	var data model.BankAccountUpdateBody
+	data.LastConnUpdateAt = &now
+	data.ConnectionStatus = "disconnected"
+	// data.AccountBalance = 0
+
+	// FASTBANK
+	if account.AccountNumber == "5014327339" {
+		var query model.ExternalBankAccountStatusRequest
+		query.AccountNumber = account.AccountNumber
+		statusResp, err := s.GetExternalBankAccountStatus(query)
+		if err != nil {
+			return internalServerError(err.Error())
+		}
+		if statusResp.Status == "online" {
+			data.ConnectionStatus = "active"
+		} else {
+			fmt.Println("statusResp", statusResp)
+			data.ConnectionStatus = "disconnected"
+		}
+
+		balaceResp, err := s.GetExternalBankAccountBalance(query)
+		if err != nil {
+			return internalServerError(err.Error())
+		}
+
+		if balaceResp.AccountNo == account.AccountNumber {
+			balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
+			data.AccountBalance = balance
+		} else {
+			fmt.Println("ERROR, balaceResp: ", balaceResp)
+			return internalServerError(err.Error())
+		}
+	}
+
+	if err := s.repo.UpdateBankAccount(id, data); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	return nil
+}
+
+func (s *accountingService) UpdateAllBankAccountBotStatus(id int64) error {
+
+	account, err := s.repo.GetBankAccountById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	now := time.Now()
+	if account.LastConnUpdateAt != nil {
+		// fmt.Println(now.Sub(*account.LastConnUpdateAt).Seconds())
+		if now.Sub(*account.LastConnUpdateAt).Seconds() < 30 {
+			return nil
+		}
+	}
+
+	var data model.BankAccountUpdateBody
+	data.LastConnUpdateAt = &now
+	data.ConnectionStatus = "disconnected"
+	// data.AccountBalance = 0
+
+	// FASTBANK
+	if account.AccountNumber == "5014327339" {
+		var query model.ExternalBankAccountStatusRequest
+		query.AccountNumber = account.AccountNumber
+		statusResp, err := s.GetExternalBankAccountStatus(query)
+		if err != nil {
+			return internalServerError(err.Error())
+		}
+		if statusResp.Status == "online" {
+			data.ConnectionStatus = "active"
+		} else {
+			fmt.Println("statusResp", statusResp)
+			data.ConnectionStatus = "disconnected"
+		}
+
+		balaceResp, err := s.GetExternalBankAccountBalance(query)
+		if err != nil {
+			return internalServerError(err.Error())
+		}
+
+		if balaceResp.AccountNo == account.AccountNumber {
+			balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
+			data.AccountBalance = balance
+		} else {
+			fmt.Println("ERROR, balaceResp: ", balaceResp)
+			return internalServerError(err.Error())
+		}
+	}
+
+	if err := s.repo.UpdateBankAccount(id, data); err != nil {
+		return internalServerError(err.Error())
+	}
+
 	return nil
 }
 
@@ -619,7 +790,7 @@ func (s *accountingService) EnableExternalBankAccount(body model.ExternalBankAcc
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("EnableExternalBankAccount:", string(responseData))
+	// fmt.Println("EnableExternalBankAccount:", string(responseData))
 	// {"success":true,"enable":true,"status":"online"}
 	// {"success":true,"enable":false,"status":"offline"}
 	var result model.ExternalBankAccountStatus

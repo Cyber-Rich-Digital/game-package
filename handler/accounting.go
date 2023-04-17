@@ -62,7 +62,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	account2Route.DELETE("/:account", middleware.Authorize, handler.deleteExternalBankAccount)
 
 	webhookRoute := root.Group("/webhooks")
-	webhookRoute.GET("/action", middleware.Authorize, handler.webhookAction)
+	webhookRoute.POST("/action", middleware.Authorize, handler.webhookAction)
 	webhookRoute.POST("/noti", middleware.Authorize, handler.webhookNoti)
 
 	transactionRoute := root.Group("/transactions")
@@ -964,7 +964,7 @@ func (h accountingController) deleteExternalBankAccount(c *gin.Context) {
 // @Param body body model.ExternalBankAccountEnableRequest true "body"
 // @Success 200 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /accounting/webhooks/action [get]
+// @Router /accounting/webhooks/action [post]
 func (h accountingController) webhookAction(c *gin.Context) {
 
 	jsonData, errValidate := ioutil.ReadAll(c.Request.Body)
@@ -973,9 +973,9 @@ func (h accountingController) webhookAction(c *gin.Context) {
 		return
 	}
 	jsonString := string(jsonData)
-	fmt.Println("GET", jsonString)
+	fmt.Println("ACTION", jsonString)
 
-	err := h.accountingService.CreateWebhookLog("GET", jsonString)
+	err := h.accountingService.CreateWebhookLog("ACTION", jsonString)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -1002,9 +1002,9 @@ func (h accountingController) webhookNoti(c *gin.Context) {
 		return
 	}
 	jsonString := string(jsonData)
-	fmt.Println("POST", jsonString)
+	fmt.Println("NOTI", jsonString)
 
-	err := h.accountingService.CreateWebhookLog("POST", jsonString)
+	err := h.accountingService.CreateWebhookLog("NOTI", jsonString)
 	if err != nil {
 		HandleError(c, err)
 		return

@@ -254,9 +254,10 @@ func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
-	selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
-	selectedFields += ",account_types.name as account_type_name, account_types.limit_flag"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	selectedFields += ", banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
 		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
@@ -282,9 +283,10 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 
 	// SELECT //
 	query := r.db.Table("Bank_accounts AS accounts")
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
-	selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
-	selectedFields += ",account_types.name as account_type_name, account_types.limit_flag"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	selectedFields += ", banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
 	query = query.Select(selectedFields)
 	query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
 	query = query.Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id")

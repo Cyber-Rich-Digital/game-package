@@ -12,6 +12,9 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
+ALTER TABLE `Bank_statements`
+    ADD INDEX `idx_account_id` (`account_id`);
+
 CREATE Table
     Bank_transactions (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -57,6 +60,11 @@ CREATE Table
         deleted_at DATETIME NULL
     );
 
+ALTER TABLE `Bank_transactions`
+    ADD INDEX `idx_user_id` (`user_id`),
+    ADD INDEX `idx_from_account_id` (`from_account_id`),
+    ADD INDEX `idx_to_account_id` (`to_account_id`),
+
 CREATE Table
     Bank_confirm_transactions (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -78,4 +86,5 @@ CREATE Table
     );
 
 ALTER TABLE `bank_confirm_transactions`
-	ADD UNIQUE INDEX `uni_transaction_id` (`transaction_id`);
+	ADD UNIQUE INDEX `uni_transaction_id` (`transaction_id`),
+    ADD INDEX `idx_user_id` (`user_id`);
