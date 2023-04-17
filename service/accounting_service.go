@@ -50,6 +50,8 @@ type AccountingService interface {
 
 	GetExternalBankAccountsLogs(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	GetExternalBankStatements(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+
+	CreateWebhookLog(logType string, jsonRequest string) error
 }
 
 type accountingService struct {
@@ -689,4 +691,18 @@ func (s *accountingService) GetExternalBankStatements(query model.BankAccountLis
 	result.List = list
 	result.Total = int64(len(list))
 	return &result, nil
+}
+
+func (s *accountingService) CreateWebhookLog(logType string, jsonRequest string) error {
+
+	var body model.WebhookLogCreateBody
+	body.JsonRequest = jsonRequest
+	body.JsonPayload = "{}"
+	body.LogType = logType
+	body.Status = "success"
+
+	if err := s.repo.CreateWebhookLog(body); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
 }

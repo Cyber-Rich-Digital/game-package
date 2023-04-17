@@ -43,6 +43,8 @@ type AccountingRepository interface {
 	CreateTransfer(data model.BankAccountTransferBody) error
 	ConfirmTransfer(id int64, data model.BankAccountTransferConfirmBody) error
 	DeleteTransfer(id int64) error
+
+	CreateWebhookLog(body model.WebhookLogCreateBody) error
 }
 
 func (r repo) GetAdminById(id int64) (*model.Admin, error) {
@@ -617,6 +619,13 @@ func (r repo) ConfirmTransfer(id int64, data model.BankAccountTransferConfirmBod
 
 func (r repo) DeleteTransfer(id int64) error {
 	if err := r.db.Table("Bank_account_transfers").Where("id = ?", id).Delete(&model.BankAccountTransfer{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) CreateWebhookLog(data model.WebhookLogCreateBody) error {
+	if err := r.db.Table("Webhook_logs").Create(&data).Error; err != nil {
 		return err
 	}
 	return nil

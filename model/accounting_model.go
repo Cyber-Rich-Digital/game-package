@@ -372,3 +372,21 @@ type ExternalBankAccountCreateResponse struct {
 	VerifyLogin      bool   `json:"verifyLogin"`
 	Deleted          bool   `json:"deleted"`
 }
+
+type WebhookLog struct {
+	Id          int64          `json:"id"`
+	JsonRequest string         `json:"jsonRequest"`
+	JsonPayload string         `json:"jsonPayload"`
+	LogType     string         `json:"logType"`
+	Status      string         `json:"status"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   *time.Time     `json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt `json:"deletedAt"`
+}
+
+type WebhookLogCreateBody struct {
+	JsonRequest string `json:"jsonRequest"`
+	JsonPayload string `json:"jsonPayload"`
+	LogType     string `json:"logType"`
+	Status      string `json:"status"`
+}

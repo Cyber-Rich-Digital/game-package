@@ -5,6 +5,8 @@ import (
 	"cybergame-api/model"
 	"cybergame-api/repository"
 	"cybergame-api/service"
+	"fmt"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -58,6 +60,10 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	account2Route.PUT("", middleware.Authorize, handler.updateExternalBankAccount)
 	account2Route.PUT("/status", middleware.Authorize, handler.EnableExternalBankAccount)
 	account2Route.DELETE("/:account", middleware.Authorize, handler.deleteExternalBankAccount)
+
+	webhookRoute := root.Group("/webhooks")
+	webhookRoute.GET("/action", middleware.Authorize, handler.webhookAction)
+	webhookRoute.POST("/noti", middleware.Authorize, handler.webhookNoti)
 
 	transactionRoute := root.Group("/transactions")
 	transactionRoute.GET("/list", middleware.Authorize, handler.getTransactions)
@@ -947,4 +953,62 @@ func (h accountingController) deleteExternalBankAccount(c *gin.Context) {
 	}
 
 	c.JSON(200, model.Success{Message: "Delete success"})
+}
+
+// @Summary WebhookAction
+// @Description เว็บฮุคแบบ GET
+// @Tags Accounting - TEST
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.ExternalBankAccountEnableRequest true "body"
+// @Success 200 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/webhooks/action [get]
+func (h accountingController) webhookAction(c *gin.Context) {
+
+	jsonData, errValidate := ioutil.ReadAll(c.Request.Body)
+	if errValidate != nil {
+		HandleError(c, errValidate)
+		return
+	}
+	jsonString := string(jsonData)
+	fmt.Println("GET", jsonString)
+
+	err := h.accountingService.CreateWebhookLog("GET", jsonString)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Success{Message: "success"})
+}
+
+// @Summary WebhookNoti
+// @Description เว็บฮุคแบบ POST
+// @Tags Accounting - TEST
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.ExternalBankAccountEnableRequest true "body"
+// @Success 200 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/webhooks/noti [post]
+func (h accountingController) webhookNoti(c *gin.Context) {
+
+	jsonData, errValidate := ioutil.ReadAll(c.Request.Body)
+	if errValidate != nil {
+		HandleError(c, errValidate)
+		return
+	}
+	jsonString := string(jsonData)
+	fmt.Println("POST", jsonString)
+
+	err := h.accountingService.CreateWebhookLog("POST", jsonString)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Success{Message: "success"})
 }
