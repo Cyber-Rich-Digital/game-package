@@ -146,7 +146,7 @@ func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest)
 
 func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error) {
 
-	s.UpdateBankAccountBotStatus(data.Id)
+	s.UpdateBankAccountBotStatusById(data.Id)
 
 	accounting, err := s.repo.GetBankAccountById(data.Id)
 	if err != nil {
@@ -166,6 +166,8 @@ func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
+	s.UpdateAllBankAccountBotStatus()
+
 	accounting, err := s.repo.GetBankAccounts(data)
 	if err != nil {
 		return nil, internalServerError(err.Error())
@@ -323,7 +325,7 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 	return nil
 }
 
-func (s *accountingService) UpdateBankAccountBotStatus(id int64) error {
+func (s *accountingService) UpdateBankAccountBotStatusById(id int64) error {
 
 	account, err := s.repo.GetBankAccountById(id)
 	if err != nil {
@@ -378,56 +380,63 @@ func (s *accountingService) UpdateBankAccountBotStatus(id int64) error {
 	return nil
 }
 
-func (s *accountingService) UpdateAllBankAccountBotStatus(id int64) error {
+func (s *accountingService) UpdateAllBankAccountBotStatus() error {
 
-	account, err := s.repo.GetBankAccountById(id)
+	var query model.BankAccountListRequest
+	query.Limit = 100
+	query.Page = 0
+	accounts, err := s.repo.GetBankAccounts(query)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 	now := time.Now()
-	if account.LastConnUpdateAt != nil {
-		// fmt.Println(now.Sub(*account.LastConnUpdateAt).Seconds())
-		if now.Sub(*account.LastConnUpdateAt).Seconds() < 30 {
-			return nil
+	error_delay := time.Now().Add(time.Minute * 5)
+
+	for _, account := range accounts.List.([]model.BankAccountResponse) {
+
+		if account.LastConnUpdateAt != nil {
+			if now.Sub(*account.LastConnUpdateAt).Seconds() < 30 {
+				continue
+			}
 		}
-	}
+		var data model.BankAccountUpdateBody
+		data.LastConnUpdateAt = &now
+		data.ConnectionStatus = "disconnected"
+		// data.AccountBalance = 0
 
-	var data model.BankAccountUpdateBody
-	data.LastConnUpdateAt = &now
-	data.ConnectionStatus = "disconnected"
-	// data.AccountBalance = 0
-
-	// FASTBANK
-	if account.AccountNumber == "5014327339" {
+		// FASTBANK
 		var query model.ExternalBankAccountStatusRequest
 		query.AccountNumber = account.AccountNumber
 		statusResp, err := s.GetExternalBankAccountStatus(query)
 		if err != nil {
-			return internalServerError(err.Error())
-		}
-		if statusResp.Status == "online" {
-			data.ConnectionStatus = "active"
+			data.LastConnUpdateAt = &error_delay
+			// fmt.Println("ERROR", err.Error())
 		} else {
-			fmt.Println("statusResp", statusResp)
-			data.ConnectionStatus = "disconnected"
+			if statusResp.Status == "online" {
+				data.ConnectionStatus = "active"
+			} else {
+				fmt.Println("statusResp", statusResp)
+				data.ConnectionStatus = "disconnected"
+			}
 		}
 
 		balaceResp, err := s.GetExternalBankAccountBalance(query)
 		if err != nil {
-			return internalServerError(err.Error())
-		}
-
-		if balaceResp.AccountNo == account.AccountNumber {
-			balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
-			data.AccountBalance = balance
+			data.LastConnUpdateAt = &error_delay
+			// fmt.Println("ERROR", err.Error())
 		} else {
-			fmt.Println("ERROR, balaceResp: ", balaceResp)
-			return internalServerError(err.Error())
+			if balaceResp.AccountNo == account.AccountNumber {
+				balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
+				data.AccountBalance = balance
+			} else {
+				data.LastConnUpdateAt = &error_delay
+				// fmt.Println("ERROR, balaceResp: ", balaceResp)
+			}
 		}
-	}
 
-	if err := s.repo.UpdateBankAccount(id, data); err != nil {
-		return internalServerError(err.Error())
+		if err := s.repo.UpdateBankAccount(account.Id, data); err != nil {
+			fmt.Println("ERROR, UPDATE ", err.Error())
+		}
 	}
 
 	return nil

@@ -153,6 +153,7 @@ type BankAccountResponse struct {
 	AccountPriority  string         `json:"accountPriority"`
 	AccountStatus    string         `json:"accountStatus"`
 	ConnectionStatus string         `json:"connectionStatus"`
+	LastConnUpdateAt *time.Time     `json:"lastConnUpdateAt"`
 	CreatedAt        time.Time      `json:"createdAt"`
 	UpdatedAt        *time.Time     `json:"updatedAt"`
 	DeletedAt        gorm.DeletedAt `json:"deletedAt"`
