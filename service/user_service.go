@@ -106,7 +106,7 @@ func (s *userService) Create(data *model.CreateUser) error {
 	newUser.Phone = data.Phone
 	newUser.Promotion = data.Promotion
 	newUser.Password = string(hashedPassword)
-	newUser.Status = data.Status
+	newUser.Status = "ACTIVE"
 	newUser.Fullname = data.Fullname
 	newUser.Bankname = data.Bankname
 	newUser.BankAccount = data.BankAccount

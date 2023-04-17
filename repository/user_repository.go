@@ -2,7 +2,9 @@ package repository
 
 import (
 	"cybergame-api/model"
+	"errors"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -192,6 +194,12 @@ func (r repo) CreateUser(admin model.User) error {
 	if err := r.db.Table("Users").
 		Create(&admin).
 		Error; err != nil {
+
+		var dup *mysql.MySQLError
+		if errors.As(err, &dup); dup.Number == 1062 {
+			return errors.New("Phone already exists")
+		}
+
 		return err
 	}
 
