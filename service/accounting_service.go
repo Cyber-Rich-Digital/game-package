@@ -27,7 +27,7 @@ type AccountingService interface {
 	GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
-	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
+	UpdateBankAccount(id int64, data model.BankAccountUpdateRequest) error
 	DeleteBankAccount(id int64) error
 
 	GetTransactionById(data model.BankAccountTransactionParam) (*model.BankAccountTransaction, error)
@@ -42,16 +42,17 @@ type AccountingService interface {
 	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
 
-	GetExternalBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
-	GetExternalBankAccountBalance(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountBalance, error)
-	GetExternalBankAccountStatus(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountStatus, error)
-	CreateExternalBankAccount(data model.ExternalBankAccountCreateBody) error
-	UpdateExternalBankAccount(data model.ExternalBankAccountCreateBody) error
-	EnableExternalBankAccount(query model.ExternalBankAccountEnableRequest) (*model.ExternalBankAccountStatus, error)
-	DeleteExternalBankAccount(query model.ExternalBankAccountStatusRequest) error
+	GetExternalAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error)
+	GetExternalAccountStatus(query model.ExternalAccountStatusRequest) (*model.ExternalAccountStatus, error)
+	CreateExternalAccount(data model.ExternalAccountCreateBody) (*model.ExternalAccountCreateResponse, error)
+	UpdateExternalAccount(data model.ExternalAccountCreateBody) (*model.ExternalAccountCreateResponse, error)
+	EnableExternalAccount(query model.ExternalAccountEnableRequest) (*model.ExternalAccountStatus, error)
+	DeleteExternalAccount(query model.ExternalAccountStatusRequest) error
+	TransferExternalAccount(data model.ExternalAccountTransferRequest) error
 
-	GetExternalBankAccountsLogs(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
-	GetExternalBankStatements(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetExternalAccountLogs(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetExternalAccountStatements(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 
 	CreateWebhookLog(logType string, jsonRequest string) error
 }
@@ -146,9 +147,9 @@ func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest)
 
 func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error) {
 
-	s.UpdateBankAccountBotStatus(data.Id)
+	s.UpdateBankAccountBotStatusById(data.Id)
 
-	accounting, err := s.repo.GetBankAccountById(data.Id)
+	record, err := s.repo.GetBankAccountById(data.Id)
 	if err != nil {
 		if err.Error() == "record not found" {
 			return nil, notFound(bankAccountNotFound)
@@ -158,7 +159,7 @@ func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*mo
 		}
 		return nil, internalServerError(err.Error())
 	}
-	return accounting, nil
+	return record, nil
 }
 
 func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
@@ -166,11 +167,13 @@ func (s *accountingService) GetBankAccounts(data model.BankAccountListRequest) (
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	accounting, err := s.repo.GetBankAccounts(data)
+	s.UpdateAllBankAccountBotStatus()
+
+	list, err := s.repo.GetBankAccounts(data)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return accounting, nil
+	return list, nil
 }
 
 func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) error {
@@ -211,7 +214,7 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 	account.AutoTransferMaxAmount = data.AutoTransferMaxAmount
 	account.AutoWithdrawMaxAmount = data.AutoWithdrawMaxAmount
 	account.DeviceUid = data.DeviceUid
-	account.PinCode = data.PinCode
+	// account.PinCode = data.PinCode
 	account.QrWalletStatus = data.QrWalletStatus
 	account.AccountStatus = data.AccountStatus
 	account.AccountBalance = 0
@@ -232,19 +235,30 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 		// Username         string `json:"username"`
 		// WebhookNotifyUrl string `json:"webhookNotifyUrl"`
 		// WebhookUrl       string `json:"webhookUrl"`
-		var body model.ExternalBankAccountCreateBody
+		var body model.ExternalAccountCreateBody
 		body.AccountNo = acNo
 		body.BankCode = bank.Code
 		body.DeviceId = data.DeviceUid
 		// body.Password = data.Password
 		body.Pin = data.PinCode
 		// body.Username = data.Username
-		body.WebhookNotifyUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api//accounting/webhooks/noti"
+		body.WebhookNotifyUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api/accounting/webhooks/noti"
 		body.WebhookUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api/accounting/webhooks/action"
 
-		if err := s.CreateExternalBankAccount(body); err != nil {
+		if createResp, err := s.CreateExternalAccount(body); err != nil {
 			// todo: delete created account
 			return internalServerError(err.Error())
+		} else {
+			// Update EncryptionPin
+			account, err := s.repo.GetBankAccountByAccountNumber(acNo)
+			if err != nil {
+				return internalServerError(err.Error())
+			}
+			var updateBody model.BankAccountUpdateBody
+			updateBody.PinCode = &createResp.Pin
+			if err := s.repo.UpdateBankAccount(account.Id, updateBody); err != nil {
+				return internalServerError(err.Error())
+			}
 		}
 		// fmt.Println(body)
 	}
@@ -252,17 +266,32 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 	return nil
 }
 
-func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error {
+func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpdateRequest) error {
 
 	account, err := s.repo.GetBankAccountById(id)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
-	var updateExBody model.ExternalBankAccountCreateBody
+	// BankId                *int64  `json:"-"`
+	// AccountTypeId         *int64  `json:"accounTypeId"`
+	// AccountName           *string `json:"-"`
+	// AccountNumber         *string `json:"-"`
+	// DeviceUid             *string `json:"deviceUid"`
+	// PinCode               *string `json:"pinCode"`
+	// AutoCreditFlag        *string `json:"autoCreditFlag"`
+	// AutoWithdrawFlag      *string `json:"autoWithdrawFlag"`
+	// AutoWithdrawMaxAmount *string `json:"autoWithdrawMaxAmount"`
+	// AutoTransferMaxAmount *string `json:"autoTransferMaxAmount"`
+	// AccountPriority       *string `json:"accountPriority"`
+	// QrWalletStatus        *string `json:"qrWalletStatus"`
+	// AccountStatus         *string `json:"accountStatus"`
+	var updateBody model.BankAccountUpdateBody
+	var updateExBody model.ExternalAccountCreateBody
+	onExternalChange := false
 
 	// Validate
-	if data.BankId != 0 && account.BankId != data.BankId {
-		bank, err := s.repo.GetBankById(data.BankId)
+	if req.BankId != nil && account.BankId != *req.BankId {
+		bank, err := s.repo.GetBankById(*req.BankId)
 		if err != nil {
 			fmt.Println(err)
 			if err.Error() == recordNotFound {
@@ -270,60 +299,97 @@ func (s *accountingService) UpdateBankAccount(id int64, data model.BankAccountUp
 			}
 			return badRequest("Invalid Bank")
 		}
-		data.BankId = bank.Id
+		updateBody.BankId = &bank.Id
+		onExternalChange = true
 		updateExBody.BankCode = bank.Code
 	}
-	if account.AccountTypeId != data.AccountTypeId {
-		accountType, err := s.repo.GetAccounTypeById(data.AccountTypeId)
+	if req.AccountTypeId != nil && account.AccountTypeId != *req.AccountTypeId {
+		accountType, err := s.repo.GetAccounTypeById(*req.AccountTypeId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Account Type")
 		}
-		data.AccountTypeId = accountType.Id
+		updateBody.AccountTypeId = &accountType.Id
 	}
-	acNo := helper.StripAllButNumbers(data.AccountNumber)
-	if acNo != "" && account.AccountNumber != acNo {
-		check, err := s.repo.HasBankAccount(acNo)
-		if err != nil {
-			return internalServerError(err.Error())
-		}
-		if !check {
-			fmt.Println(acNo)
-			return notFound("Account already exist")
+	if req.AccountName != nil && account.AccountName != *req.AccountName {
+		updateBody.AccountName = req.AccountName
+	}
+	if req.AccountNumber != nil && account.AccountNumber != *req.AccountNumber {
+		acNo := helper.StripAllButNumbers(*req.AccountNumber)
+		if acNo != "" {
+			check, err := s.repo.HasBankAccount(acNo)
+			if err != nil {
+				return internalServerError(err.Error())
+			}
+			if !check {
+				fmt.Println(acNo)
+				return notFound("Account already exist")
+			}
+			updateBody.AccountNumber = &acNo
+			onExternalChange = true
+			account.AccountNumber = acNo
+		} else {
+			updateBody.AccountNumber = &account.AccountNumber
 		}
 	}
-
-	if err := s.repo.UpdateBankAccount(id, data); err != nil {
-		return internalServerError(err.Error())
+	if req.DeviceUid != nil && account.DeviceUid != *req.DeviceUid {
+		updateBody.DeviceUid = req.DeviceUid
+		onExternalChange = true
+		account.DeviceUid = *req.DeviceUid
+	}
+	if req.PinCode != nil {
+		updateBody.PinCode = req.PinCode
+		onExternalChange = true
+		updateExBody.Pin = *req.PinCode
+	}
+	if req.AutoCreditFlag != nil && account.AutoCreditFlag != *req.AutoCreditFlag {
+		updateBody.AutoCreditFlag = req.AutoCreditFlag
+	}
+	if req.AutoWithdrawFlag != nil && account.AutoWithdrawFlag != *req.AutoWithdrawFlag {
+		updateBody.AutoWithdrawFlag = req.AutoWithdrawFlag
+	}
+	if req.AutoWithdrawMaxAmount != nil && account.AutoWithdrawMaxAmount != *req.AutoWithdrawMaxAmount {
+		updateBody.AutoWithdrawMaxAmount = req.AutoWithdrawMaxAmount
+	}
+	if req.AutoTransferMaxAmount != nil && account.AutoTransferMaxAmount != *req.AutoTransferMaxAmount {
+		updateBody.AutoTransferMaxAmount = req.AutoTransferMaxAmount
+	}
+	if req.AccountPriority != nil && account.AccountPriority != *req.AccountPriority {
+		updateBody.AccountPriority = req.AccountPriority
+	}
+	if req.QrWalletStatus != nil && account.QrWalletStatus != *req.QrWalletStatus {
+		updateBody.QrWalletStatus = req.QrWalletStatus
+	}
+	if req.AccountStatus != nil && account.AccountStatus != *req.AccountStatus {
+		updateBody.AccountStatus = req.AccountStatus
 	}
 
 	// FASTBANK
-	if acNo == "5014327339" {
-		// AccountNo        string `json:"accountNo"`
-		// BankCode         string `json:"bankCode"`
-		// DeviceId         string `json:"deviceId"`
-		// Password         string `json:"password"`
-		// Pin              string `json:"pin"`
-		// Username         string `json:"username"`
-		// WebhookNotifyUrl string `json:"webhookNotifyUrl"`
-		// WebhookUrl       string `json:"webhookUrl"`
-		// updateExBody.AccountNo = acNo
-		updateExBody.DeviceId = data.DeviceUid
+	if onExternalChange && account.AccountNumber == "5014327339" {
+		updateExBody.AccountNo = account.AccountNumber
+		updateExBody.DeviceId = account.DeviceUid
 		// body.Password = data.Password
-		updateExBody.Pin = data.PinCode
+		// updateExBody.Pin = account.PinCode
 		// body.Username = data.Username
-		updateExBody.WebhookNotifyUrl = "http://143.198.211.247:3001/api/accounting/bankaccounts2/list"
-		updateExBody.WebhookUrl = "http://143.198.211.247:3001/api/accounting/bankaccounts2/list"
-		if err := s.UpdateExternalBankAccount(updateExBody); err != nil {
+		updateExBody.WebhookNotifyUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api/accounting/webhooks/noti"
+		updateExBody.WebhookUrl = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT") + "/api/accounting/webhooks/action"
+		// fmt.Println("updateExBody", updateExBody)
+		if externalCreateResp, err := s.UpdateExternalAccount(updateExBody); err != nil {
 			// todo: delete created account
 			return internalServerError(err.Error())
+		} else {
+			updateBody.PinCode = &externalCreateResp.Pin
 		}
+	}
+
+	if err := s.repo.UpdateBankAccount(id, updateBody); err != nil {
+		return internalServerError(err.Error())
 	}
 
 	return nil
 }
 
-func (s *accountingService) UpdateBankAccountBotStatus(id int64) error {
+func (s *accountingService) UpdateBankAccountBotStatusById(id int64) error {
 
 	account, err := s.repo.GetBankAccountById(id)
 	if err != nil {
@@ -337,34 +403,36 @@ func (s *accountingService) UpdateBankAccountBotStatus(id int64) error {
 		}
 	}
 
+	status_active := "active"
+	status_disconnected := "disconnected"
 	var data model.BankAccountUpdateBody
 	data.LastConnUpdateAt = &now
-	data.ConnectionStatus = "disconnected"
+	data.ConnectionStatus = &status_disconnected
 	// data.AccountBalance = 0
 
 	// FASTBANK
 	if account.AccountNumber == "5014327339" {
-		var query model.ExternalBankAccountStatusRequest
+		var query model.ExternalAccountStatusRequest
 		query.AccountNumber = account.AccountNumber
-		statusResp, err := s.GetExternalBankAccountStatus(query)
+		statusResp, err := s.GetExternalAccountStatus(query)
 		if err != nil {
 			return internalServerError(err.Error())
 		}
 		if statusResp.Status == "online" {
-			data.ConnectionStatus = "active"
+			data.ConnectionStatus = &status_active
 		} else {
 			fmt.Println("statusResp", statusResp)
-			data.ConnectionStatus = "disconnected"
+			data.ConnectionStatus = &status_disconnected
 		}
 
-		balaceResp, err := s.GetExternalBankAccountBalance(query)
+		balaceResp, err := s.GetExternalAccountBalance(query)
 		if err != nil {
 			return internalServerError(err.Error())
 		}
 
 		if balaceResp.AccountNo == account.AccountNumber {
 			balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
-			data.AccountBalance = balance
+			data.AccountBalance = &balance
 		} else {
 			fmt.Println("ERROR, balaceResp: ", balaceResp)
 			return internalServerError(err.Error())
@@ -378,56 +446,64 @@ func (s *accountingService) UpdateBankAccountBotStatus(id int64) error {
 	return nil
 }
 
-func (s *accountingService) UpdateAllBankAccountBotStatus(id int64) error {
+func (s *accountingService) UpdateAllBankAccountBotStatus() error {
 
-	account, err := s.repo.GetBankAccountById(id)
+	var query model.BankAccountListRequest
+	query.Limit = 100
+	query.Page = 0
+	accounts, err := s.repo.GetBankAccounts(query)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 	now := time.Now()
-	if account.LastConnUpdateAt != nil {
-		// fmt.Println(now.Sub(*account.LastConnUpdateAt).Seconds())
-		if now.Sub(*account.LastConnUpdateAt).Seconds() < 30 {
-			return nil
+	error_delay := time.Now().Add(time.Minute * 5)
+	status_active := "active"
+	status_disconnected := "disconnected"
+	for _, account := range accounts.List.([]model.BankAccountResponse) {
+
+		if account.LastConnUpdateAt != nil {
+			if now.Sub(*account.LastConnUpdateAt).Seconds() < 30 {
+				continue
+			}
 		}
-	}
+		var data model.BankAccountUpdateBody
+		data.LastConnUpdateAt = &now
+		data.ConnectionStatus = &status_disconnected
+		// data.AccountBalance = 0
 
-	var data model.BankAccountUpdateBody
-	data.LastConnUpdateAt = &now
-	data.ConnectionStatus = "disconnected"
-	// data.AccountBalance = 0
-
-	// FASTBANK
-	if account.AccountNumber == "5014327339" {
-		var query model.ExternalBankAccountStatusRequest
+		// FASTBANK
+		var query model.ExternalAccountStatusRequest
 		query.AccountNumber = account.AccountNumber
-		statusResp, err := s.GetExternalBankAccountStatus(query)
+		statusResp, err := s.GetExternalAccountStatus(query)
 		if err != nil {
-			return internalServerError(err.Error())
-		}
-		if statusResp.Status == "online" {
-			data.ConnectionStatus = "active"
+			data.LastConnUpdateAt = &error_delay
+			// fmt.Println("ERROR", err.Error())
 		} else {
-			fmt.Println("statusResp", statusResp)
-			data.ConnectionStatus = "disconnected"
+			if statusResp.Status == "online" {
+				data.ConnectionStatus = &status_active
+			} else {
+				fmt.Println("statusResp", statusResp)
+				data.ConnectionStatus = &status_disconnected
+			}
 		}
 
-		balaceResp, err := s.GetExternalBankAccountBalance(query)
+		balaceResp, err := s.GetExternalAccountBalance(query)
 		if err != nil {
-			return internalServerError(err.Error())
-		}
-
-		if balaceResp.AccountNo == account.AccountNumber {
-			balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
-			data.AccountBalance = balance
+			data.LastConnUpdateAt = &error_delay
+			// fmt.Println("ERROR", err.Error())
 		} else {
-			fmt.Println("ERROR, balaceResp: ", balaceResp)
-			return internalServerError(err.Error())
+			if balaceResp.AccountNo == account.AccountNumber {
+				balance, _ := strconv.ParseFloat(strings.TrimSpace(balaceResp.AccountBalance), 64)
+				data.AccountBalance = &balance
+			} else {
+				data.LastConnUpdateAt = &error_delay
+				// fmt.Println("ERROR, balaceResp: ", balaceResp)
+			}
 		}
-	}
 
-	if err := s.repo.UpdateBankAccount(id, data); err != nil {
-		return internalServerError(err.Error())
+		if err := s.repo.UpdateBankAccount(account.Id, data); err != nil {
+			fmt.Println("ERROR, UPDATE ", err.Error())
+		}
 	}
 
 	return nil
@@ -448,14 +524,14 @@ func (s *accountingService) DeleteBankAccount(id int64) error {
 
 func (s *accountingService) GetTransactionById(data model.BankAccountTransactionParam) (*model.BankAccountTransaction, error) {
 
-	accounting, err := s.repo.GetTransactionById(data.Id)
+	record, err := s.repo.GetTransactionById(data.Id)
 	if err != nil {
 		if err.Error() == recordNotFound {
 			return nil, notFound(transactionNotFound)
 		}
 		return nil, internalServerError(err.Error())
 	}
-	return accounting, nil
+	return record, nil
 }
 
 func (s *accountingService) GetTransactions(data model.BankAccountTransactionListRequest) (*model.SuccessWithPagination, error) {
@@ -463,11 +539,11 @@ func (s *accountingService) GetTransactions(data model.BankAccountTransactionLis
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	accounting, err := s.repo.GetTransactions(data)
+	list, err := s.repo.GetTransactions(data)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return accounting, nil
+	return list, nil
 }
 
 func (s *accountingService) CreateTransaction(data model.BankAccountTransactionBody) error {
@@ -518,14 +594,14 @@ func (s *accountingService) DeleteTransaction(id int64) error {
 
 func (s *accountingService) GetTransferById(data model.BankAccountTransferParam) (*model.BankAccountTransfer, error) {
 
-	accounting, err := s.repo.GetTransferById(data.Id)
+	record, err := s.repo.GetTransferById(data.Id)
 	if err != nil {
 		if err.Error() == recordNotFound {
 			return nil, notFound(transferNotFound)
 		}
 		return nil, internalServerError(err.Error())
 	}
-	return accounting, nil
+	return record, nil
 }
 
 func (s *accountingService) GetTransfers(data model.BankAccountTransferListRequest) (*model.SuccessWithPagination, error) {
@@ -533,11 +609,11 @@ func (s *accountingService) GetTransfers(data model.BankAccountTransferListReque
 	if err := helper.Pagination(&data.Page, &data.Limit); err != nil {
 		return nil, badRequest(err.Error())
 	}
-	accounting, err := s.repo.GetTransfers(data)
+	list, err := s.repo.GetTransfers(data)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
-	return accounting, nil
+	return list, nil
 }
 
 func (s *accountingService) CreateTransfer(data model.BankAccountTransferBody) error {
@@ -608,7 +684,7 @@ func (s *accountingService) DeleteTransfer(id int64) error {
 	return nil
 }
 
-func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+func (s *accountingService) GetExternalAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
 
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", nil)
@@ -628,7 +704,7 @@ func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRe
 	if err != nil {
 		log.Fatal(err)
 	}
-	var list []model.ExternalBankAccount
+	var list []model.ExternalAccount
 	json.Unmarshal(responseData, &list)
 
 	// End count total records for pagination purposes (without limit and offset) //
@@ -638,7 +714,7 @@ func (s *accountingService) GetExternalBankAccounts(data model.BankAccountListRe
 	return &result, nil
 }
 
-func (s *accountingService) GetExternalBankAccountBalance(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountBalance, error) {
+func (s *accountingService) GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error) {
 
 	client := &http.Client{}
 	// curl -X GET "https://api.fastbankapi.com/api/v2/statement/balance?accountNo=4281243019" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
@@ -659,7 +735,7 @@ func (s *accountingService) GetExternalBankAccountBalance(query model.ExternalBa
 	if err != nil {
 		log.Fatal(err)
 	}
-	var result model.ExternalBankAccountBalance
+	var result model.ExternalAccountBalance
 	json.Unmarshal(responseData, &result)
 	if result.AccountNo != query.AccountNumber {
 		fmt.Println("response", string(responseData))
@@ -668,7 +744,7 @@ func (s *accountingService) GetExternalBankAccountBalance(query model.ExternalBa
 	return &result, nil
 }
 
-func (s *accountingService) GetExternalBankAccountStatus(query model.ExternalBankAccountStatusRequest) (*model.ExternalBankAccountStatus, error) {
+func (s *accountingService) GetExternalAccountStatus(query model.ExternalAccountStatusRequest) (*model.ExternalAccountStatus, error) {
 
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bank-status?accountNo="+query.AccountNumber, nil)
@@ -687,12 +763,12 @@ func (s *accountingService) GetExternalBankAccountStatus(query model.ExternalBan
 		log.Fatal(err)
 	}
 
-	var result model.ExternalBankAccountStatus
+	var result model.ExternalAccountStatus
 	json.Unmarshal(responseData, &result)
 	return &result, nil
 }
 
-func (s *accountingService) CreateExternalBankAccount(body model.ExternalBankAccountCreateBody) error {
+func (s *accountingService) CreateExternalAccount(body model.ExternalAccountCreateBody) (*model.ExternalAccountCreateResponse, error) {
 
 	client := &http.Client{}
 	data, _ := json.Marshal(body)
@@ -706,20 +782,23 @@ func (s *accountingService) CreateExternalBankAccount(body model.ExternalBankAcc
 	}
 	if response.StatusCode != 200 {
 		fmt.Println(response)
-		return internalServerError("Error from external API")
+		return nil, internalServerError("Error from external API")
 	}
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var result model.ExternalBankAccountCreateResponse
+	var result model.ExternalAccountCreateResponse
 	json.Unmarshal(responseData, &result)
-	fmt.Println("response", result)
-
-	return nil
+	// fmt.Println("response", result)
+	jsonResult, err := json.Marshal(result)
+	if err == nil {
+		s.CreateWebhookLog("CreateExternalAccount", string(jsonResult))
+	}
+	return &result, nil
 }
 
-func (s *accountingService) UpdateExternalBankAccount(body model.ExternalBankAccountCreateBody) error {
+func (s *accountingService) UpdateExternalAccount(body model.ExternalAccountCreateBody) (*model.ExternalAccountCreateResponse, error) {
 
 	client := &http.Client{}
 	data, _ := json.Marshal(body)
@@ -733,20 +812,23 @@ func (s *accountingService) UpdateExternalBankAccount(body model.ExternalBankAcc
 	}
 	if response.StatusCode != 200 {
 		fmt.Println(response)
-		return internalServerError("Error from external API")
+		return nil, internalServerError("Error from external API")
 	}
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var result model.ExternalBankAccountCreateResponse
+	var result model.ExternalAccountCreateResponse
 	json.Unmarshal(responseData, &result)
-	fmt.Println("response", result)
-
-	return nil
+	// fmt.Println("response", result)
+	jsonResult, err := json.Marshal(result)
+	if err == nil {
+		s.CreateWebhookLog("UpdateExternalAccount", string(jsonResult))
+	}
+	return &result, nil
 }
 
-func (s *accountingService) DeleteExternalBankAccount(query model.ExternalBankAccountStatusRequest) error {
+func (s *accountingService) DeleteExternalAccount(query model.ExternalAccountStatusRequest) error {
 
 	client := &http.Client{}
 	req, _ := http.NewRequest("DELETE", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount/"+query.AccountNumber, nil)
@@ -769,7 +851,7 @@ func (s *accountingService) DeleteExternalBankAccount(query model.ExternalBankAc
 	return nil
 }
 
-func (s *accountingService) EnableExternalBankAccount(body model.ExternalBankAccountEnableRequest) (*model.ExternalBankAccountStatus, error) {
+func (s *accountingService) EnableExternalAccount(body model.ExternalAccountEnableRequest) (*model.ExternalAccountStatus, error) {
 
 	client := &http.Client{}
 	// curl -X POST "https://api.fastbankapi.com/api/v2/site/enable-bank" -H "accept: */*" -H "apiKey: 123" -H "Content-Type: application/json" -d "{ \"accountNo\": \"string\", \"enable\": true}"
@@ -790,20 +872,24 @@ func (s *accountingService) EnableExternalBankAccount(body model.ExternalBankAcc
 	if err != nil {
 		log.Fatal(err)
 	}
-	// fmt.Println("EnableExternalBankAccount:", string(responseData))
+	// fmt.Println("EnableExternalAccount:", string(responseData))
 	// {"success":true,"enable":true,"status":"online"}
 	// {"success":true,"enable":false,"status":"offline"}
-	var result model.ExternalBankAccountStatus
+	var result model.ExternalAccountStatus
 	json.Unmarshal(responseData, &result)
 	return &result, nil
 }
 
-func (s *accountingService) GetExternalBankAccountsLogs(query model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+func (s *accountingService) GetExternalAccountLogs(query model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+
+	fmt.Println("BankAccountListRequest", query)
 
 	client := &http.Client{}
-	// curl -X GET "https://api.fastbankapi.com/api/v2/site/bankAccount/logs?accountNo=123&page=0&size=10" -H "accept: */*" -H "apiKey: 123"
+	// curl -X GET "https://api.fastbankapi.com/api/v2/site/bankAccount/logs?accountNo=aaaaaaaaaaaaaa&page=0&size=10" -H "accept: */*" -H "apiKey: xxxxxxxxxx.yyyyyyyyyyy"
 	queryString := fmt.Sprintf("&page=%d&size=%d", query.Page, query.Limit)
-	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount/logs?accountNo="+query.AccountNumber+queryString, nil)
+	fullPath := os.Getenv("ACCOUNTING_API_ENDPOINT") + "/api/v2/site/bankAccount/logs?accountNo=" + query.AccountNumber + queryString
+	fmt.Println("fullPath", fullPath)
+	req, _ := http.NewRequest("GET", fullPath, nil)
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
 
@@ -820,23 +906,28 @@ func (s *accountingService) GetExternalBankAccountsLogs(query model.BankAccountL
 	if err != nil {
 		log.Fatal(err)
 	}
-	var list []model.ExternalBankAccount
-	// json.Unmarshal(responseData, &list)
-	fmt.Println("response", string(responseData))
+	var externalList model.ExternalListWithPagination
+	json.Unmarshal(responseData, &externalList)
+	// fmt.Println("response", string(responseData))
 
 	// End count total records for pagination purposes (without limit and offset) //
 	var result model.SuccessWithPagination
-	result.List = list
-	result.Total = int64(len(list))
+	result.List = externalList.Content
+	result.Total = externalList.TotalElements
 	return &result, nil
 }
 
-func (s *accountingService) GetExternalBankStatements(query model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+func (s *accountingService) GetExternalAccountStatements(query model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+
+	fmt.Println("BankAccountListRequest", query)
 
 	client := &http.Client{}
+	// https://api.fastbankapi.com/api/v2/statement?accountNo=5014327339&page=0&size=10&txnCode=all
 	// curl -X GET "https://api.fastbankapi.com/api/v2/statement?accountNo=4281243019&page=0&size=10&txnCode=all" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
 	queryString := fmt.Sprintf("&page=%d&size=%d&txnCode=all", query.Page, query.Limit)
-	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement?accountNo="+query.Search+queryString, nil)
+	fullPath := os.Getenv("ACCOUNTING_API_ENDPOINT") + "/api/v2/statement?accountNo=" + query.AccountNumber + queryString
+	fmt.Println("fullPath", fullPath)
+	req, _ := http.NewRequest("GET", fullPath, nil)
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
 
@@ -853,15 +944,61 @@ func (s *accountingService) GetExternalBankStatements(query model.BankAccountLis
 	if err != nil {
 		log.Fatal(err)
 	}
-	var list []model.ExternalBankAccount
-	// json.Unmarshal(responseData, &list)
-	fmt.Println("response", string(responseData))
+	var externalList model.ExternalListWithPagination
+	json.Unmarshal(responseData, &externalList)
+	// fmt.Println("response", string(responseData))
 
 	// End count total records for pagination purposes (without limit and offset) //
 	var result model.SuccessWithPagination
-	result.List = list
-	result.Total = int64(len(list))
+	result.List = externalList.Content
+	result.Total = externalList.TotalElements
 	return &result, nil
+}
+
+func (s *accountingService) TransferExternalAccount(req model.ExternalAccountTransferRequest) error {
+
+	var body model.ExternalAccountTransferBody
+	systemAccount, err := s.repo.GetBankAccountById(req.SystemAccountId)
+	if err != nil {
+		if err.Error() == recordNotFound {
+			return notFound(bankAccountNotFound)
+		}
+		return internalServerError(err.Error())
+	}
+	body.AccountForm = systemAccount.AccountNumber
+	body.AccountTo = req.AccountNumber
+	body.Amount = req.Amount
+	body.BankCode = req.BankCode
+	body.Pin = systemAccount.PinCode
+
+	client := &http.Client{}
+	// curl -X POST "https://api.fastbankapi.com/api/v2/statement/transfer" -H "accept: */*" -H "apiKey: xxxxxxxxxx.yyyyyyyyyyy"
+	//-H "Content-Type: application/json" -d "{ \"accountFrom\": \"aaaaaaaaaaaaaaaa\", \"accountTo\": \"bbbbbbbbbbbbbb\", \"amount\": \"8\", \"bankCode\": \"bay\", \"pin\": \"ccccc\"}"
+	data, _ := json.Marshal(body)
+	reqHttp, _ := http.NewRequest("POST", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement/transfer", bytes.NewBuffer(data))
+	reqHttp.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	reqHttp.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(reqHttp)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("response", string(responseData))
+
+	if response.StatusCode != 200 {
+		var errorModel model.ExternalAccountError
+		json.Unmarshal(responseData, &errorModel)
+		fmt.Println("errorModel", errorModel)
+		if errorModel.Error != "" {
+			return internalServerError(errorModel.Error)
+		}
+		return internalServerError("Error from external API")
+	}
+	return nil
 }
 
 func (s *accountingService) CreateWebhookLog(logType string, jsonRequest string) error {
