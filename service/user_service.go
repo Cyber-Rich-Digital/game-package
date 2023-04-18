@@ -133,6 +133,11 @@ func (s *userService) UpdateUser(userId int64, body model.UpdateUser, adminName 
 
 	user, err := s.repo.GetUser(userId)
 	if err != nil {
+
+		if err.Error() == "record not found" {
+			return notFound(UserNotFound)
+		}
+
 		return internalServerError(err.Error())
 	}
 
