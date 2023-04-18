@@ -15,8 +15,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"cybergame-api/cloudbucket"
 )
 
 // @title CyberGame API
@@ -36,7 +34,6 @@ func main() {
 	db := initDatabase()
 
 	r := gin.Default()
-	r.POST("/api/cloud-storage-bucket", cloudbucket.HandleFileUploadToBucket)
 
 	gin.SetMode(os.Getenv("GIN_MODE"))
 

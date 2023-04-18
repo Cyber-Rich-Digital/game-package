@@ -18,11 +18,11 @@ var (
 
 // HandleFileUploadToBucket uploads file to bucket
 func HandleFileUploadToBucket(c *gin.Context) {
-	bucket := os.Getenv("NAME_BUCKET") //your bucket name
-	maxBytes := os.Getenv("MAXIMAGE")  // 2MB
+	bucket := os.Getenv("NAME_BUCKET")       //your bucket name
+	maxBytes := os.Getenv("IMAGE_MAXI_SIZE") // 2MB
 	var err error
 
-	if maxBytes >= maxBytes {
+	if maxBytes >= os.Getenv("IMAGE_MAXI_SIZE") {
 
 		ctx := appengine.NewContext(c.Request)
 
