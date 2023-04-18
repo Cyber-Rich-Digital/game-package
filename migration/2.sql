@@ -54,7 +54,8 @@ CREATE Table
         account_status VARCHAR(255) NOT NULL,
         device_uid VARCHAR(255) NOT NULL,
         pin_code VARCHAR(255) NOT NULL,
-        conection_status VARCHAR(255) NOT NULL,
+        connection_status VARCHAR(255) NOT NULL,
+        last_conn_update_at DATETIME NULL,
         auto_credit_flag VARCHAR(255) NOT NULL,
         auto_withdraw_flag VARCHAR(255) NOT NULL,
         auto_withdraw_max_amount VARCHAR(255) NOT NULL,
@@ -66,7 +67,9 @@ CREATE Table
     );
 
 ALTER TABLE `Bank_accounts`
-	ADD UNIQUE INDEX `uni_account_number` (`account_number`);
+	ADD UNIQUE INDEX `uni_account_number` (`account_number`),
+    ADD INDEX `idx_bank_id` (`bank_id`),
+    ADD INDEX `idx_account_type_id` (`account_type_id`);
 
 CREATE Table
     Bank_account_transactions (
@@ -81,6 +84,9 @@ CREATE Table
         updated_at DATETIME NULL ON UPDATE NOW(),
         deleted_at DATETIME NULL
     );
+
+ALTER TABLE `Bank_account_transactions`
+    ADD INDEX `idx_account_id` (`account_id`);
 
 CREATE Table
     Bank_account_transfers (
@@ -99,6 +105,22 @@ CREATE Table
         status VARCHAR(255) NOT NULL,
         confirmed_at DATETIME NULL,
         confirmed_by_user_id BIGINT NULL,
+        created_at DATETIME DEFAULT NOW(),
+        updated_at DATETIME NULL ON UPDATE NOW(),
+        deleted_at DATETIME NULL
+    );
+
+ALTER TABLE `Bank_account_transfers`
+    ADD INDEX `idx_from_account_id` (`from_account_id`),
+    ADD INDEX `idx_to_account_id` (`to_account_id`);
+
+CREATE Table
+    Webhook_logs (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        json_request TEXT NOT NULL,
+        json_payload TEXT NOT NULL,
+        log_type VARCHAR(255) NOT NULL,
+        status VARCHAR(255) NOT NULL,
         created_at DATETIME DEFAULT NOW(),
         updated_at DATETIME NULL ON UPDATE NOW(),
         deleted_at DATETIME NULL
