@@ -50,6 +50,7 @@ type AccountingService interface {
 	EnableExternalAccount(query model.ExternalAccountEnableRequest) (*model.ExternalAccountStatus, error)
 	DeleteExternalAccount(query model.ExternalAccountStatusRequest) error
 	TransferExternalAccount(data model.ExternalAccountTransferRequest) error
+	CreateBankStatementFromWebhook(data model.WebhookStatement) error
 
 	GetExternalAccountLogs(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	GetExternalAccountStatements(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
@@ -888,7 +889,6 @@ func (s *accountingService) GetExternalAccountLogs(query model.BankAccountListRe
 	// curl -X GET "https://api.fastbankapi.com/api/v2/site/bankAccount/logs?accountNo=aaaaaaaaaaaaaa&page=0&size=10" -H "accept: */*" -H "apiKey: xxxxxxxxxx.yyyyyyyyyyy"
 	queryString := fmt.Sprintf("&page=%d&size=%d", query.Page, query.Limit)
 	fullPath := os.Getenv("ACCOUNTING_API_ENDPOINT") + "/api/v2/site/bankAccount/logs?accountNo=" + query.AccountNumber + queryString
-	fmt.Println("fullPath", fullPath)
 	req, _ := http.NewRequest("GET", fullPath, nil)
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
@@ -926,7 +926,6 @@ func (s *accountingService) GetExternalAccountStatements(query model.BankAccount
 	// curl -X GET "https://api.fastbankapi.com/api/v2/statement?accountNo=4281243019&page=0&size=10&txnCode=all" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
 	queryString := fmt.Sprintf("&page=%d&size=%d&txnCode=all", query.Page, query.Limit)
 	fullPath := os.Getenv("ACCOUNTING_API_ENDPOINT") + "/api/v2/statement?accountNo=" + query.AccountNumber + queryString
-	fmt.Println("fullPath", fullPath)
 	req, _ := http.NewRequest("GET", fullPath, nil)
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
@@ -987,7 +986,7 @@ func (s *accountingService) TransferExternalAccount(req model.ExternalAccountTra
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("response", string(responseData))
+	// fmt.Println("response", string(responseData))
 
 	if response.StatusCode != 200 {
 		var errorModel model.ExternalAccountError
@@ -998,6 +997,39 @@ func (s *accountingService) TransferExternalAccount(req model.ExternalAccountTra
 		}
 		return internalServerError("Error from external API")
 	}
+	return nil
+}
+
+func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookStatement) error {
+
+	systemAccount, err := s.repo.GetBankAccountByExternalId(data.BankAccountId)
+	if err != nil {
+		fmt.Println(err)
+		return badRequest("Invalid Bank Account")
+	}
+
+	_, errOldStatement := s.repo.GetWebhookStatementByExternalId(data.Id)
+	if errOldStatement != nil && errOldStatement.Error() == recordNotFound {
+		var body model.BankStatementCreateBody
+		body.AccountId = systemAccount.Id
+		body.ExternalId = data.Id
+		if data.TxnCode == "X1" || data.TxnCode == "CR" {
+			body.StatementType = "transfer_in"
+			body.Amount = data.Amount
+		} else if data.TxnCode == "X2" || data.TxnCode == "DR" {
+			body.StatementType = "transfer_out"
+			body.Amount = data.Amount * -1
+		} else {
+			return badRequest("Invalid TxnCode")
+		}
+		body.Detail = data.TxnDescription + " " + data.Info
+		body.TransferAt = data.DateTime
+		body.Status = "pending"
+		if err := s.repo.CreateWebhookStatement(body); err != nil {
+			return internalServerError(err.Error())
+		}
+	}
+
 	return nil
 }
 

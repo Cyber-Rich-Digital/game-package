@@ -497,3 +497,28 @@ type WebhookLogCreateBody struct {
 	LogType     string `json:"logType"`
 	Status      string `json:"status"`
 }
+
+type WebhookStatementResponse struct {
+	NewStatementList []WebhookStatement `json:"newStatementList"`
+}
+
+type WebhookStatement struct {
+	Id                 int64     `json:"id"`
+	CustomerId         int64     `json:"customerId"`
+	ClientId           int64     `json:"clientId"`
+	ClientName         string    `json:"clientName"`
+	BankAccountId      int64     `json:"bankAccountId"`
+	BankCode           string    `json:"bankCode"`
+	Amount             float32   `json:"amount"`
+	DateTime           time.Time `json:"dateTime"`
+	RawDateTime        time.Time `json:"rawDateTime"`
+	Info               string    `json:"info"`
+	ChannelCode        string    `json:"channelCode"`
+	ChannelDescription string    `json:"channelDescription"`
+	TxnCode            string    `json:"txnCode"`
+	TxnDescription     string    `json:"txnDescription"`
+	Checksum           string    `json:"checksum"`
+	IsRead             bool      `json:"isRead"`
+	CreatedDate        string    `json:"createdDate"`
+	UpdatedDate        string    `json:"updatedDate"`
+}

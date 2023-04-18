@@ -5,7 +5,7 @@ import (
 	"cybergame-api/model"
 	"cybergame-api/repository"
 	"cybergame-api/service"
-	"fmt"
+	"encoding/json"
 	"io/ioutil"
 	"strconv"
 
@@ -1061,15 +1061,30 @@ func (h accountingController) webhookAction(c *gin.Context) {
 		HandleError(c, errValidate)
 		return
 	}
-	jsonString := string(jsonData)
-	fmt.Println("ACTION", jsonString)
 
+	// IsNewStateMentList
+	var resp model.WebhookStatementResponse
+	errJson := json.Unmarshal(jsonData, &resp)
+	if errJson != nil {
+		HandleError(c, errJson)
+		return
+	}
+	if resp.NewStatementList != nil {
+		for _, v := range resp.NewStatementList {
+			err := h.accountingService.CreateBankStatementFromWebhook(v)
+			if err != nil {
+				HandleError(c, err)
+				return
+			}
+		}
+	}
+
+	jsonString := string(jsonData)
 	err := h.accountingService.CreateWebhookLog("ACTION", jsonString)
 	if err != nil {
 		HandleError(c, err)
 		return
 	}
-
 	c.JSON(200, model.Success{Message: "success"})
 }
 
@@ -1089,14 +1104,12 @@ func (h accountingController) webhookNoti(c *gin.Context) {
 		HandleError(c, errValidate)
 		return
 	}
-	jsonString := string(jsonData)
-	fmt.Println("NOTI", jsonString)
 
+	jsonString := string(jsonData)
 	err := h.accountingService.CreateWebhookLog("NOTI", jsonString)
 	if err != nil {
 		HandleError(c, err)
 		return
 	}
-
 	c.JSON(200, model.Success{Message: "success"})
 }

@@ -45,6 +45,7 @@ type BankStatementListRequest struct {
 
 type BankStatementCreateBody struct {
 	AccountId     int64     `json:"accountId"`
+	ExternalId    int64     `json:"externalId"`
 	Amount        float32   `json:"amount" sql:"type:decimal(14,2);"`
 	Detail        string    `json:"detail"`
 	StatementType string    `json:"statementType"`

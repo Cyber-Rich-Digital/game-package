@@ -28,6 +28,7 @@ type AccountingRepository interface {
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccountByAccountNumber(accountNumber string) (*model.BankAccount, error)
+	GetBankAccountByExternalId(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
 	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
@@ -46,6 +47,8 @@ type AccountingRepository interface {
 	DeleteTransfer(id int64) error
 
 	CreateWebhookLog(body model.WebhookLogCreateBody) error
+	GetWebhookStatementByExternalId(id int64) (*model.BankStatement, error)
+	CreateWebhookStatement(body model.BankStatementCreateBody) error
 }
 
 func (r repo) GetAdminById(id int64) (*model.Admin, error) {
@@ -293,9 +296,21 @@ func (r repo) GetBankAccountByAccountNumber(accountNumber string) (*model.BankAc
 		Error; err != nil {
 		return nil, err
 	}
+	return &accounting, nil
+}
 
-	if accounting.Id == 0 {
-		return nil, errors.New("Account not found")
+func (r repo) GetBankAccountByExternalId(external_id int64) (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Where("accounts.external_id = ?", external_id).
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
 	}
 	return &accounting, nil
 }
@@ -653,6 +668,28 @@ func (r repo) DeleteTransfer(id int64) error {
 
 func (r repo) CreateWebhookLog(data model.WebhookLogCreateBody) error {
 	if err := r.db.Table("Webhook_logs").Create(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) GetWebhookStatementByExternalId(external_id int64) (*model.BankStatement, error) {
+
+	var record model.BankStatement
+	selectedFields := "statements.id, statements.external_id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
+	if err := r.db.Table("Bank_statements as statements").
+		Select(selectedFields).
+		Where("statements.external_id = ?", external_id).
+		Where("statements.deleted_at IS NULL").
+		First(&record).
+		Error; err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (r repo) CreateWebhookStatement(data model.BankStatementCreateBody) error {
+	if err := r.db.Table("Bank_statements").Create(&data).Error; err != nil {
 		return err
 	}
 	return nil
