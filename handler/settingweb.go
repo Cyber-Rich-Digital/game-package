@@ -7,14 +7,9 @@ import (
 
 	"cybergame-api/repository"
 
-	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
-)
-
-var (
-	storageClient *storage.Client
 )
 
 type settingwebController struct {
