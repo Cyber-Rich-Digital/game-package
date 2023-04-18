@@ -11,24 +11,32 @@ func NewPermissionRepository(db *gorm.DB) PermissionRepository {
 }
 
 type PermissionRepository interface {
-	GetPermissions() ([]*model.Permission, error)
+	GetPermissions() ([]*model.Permission, *[]model.AdminPermission, error)
 	CheckPerListExist(ids []int64) ([]int64, error)
 	CheckPerListAndGroupId(groupId int64, perIds []int64) ([]int64, error)
 	CreatePermission(data *model.CreatePermission) error
 	DeletePermission(perm model.DeletePermission) error
 }
 
-func (r repo) GetPermissions() ([]*model.Permission, error) {
+func (r repo) GetPermissions() ([]*model.Permission, *[]model.AdminPermission, error) {
 
 	var list []*model.Permission
+	var adminPers *[]model.AdminPermission
 
 	if err := r.db.Table("Permissions").
-		Select("id, name").
+		Select("id, name, permission_key, main").
+		Where("Permission_key IS NOT NULL").
 		Find(&list).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return list, nil
+	if err := r.db.Table("Admin_permissions").
+		// Where("Permission_key IS NOT NULL").
+		Find(&adminPers).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return list, adminPers, nil
 }
 
 func (r repo) CheckPerListExist(ids []int64) ([]int64, error) {

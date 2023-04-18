@@ -121,6 +121,8 @@ type AdminBody struct {
 type AdminPermission struct {
 	AdminId      int64 `json:"adminId"`
 	PermissionId int64 `json:"permissionId"`
+	IsRead       bool  `json:"read"`
+	IsWrite      bool  `json:"write"`
 }
 
 type AdminList struct {
