@@ -38,11 +38,9 @@ type User struct {
 type CreateUser struct {
 	Partner      string `json:"partner" validate:"required,max=20"`
 	MemberCode   string `json:"memberCode" validate:"max=255"`
-	Username     string `json:"username" validate:"required,max=255"`
 	Phone        string `json:"phone" validate:"required,max=12" example:"0812345678"`
 	Promotion    string `json:"promotion" validate:"max=20"`
 	Password     string `json:"password" validate:"required,max=255"`
-	Status       string `json:"status" validate:"max=255" enum:"ACTIVE,DEACTIVE" example:"ACTIVE"`
 	Fullname     string `json:"fullname" validate:"required,max=255"`
 	Bankname     string `json:"bankname" validate:"required,max=50"`
 	BankAccount  string `json:"bankAccount" validate:"required,max=15"`
