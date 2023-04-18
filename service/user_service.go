@@ -106,7 +106,7 @@ func (s *userService) Create(data *model.CreateUser) error {
 	newUser.Phone = data.Phone
 	newUser.Promotion = data.Promotion
 	newUser.Password = string(hashedPassword)
-	newUser.Status = data.Status
+	newUser.Status = "ACTIVE"
 	newUser.Fullname = data.Fullname
 	newUser.Bankname = data.Bankname
 	newUser.BankAccount = data.BankAccount
@@ -133,6 +133,11 @@ func (s *userService) UpdateUser(userId int64, body model.UpdateUser, adminName 
 
 	user, err := s.repo.GetUser(userId)
 	if err != nil {
+
+		if err.Error() == "record not found" {
+			return notFound(UserNotFound)
+		}
+
 		return internalServerError(err.Error())
 	}
 

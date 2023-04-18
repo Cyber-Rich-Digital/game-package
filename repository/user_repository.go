@@ -2,7 +2,9 @@ package repository
 
 import (
 	"cybergame-api/model"
+	"errors"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -45,7 +47,7 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 	var list []model.UserList
 	var total int64
 
-	exec := r.db.Table("Users").
+	exec := r.db.Model(model.User{}).Table("Users").
 		Select("id, member_code, promotion, fullname, bankname, bank_account, channel, credit, ip, ip_registered, created_at, updated_at, logedin_at")
 
 	if query.Search != "" {
@@ -64,7 +66,7 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 		return nil, nil, err
 	}
 
-	execTotal := r.db.Table("Users").
+	execTotal := r.db.Model(model.User{}).Table("Users").
 		Select("id")
 
 	if query.Search != "" {
@@ -88,16 +90,11 @@ func (r repo) GetUser(id int64) (*model.UserDetail, error) {
 
 	var admin *model.UserDetail
 
-	if err := r.db.Table("Users").
+	if err := r.db.Model(model.User{}).Table("Users").
 		Select("id, partner, member_code, phone, promotion, bankname, bank_account, fullname, channel, true_wallet, contact, note, course").
 		Where("id = ?", id).
 		First(&admin).
 		Error; err != nil {
-
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-
 		return nil, err
 	}
 
@@ -105,6 +102,7 @@ func (r repo) GetUser(id int64) (*model.UserDetail, error) {
 }
 
 func (r repo) CheckUser(username string) (bool, error) {
+
 	var user model.User
 
 	if err := r.db.Table("Users").
@@ -192,6 +190,12 @@ func (r repo) CreateUser(admin model.User) error {
 	if err := r.db.Table("Users").
 		Create(&admin).
 		Error; err != nil {
+
+		var dup *mysql.MySQLError
+		if errors.As(err, &dup); dup.Number == 1062 {
+			return errors.New("Phone already exists")
+		}
+
 		return err
 	}
 
@@ -202,7 +206,7 @@ func (r repo) UpdateUser(userId int64, data model.UpdateUser, changes []model.Us
 
 	tx := r.db.Begin()
 
-	if err := tx.Table("Users").
+	if err := tx.Model(model.User{}).Table("Users").
 		Where("id = ?", userId).
 		Updates(&data).
 		Error; err != nil {
