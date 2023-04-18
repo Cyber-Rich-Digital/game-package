@@ -53,17 +53,20 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	accountRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankAccount)
 
 	account2Route := root.Group("/bankaccounts2")
-	account2Route.GET("/list", middleware.Authorize, handler.getExternalBankAccounts)
-	account2Route.GET("/status/:account", middleware.Authorize, handler.getExternalBankAccountStatus)
-	account2Route.GET("/balance/:account", middleware.Authorize, handler.getExternalBankAccountBalance)
-	account2Route.POST("", middleware.Authorize, handler.createExternalBankAccount)
-	account2Route.PUT("", middleware.Authorize, handler.updateExternalBankAccount)
-	account2Route.PUT("/status", middleware.Authorize, handler.EnableExternalBankAccount)
-	account2Route.DELETE("/:account", middleware.Authorize, handler.deleteExternalBankAccount)
+	account2Route.GET("/list", middleware.Authorize, handler.getExternalAccounts)
+	account2Route.GET("/status/:account", middleware.Authorize, handler.getExternalAccountStatus)
+	account2Route.GET("/balance/:account", middleware.Authorize, handler.getExternalAccountBalance)
+	account2Route.POST("", middleware.Authorize, handler.createExternalAccount)
+	account2Route.PUT("", middleware.Authorize, handler.updateExternalAccount)
+	account2Route.PUT("/status", middleware.Authorize, handler.EnableExternalAccount)
+	account2Route.DELETE("/:account", middleware.Authorize, handler.deleteExternalAccount)
+	account2Route.POST("/transfer", middleware.Authorize, handler.transferExternalAccount)
+	account2Route.GET("/logs", middleware.Authorize, handler.getExternalAccountLogs)
+	account2Route.GET("/statements", middleware.Authorize, handler.getExternalAccountStatements)
 
 	webhookRoute := root.Group("/webhooks")
-	webhookRoute.POST("/action", middleware.Authorize, handler.webhookAction)
-	webhookRoute.POST("/noti", middleware.Authorize, handler.webhookNoti)
+	webhookRoute.POST("/action", handler.webhookAction)
+	webhookRoute.POST("/noti", handler.webhookNoti)
 
 	transactionRoute := root.Group("/transactions")
 	transactionRoute.GET("/list", middleware.Authorize, handler.getTransactions)
@@ -361,7 +364,7 @@ func (h accountingController) createBankAccount(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "id"
-// @Param body body model.BankAccountUpdateBody true "body"
+// @Param body body model.BankAccountUpdateRequest true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts/{id} [patch]
@@ -374,7 +377,7 @@ func (h accountingController) updateBankAccount(c *gin.Context) {
 		return
 	}
 
-	body := model.BankAccountUpdateBody{}
+	body := model.BankAccountUpdateRequest{}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
 		HandleError(c, err)
@@ -756,21 +759,17 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Deleted success"})
 }
 
-// @Summary GetExternalBankAccounts
-// @Description ดึงข้อมูลลิสบัญชีธนาคาร ข้างนอก
+// @Summary GetExternalAccounts
+// @Description ดึงข้อมูลลิสบัญชีธนาคาร บอท
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param page query int false "page"
-// @Param limit query int false "limit"
-// @Param search query string false "search"
-// @Param sortCol query string false "sortCol"
-// @Param sortAsc query string false "sortAsc"
+// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/list [get]
-func (h accountingController) getExternalBankAccounts(c *gin.Context) {
+func (h accountingController) getExternalAccounts(c *gin.Context) {
 
 	var query model.BankAccountListRequest
 	if err := c.ShouldBind(&query); err != nil {
@@ -782,7 +781,7 @@ func (h accountingController) getExternalBankAccounts(c *gin.Context) {
 		return
 	}
 
-	data, err := h.accountingService.GetExternalBankAccounts(query)
+	data, err := h.accountingService.GetExternalAccounts(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -791,8 +790,8 @@ func (h accountingController) getExternalBankAccounts(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetExternalBankAccountStatus
-// @Description ดึงข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
+// @Summary GetExternalAccountStatus
+// @Description ดึงข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
@@ -801,12 +800,12 @@ func (h accountingController) getExternalBankAccounts(c *gin.Context) {
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/status/{account} [get]
-func (h accountingController) getExternalBankAccountStatus(c *gin.Context) {
+func (h accountingController) getExternalAccountStatus(c *gin.Context) {
 
-	var query model.ExternalBankAccountStatusRequest
+	var query model.ExternalAccountStatusRequest
 	query.AccountNumber = c.Param("account")
 
-	data, err := h.accountingService.GetExternalBankAccountStatus(query)
+	data, err := h.accountingService.GetExternalAccountStatus(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -815,8 +814,8 @@ func (h accountingController) getExternalBankAccountStatus(c *gin.Context) {
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
-// @Summary GetExternalBankAccountBalance
-// @Description ดึงข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
+// @Summary GetExternalAccountBalance
+// @Description ดึงข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
@@ -825,12 +824,12 @@ func (h accountingController) getExternalBankAccountStatus(c *gin.Context) {
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/balance/{account} [get]
-func (h accountingController) getExternalBankAccountBalance(c *gin.Context) {
+func (h accountingController) getExternalAccountBalance(c *gin.Context) {
 
-	var query model.ExternalBankAccountStatusRequest
+	var query model.ExternalAccountStatusRequest
 	query.AccountNumber = c.Param("account")
 
-	data, err := h.accountingService.GetExternalBankAccountBalance(query)
+	data, err := h.accountingService.GetExternalAccountBalance(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -839,19 +838,19 @@ func (h accountingController) getExternalBankAccountBalance(c *gin.Context) {
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
-// @Summary CreateExternalBankAccount
+// @Summary CreateExternalAccount
 // @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body model.ExternalBankAccountCreateBody true "body"
+// @Param body body model.ExternalAccountCreateBody true "body"
 // @Success 201 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2 [post]
-func (h accountingController) createExternalBankAccount(c *gin.Context) {
+func (h accountingController) createExternalAccount(c *gin.Context) {
 
-	var accounting model.ExternalBankAccountCreateBody
+	var accounting model.ExternalAccountCreateBody
 	if err := c.ShouldBindJSON(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -861,7 +860,7 @@ func (h accountingController) createExternalBankAccount(c *gin.Context) {
 		return
 	}
 
-	err := h.accountingService.CreateExternalBankAccount(accounting)
+	_, err := h.accountingService.CreateExternalAccount(accounting)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -869,19 +868,19 @@ func (h accountingController) createExternalBankAccount(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Created success"})
 }
 
-// @Summary UpdateExternalBankAccount
-// @Description ดึงข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
+// @Summary UpdateExternalAccount
+// @Description อัพเดทข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body model.ExternalBankAccountCreateBody true "body"
+// @Param body body model.ExternalAccountCreateBody true "body"
 // @Success 200 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/ [put]
-func (h accountingController) updateExternalBankAccount(c *gin.Context) {
+func (h accountingController) updateExternalAccount(c *gin.Context) {
 
-	var query model.ExternalBankAccountCreateBody
+	var query model.ExternalAccountCreateBody
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -891,7 +890,7 @@ func (h accountingController) updateExternalBankAccount(c *gin.Context) {
 		return
 	}
 
-	err := h.accountingService.UpdateExternalBankAccount(query)
+	_, err := h.accountingService.UpdateExternalAccount(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -900,19 +899,19 @@ func (h accountingController) updateExternalBankAccount(c *gin.Context) {
 	c.JSON(200, model.Success{Message: "Update success"})
 }
 
-// @Summary EnableExternalBankAccount
-// @Description ดึงข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
+// @Summary EnableExternalAccount
+// @Description เปิด ปิด สถานะบัญชีธนาคารบอท ด้วยเลขบัญชี
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body model.ExternalBankAccountEnableRequest true "body"
+// @Param body body model.ExternalAccountEnableRequest true "body"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/status [put]
-func (h accountingController) EnableExternalBankAccount(c *gin.Context) {
+func (h accountingController) EnableExternalAccount(c *gin.Context) {
 
-	var query model.ExternalBankAccountEnableRequest
+	var query model.ExternalAccountEnableRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -922,7 +921,7 @@ func (h accountingController) EnableExternalBankAccount(c *gin.Context) {
 		return
 	}
 
-	result, err := h.accountingService.EnableExternalBankAccount(query)
+	result, err := h.accountingService.EnableExternalAccount(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -931,8 +930,8 @@ func (h accountingController) EnableExternalBankAccount(c *gin.Context) {
 	c.JSON(200, model.SuccessWithData{Message: "Update success", Data: result})
 }
 
-// @Summary DeleteExternalBankAccount
-// @Description ลบข้อมูล บัญชีธนาคารข้างนอก ด้วยเลขบัญชี
+// @Summary DeleteExternalAccount
+// @Description ลบข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
@@ -941,12 +940,12 @@ func (h accountingController) EnableExternalBankAccount(c *gin.Context) {
 // @Success 200 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/{account} [delete]
-func (h accountingController) deleteExternalBankAccount(c *gin.Context) {
+func (h accountingController) deleteExternalAccount(c *gin.Context) {
 
-	var query model.ExternalBankAccountStatusRequest
+	var query model.ExternalAccountStatusRequest
 	query.AccountNumber = c.Param("account")
 
-	err := h.accountingService.DeleteExternalBankAccount(query)
+	err := h.accountingService.DeleteExternalAccount(query)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -955,13 +954,103 @@ func (h accountingController) deleteExternalBankAccount(c *gin.Context) {
 	c.JSON(200, model.Success{Message: "Delete success"})
 }
 
-// @Summary WebhookAction
-// @Description เว็บฮุคแบบ GET
+// @Summary TransferExternalAccount
+// @Description โอนเงิน บัญชีธนาคารบอท
 // @Tags Accounting - TEST
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body model.ExternalBankAccountEnableRequest true "body"
+// @Param body body model.ExternalAccountTransferRequest true "body"
+// @Success 200 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/bankaccounts2/transfer [post]
+func (h accountingController) transferExternalAccount(c *gin.Context) {
+
+	var query model.ExternalAccountTransferRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	err := h.accountingService.TransferExternalAccount(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.Success{Message: "Transfer success"})
+}
+
+// @Summary GetExternalAccountLogs
+// @Description ดึงข้อมูล Logs บัญชีธนาคารบอท
+// @Tags Accounting - TEST
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/bankaccounts2/logs [get]
+func (h accountingController) getExternalAccountLogs(c *gin.Context) {
+
+	var query model.BankAccountListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetExternalAccountLogs(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetExternalAccountStatements
+// @Description ดึงข้อมูล Statement บัญชีธนาคารบอท
+// @Tags Accounting - TEST
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/bankaccounts2/statements [get]
+func (h accountingController) getExternalAccountStatements(c *gin.Context) {
+
+	var query model.BankAccountListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetExternalAccountStatements(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary WebhookAction
+// @Description เว็บฮุคแบบ GET
+// @Tags Accounting - TEST
+// @Accept json
+// @Produce json
+// @Param body body model.ExternalAccountEnableRequest true "body"
 // @Success 200 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/webhooks/action [post]
@@ -987,10 +1076,9 @@ func (h accountingController) webhookAction(c *gin.Context) {
 // @Summary WebhookNoti
 // @Description เว็บฮุคแบบ POST
 // @Tags Accounting - TEST
-// @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param body body model.ExternalBankAccountEnableRequest true "body"
+// @Param body body model.ExternalAccountEnableRequest true "body"
 // @Success 200 {object} model.Success
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/webhooks/noti [post]

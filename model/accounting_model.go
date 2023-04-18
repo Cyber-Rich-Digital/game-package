@@ -96,7 +96,7 @@ type BankAccountParam struct {
 }
 
 type BankAccountListRequest struct {
-	AccountNumber string `json:"accountNumber"`
+	AccountNumber string `form:"accountNumber"`
 	Page          int    `form:"page" default:"1" min:"1"`
 	Limit         int    `form:"limit" default:"10" min:"1" max:"100"`
 	Search        string `form:"search"`
@@ -121,23 +121,40 @@ type BankAccountCreateBody struct {
 	AccountStatus         string  `json:"accountStatus"`
 	ConnectionStatus      string  `json:"-"`
 }
+
+type BankAccountUpdateRequest struct {
+	BankId                *int64  `json:"-"`
+	AccountTypeId         *int64  `json:"accounTypeId"`
+	AccountName           *string `json:"-"`
+	AccountNumber         *string `json:"-"`
+	DeviceUid             *string `json:"deviceUid"`
+	PinCode               *string `json:"pinCode"`
+	AutoCreditFlag        *string `json:"autoCreditFlag"`
+	AutoWithdrawFlag      *string `json:"autoWithdrawFlag"`
+	AutoWithdrawMaxAmount *string `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount *string `json:"autoTransferMaxAmount"`
+	AccountPriority       *string `json:"accountPriority"`
+	QrWalletStatus        *string `json:"qrWalletStatus"`
+	AccountStatus         *string `json:"accountStatus"`
+}
+
 type BankAccountUpdateBody struct {
-	BankId                int64      `json:"-"`
-	AccountTypeId         int64      `json:"accounTypeId" validate:"required"`
-	AccountName           string     `json:"-"`
-	AccountNumber         string     `json:"-"`
-	DeviceUid             string     `json:"deviceUid"`
-	PinCode               string     `json:"pinCode"`
-	AutoCreditFlag        string     `json:"autoCreditFlag"`
-	AutoWithdrawFlag      string     `json:"autoWithdrawFlag"`
-	AutoWithdrawMaxAmount string     `json:"autoWithdrawMaxAmount"`
-	AutoTransferMaxAmount string     `json:"autoTransferMaxAmount"`
-	AccountPriority       string     `json:"accountPriority"`
-	QrWalletStatus        string     `json:"qrWalletStatus"`
-	AccountStatus         string     `json:"accountStatus"`
+	BankId                *int64     `json:"-"`
+	AccountTypeId         *int64     `json:"accounTypeId"`
+	AccountName           *string    `json:"-"`
+	AccountNumber         *string    `json:"-"`
+	DeviceUid             *string    `json:"deviceUid"`
+	PinCode               *string    `json:"pinCode"`
+	AutoCreditFlag        *string    `json:"autoCreditFlag"`
+	AutoWithdrawFlag      *string    `json:"autoWithdrawFlag"`
+	AutoWithdrawMaxAmount *string    `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount *string    `json:"autoTransferMaxAmount"`
+	AccountPriority       *string    `json:"accountPriority"`
+	QrWalletStatus        *string    `json:"qrWalletStatus"`
+	AccountStatus         *string    `json:"accountStatus"`
 	LastConnUpdateAt      *time.Time `json:"-"`
-	ConnectionStatus      string     `json:"-"`
-	AccountBalance        float64    `json:"-"`
+	ConnectionStatus      *string    `json:"-"`
+	AccountBalance        *float64   `json:"-"`
 }
 
 type BankAccountResponse struct {
@@ -296,7 +313,7 @@ type BankAccountTransferResponse struct {
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
-type ExternalBankAccount struct {
+type ExternalAccount struct {
 	BankId           int64   `json:"bankId"`
 	BankCode         string  `json:"bankCode"`
 	ClientName       string  `json:"clientName"`
@@ -313,15 +330,15 @@ type ExternalBankAccount struct {
 	Username         *string `json:"username"`
 }
 
-type ExternalBankAccountStatusRequest struct {
+type ExternalAccountStatusRequest struct {
 	AccountNumber string `json:"accountNumber"`
 }
-type ExternalBankAccountEnableRequest struct {
+type ExternalAccountEnableRequest struct {
 	AccountNo string `json:"accountNo"`
 	Enable    bool   `json:"enable"`
 }
 
-type ExternalBankAccountBalance struct {
+type ExternalAccountBalance struct {
 	LimitUsed            float32 `json:"limitUsed"`
 	BranchId             string  `json:"branchId"`
 	AccountName          string  `json:"accountName"`
@@ -341,13 +358,13 @@ type ExternalBankAccountBalance struct {
 		Description string `json:"description"`
 	} `json:"status"`
 }
-type ExternalBankAccountStatus struct {
+type ExternalAccountStatus struct {
 	Success bool   `json:"success"`
 	Enable  bool   `json:"enable"`
 	Status  string `json:"status"`
 }
 
-type ExternalBankAccountCreateBody struct {
+type ExternalAccountCreateBody struct {
 	AccountNo        string `json:"accountNo"`
 	BankCode         string `json:"bankCode"`
 	DeviceId         string `json:"deviceId"`
@@ -358,7 +375,7 @@ type ExternalBankAccountCreateBody struct {
 	WebhookUrl       string `json:"webhookUrl"`
 }
 
-type ExternalBankAccountCreateResponse struct {
+type ExternalAccountCreateResponse struct {
 	Id               int64  `json:"id"`
 	CustomerId       int64  `json:"customerId"`
 	ApiKey           string `json:"apiKey"`
@@ -375,6 +392,92 @@ type ExternalBankAccountCreateResponse struct {
 	Enable           bool   `json:"enable"`
 	VerifyLogin      bool   `json:"verifyLogin"`
 	Deleted          bool   `json:"deleted"`
+}
+
+type ExternalListWithPagination struct {
+	Content       interface{} `json:"content"`
+	TotalElements int64       `json:"totalElements"`
+}
+
+type ExternalAccountLog struct {
+	Id                 int64          `json:"id"`
+	ExternalId         int64          `json:"externalId"`
+	ClientName         string         `json:"clientName"`
+	LogType            string         `json:"logType"`
+	Message            string         `json:"message"`
+	ExternalCreateDate string         `json:"externalCreateDate"`
+	CreatedAt          time.Time      `json:"createdAt"`
+	UpdatedAt          *time.Time     `json:"updatedAt"`
+	DeletedAt          gorm.DeletedAt `json:"deletedAt"`
+}
+
+type ExternalAccountLogCreateBody struct {
+	ExternalId         int64  `json:"externalId"`
+	LogType            string `json:"logType"`
+	Message            string `json:"message"`
+	ExternalCreateDate string `json:"externalCreateDate"`
+}
+
+type ExternalAccountStatement struct {
+	Id                 int64          `json:"id"`
+	ExternalId         int64          `json:"externalId"`
+	BankAccountId      int64          `json:"bankAccountId"`
+	BankCode           string         `json:"bankCode"`
+	Amount             float32        `json:"amount"`
+	DateTime           time.Time      `json:"dateTime"`
+	RawDateTime        time.Time      `json:"rawDateTime"`
+	Info               string         `json:"info"`
+	ChannelCode        string         `json:"channelCode"`
+	ChannelDescription string         `json:"channelDescription"`
+	TxnCode            string         `json:"txnCode"`
+	TxnDescription     string         `json:"txnDescription"`
+	Checksum           string         `json:"checksum"`
+	IsRead             bool           `json:"isRead"`
+	ExternalCreateDate string         `json:"externalCreateDate"`
+	ExternalUpdateDate string         `json:"externalUpdateDate"`
+	CreatedAt          time.Time      `json:"createdAt"`
+	UpdatedAt          *time.Time     `json:"updatedAt"`
+	DeletedAt          gorm.DeletedAt `json:"deletedAt"`
+}
+
+type ExternalAccountStatementCreateBody struct {
+	ExternalId         int64   `json:"externalId"`
+	BankAccountId      int64   `json:"bankAccountId"`
+	BankCode           string  `json:"bankCode"`
+	Amount             float32 `json:"amount"`
+	DateTime           string  `json:"dateTime"`
+	RawDateTime        string  `json:"rawDateTime"`
+	Info               string  `json:"info"`
+	ChannelCode        string  `json:"channelCode"`
+	ChannelDescription string  `json:"channelDescription"`
+	TxnCode            string  `json:"txnCode"`
+	TxnDescription     string  `json:"txnDescription"`
+	Checksum           string  `json:"checksum"`
+	IsRead             bool    `json:"isRead"`
+	ExternalCreateDate string  `json:"externalCreateDate"`
+	ExternalUpdateDate string  `json:"externalUpdateDate"`
+}
+
+type ExternalAccountTransferRequest struct {
+	SystemAccountId int64  `json:"systemAccountId" validate:"required"`
+	AccountNumber   string `json:"accountNumber" validate:"required"`
+	BankCode        string `json:"bankCode" validate:"required"`
+	Amount          string `json:"amount" validate:"required"`
+}
+
+type ExternalAccountTransferBody struct {
+	AccountForm string `json:"accountFrom"`
+	AccountTo   string `json:"accountTo"`
+	Amount      string `json:"amount"`
+	BankCode    string `json:"bankCode"`
+	Pin         string `json:"pin"`
+}
+
+type ExternalAccountError struct {
+	Timestamp int64  `json:"timestamp"`
+	Status    int    `json:"status"`
+	Error     string `json:"error"`
+	Path      string `json:"path"`
 }
 
 type WebhookLog struct {
