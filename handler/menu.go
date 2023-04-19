@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
 
@@ -27,7 +28,7 @@ func MenuController(r *gin.RouterGroup, db *gorm.DB) {
 	handler := newMenuController(service)
 
 	r = r.Group("/menu")
-	r.GET("/", handler.GetMenu)
+	r.GET("/", middleware.Authorize, handler.GetMenu)
 
 }
 
@@ -42,11 +43,14 @@ func MenuController(r *gin.RouterGroup, db *gorm.DB) {
 // @Router /menu [get]
 func (h menuController) GetMenu(c *gin.Context) {
 
-	list, err := h.menuService.GetMenu()
+	adminId := c.MustGet("adminId").(float64)
+	toInt := int64(adminId)
+
+	list, err := h.menuService.GetMenu(toInt)
 	if err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	c.JSON(201, model.SuccessWithData{Message: "Success", Data: list})
+	c.JSON(200, model.SuccessWithList{Message: "Success", List: list})
 }

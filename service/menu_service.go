@@ -3,12 +3,11 @@ package service
 import (
 	"cybergame-api/model"
 	"cybergame-api/repository"
-	"fmt"
 	"strings"
 )
 
 type MenuService interface {
-	GetMenu() ([]model.Menu, error)
+	GetMenu(adminId int64) ([]model.Menu, error)
 }
 
 type menuService struct {
@@ -21,14 +20,12 @@ func NewMenuService(
 	return &menuService{PermRepo}
 }
 
-func (s *menuService) GetMenu() ([]model.Menu, error) {
+func (s *menuService) GetMenu(adminId int64) ([]model.Menu, error) {
 
-	perms, adminPers, err := s.PermRepo.GetPermissions()
+	perms, adminPers, err := s.PermRepo.GetPermissions(adminId)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(adminPers)
 
 	var menu []model.Menu
 

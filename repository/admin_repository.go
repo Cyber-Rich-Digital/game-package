@@ -21,7 +21,7 @@ type AdminRepository interface {
 	CheckAdmin(username string) (bool, error)
 	CheckAdminById(id int64) (bool, error)
 	CheckPhone(phone string) (bool, error)
-	CreateAdmin(admin model.Admin, permissionIds *[]int64) error
+	CreateAdmin(admin model.Admin, permissionIds *[]model.PermissionObj) error
 	CreateGroupAdmin(data []model.AdminPermissionList) error
 	UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error
 	UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error
@@ -128,9 +128,10 @@ func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
 	}
 
 	if err := r.db.Table("Permissions p").
-		Select("p.id, p.name").
+		Select("p.id, p.name, gp.is_read, gp.is_write").
 		Joins("LEFT JOIN Admin_group_permissions gp ON gp.permission_id = p.id").
 		Where("gp.group_id = ?", groupId).
+		Where("gp.deleted_at IS NULL").
 		Find(&permission).
 		Error; err != nil {
 		return nil, err
@@ -270,7 +271,7 @@ func (r repo) CheckPhone(phone string) (bool, error) {
 	return true, nil
 }
 
-func (r repo) CreateAdmin(admin model.Admin, permissionIds *[]int64) error {
+func (r repo) CreateAdmin(admin model.Admin, permissions *[]model.PermissionObj) error {
 
 	tx := r.db.Begin()
 
@@ -281,13 +282,15 @@ func (r repo) CreateAdmin(admin model.Admin, permissionIds *[]int64) error {
 		return err
 	}
 
-	if permissionIds != nil {
+	if permissions != nil {
 
 		var adminPer []model.AdminPermission
-		for _, v := range *permissionIds {
+		for _, v := range *permissions {
 			adminPer = append(adminPer, model.AdminPermission{
 				AdminId:      admin.Id,
-				PermissionId: v,
+				PermissionId: v.Id,
+				IsRead:       v.Read,
+				IsWrite:      v.Write,
 			})
 		}
 

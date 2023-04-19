@@ -6,19 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewRecommentRepository(db *gorm.DB) RecommentRepository {
+func NewRecommendRepository(db *gorm.DB) RecommendRepository {
 	return &repo{db}
 }
 
-type RecommentRepository interface {
-	GetRecommentList(query model.RecommentQuery) ([]model.RecommentList, int64, error)
-	CreateRecomment(recomment model.CreateRecomment) error
-	UpdateRecomment(id int64, body model.CreateRecomment) error
+type RecommendRepository interface {
+	GetRecommendList(query model.RecommendQuery) ([]model.RecommendList, int64, error)
+	CreateRecommend(recommend model.CreateRecommend) error
+	UpdateRecommend(id int64, body model.CreateRecommend) error
 }
 
-func (r repo) GetRecommentList(query model.RecommentQuery) ([]model.RecommentList, int64, error) {
+func (r repo) GetRecommendList(query model.RecommendQuery) ([]model.RecommendList, int64, error) {
 
-	var recomments []model.RecommentList
+	var recommends []model.RecommendList
 
 	db := r.db.Table("Recommend_channels").Select("id, title, status, url, created_at")
 
@@ -33,7 +33,7 @@ func (r repo) GetRecommentList(query model.RecommentQuery) ([]model.RecommentLis
 	if err := db.
 		Limit(query.Limit).
 		Offset(query.Limit * query.Page).
-		Find(&recomments).
+		Find(&recommends).
 		Order("id ASC").
 		Error; err != nil {
 		return nil, 0, err
@@ -48,13 +48,13 @@ func (r repo) GetRecommentList(query model.RecommentQuery) ([]model.RecommentLis
 		return nil, 0, err
 	}
 
-	return recomments, total, nil
+	return recommends, total, nil
 }
 
-func (r repo) CreateRecomment(recomment model.CreateRecomment) error {
+func (r repo) CreateRecommend(recommend model.CreateRecommend) error {
 
 	if err := r.db.Table("Recommend_channels").
-		Create(&recomment).
+		Create(&recommend).
 		Error; err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (r repo) CreateRecomment(recomment model.CreateRecomment) error {
 	return nil
 }
 
-func (r repo) UpdateRecomment(id int64, body model.CreateRecomment) error {
+func (r repo) UpdateRecommend(id int64, body model.CreateRecommend) error {
 
 	if err := r.db.Table("Recommend_channels").
 		Where("id = ?", id).

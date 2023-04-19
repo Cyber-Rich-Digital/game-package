@@ -61,3 +61,7 @@ INSERT INTO `Permissions` (`name`, `permission_key`, `main`) VALUES
 ALTER TABLE `Admin_permissions` 
 ADD COLUMN `is_read` TINYINT NULL DEFAULT 0 AFTER `deleted_at`,
 ADD COLUMN `is_write` VARCHAR(255) NULL DEFAULT 0 AFTER `is_read`;
+
+ALTER TABLE `cybergame`.`Admin_group_permissions` 
+ADD COLUMN `is_read` TINYINT NULL DEFAULT 0 AFTER `deleted_at`,
+ADD COLUMN `is_write` TINYINT NULL DEFAULT 0 AFTER `is_read`;
