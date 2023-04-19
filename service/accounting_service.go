@@ -7,7 +7,7 @@ import (
 	"cybergame-api/repository"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -148,7 +148,10 @@ func (s *accountingService) GetAccountTypes(params model.AccountTypeListRequest)
 
 func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*model.BankAccount, error) {
 
-	s.UpdateBankAccountBotStatusById(data.Id)
+	err := s.UpdateBankAccountBotStatusById(data.Id)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
 
 	record, err := s.repo.GetBankAccountById(data.Id)
 	if err != nil {
@@ -701,12 +704,15 @@ func (s *accountingService) GetExternalAccounts(data model.BankAccountListReques
 		fmt.Println(response)
 		return nil, internalServerError("Error from external API")
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var list []model.ExternalAccount
-	json.Unmarshal(responseData, &list)
+	errJson := json.Unmarshal(responseData, &list)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
 
 	// End count total records for pagination purposes (without limit and offset) //
 	var result model.SuccessWithPagination
@@ -732,14 +738,17 @@ func (s *accountingService) GetExternalAccountBalance(query model.ExternalAccoun
 		fmt.Println(response)
 		return nil, internalServerError("Error from external API")
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var result model.ExternalAccountBalance
-	json.Unmarshal(responseData, &result)
+	errJson := json.Unmarshal(responseData, &result)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
 	if result.AccountNo != query.AccountNumber {
-		fmt.Println("response", string(responseData))
+		s.CreateWebhookLog("GetExternalAccountBalance, ERROR:", string(responseData))
 		return nil, notFound("Bank account not found")
 	}
 	return &result, nil
@@ -755,17 +764,20 @@ func (s *accountingService) GetExternalAccountStatus(query model.ExternalAccount
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
-	if response.StatusCode != 200 {
-		fmt.Println(response)
-		return nil, notFound("Bank account not found")
-	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if response.StatusCode != 200 {
+		s.CreateWebhookLog("GetExternalAccountStatus, ERROR:", string(responseData))
+		return nil, notFound("Bank account not found")
+	}
 
 	var result model.ExternalAccountStatus
-	json.Unmarshal(responseData, &result)
+	errJson := json.Unmarshal(responseData, &result)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
 	return &result, nil
 }
 
@@ -781,17 +793,20 @@ func (s *accountingService) CreateExternalAccount(body model.ExternalAccountCrea
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
-	if response.StatusCode != 200 {
-		fmt.Println(response)
-		return nil, internalServerError("Error from external API")
-	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if response.StatusCode != 200 {
+		s.CreateWebhookLog("CreateExternalAccount, ERROR:", string(responseData))
+		return nil, internalServerError("Error from external API")
+	}
+
 	var result model.ExternalAccountCreateResponse
-	json.Unmarshal(responseData, &result)
-	// fmt.Println("response", result)
+	errJson := json.Unmarshal(responseData, &result)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
 	jsonResult, err := json.Marshal(result)
 	if err == nil {
 		s.CreateWebhookLog("CreateExternalAccount", string(jsonResult))
@@ -811,20 +826,22 @@ func (s *accountingService) UpdateExternalAccount(body model.ExternalAccountCrea
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
-	if response.StatusCode != 200 {
-		fmt.Println(response)
-		return nil, internalServerError("Error from external API")
-	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if response.StatusCode != 200 {
+		s.CreateWebhookLog("UpdateExternalAccount, ERROR:", string(responseData))
+		return nil, internalServerError("Error from external API")
+	}
 	var result model.ExternalAccountCreateResponse
-	json.Unmarshal(responseData, &result)
-	// fmt.Println("response", result)
+	errJson := json.Unmarshal(responseData, &result)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
 	jsonResult, err := json.Marshal(result)
 	if err == nil {
-		s.CreateWebhookLog("UpdateExternalAccount", string(jsonResult))
+		s.CreateWebhookLog("UpdateExternalAccount, SUCCESS:", string(jsonResult))
 	}
 	return &result, nil
 }
@@ -843,11 +860,11 @@ func (s *accountingService) DeleteExternalAccount(query model.ExternalAccountSta
 		fmt.Println(response)
 		return internalServerError("Error from external API")
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("response", string(responseData))
+	s.CreateWebhookLog("DeleteExternalAccount, responseData:", string(responseData))
 
 	return nil
 }
@@ -869,7 +886,7 @@ func (s *accountingService) EnableExternalAccount(body model.ExternalAccountEnab
 		fmt.Println(response)
 		return nil, internalServerError("Error from external API")
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -902,7 +919,7 @@ func (s *accountingService) GetExternalAccountLogs(query model.BankAccountListRe
 		fmt.Println(response)
 		return nil, internalServerError("Error from external API")
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -939,7 +956,7 @@ func (s *accountingService) GetExternalAccountStatements(query model.BankAccount
 		fmt.Println(response)
 		return nil, internalServerError("Error from external API")
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -982,7 +999,7 @@ func (s *accountingService) TransferExternalAccount(req model.ExternalAccountTra
 		fmt.Print(err.Error())
 		os.Exit(1)
 	}
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
