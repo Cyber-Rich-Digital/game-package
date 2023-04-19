@@ -65,7 +65,15 @@ ALTER TABLE `Botaccount_config`
     ADD INDEX `idx_config_key` (`config_key`);
 
 
-INSERT INTO `botaccount_config` (`config_key`, `config_val`) VALUES
+INSERT INTO `Botaccount_config` (`config_key`, `config_val`) VALUES
 	('allow_create_external_account', '_all'),
 	('allow_create_external_account', '_list'),
 	('allow_external_account_number', 'set to list and set account number');
+
+ALTER TABLE `Bank_account_types`
+	ADD COLUMN `allow_deposit` TINYINT NOT NULL DEFAULT 0 AFTER `limit_flag`,
+	ADD COLUMN `allow_withdraw` TINYINT NOT NULL DEFAULT 0 AFTER `allow_deposit`;
+
+UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=0 WHERE `limit_flag`="00001000";
+UPDATE `Bank_account_types` SET `allow_deposit`=0, `allow_withdraw`=1 WHERE `limit_flag`="00000100";
+UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=1 WHERE `limit_flag`="00001100";

@@ -6,14 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type TempUser struct {
-	Id            int64  `json:"id" gorm:"primaryKey"`
-	MemberCode    string `json:"memberCode"`
-	BankId        int64  `json:"bankId"`
-	AccountName   string `json:"accountName"`
-	AccountNumber string `json:"accountNumber"`
-}
-
 type BankStatement struct {
 	Id            int64          `json:"id" gorm:"primaryKey"`
 	AccountId     int64          `json:"accountId"`

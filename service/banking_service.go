@@ -146,7 +146,11 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
-		body.MemberCode = member.MemberCode
+		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid User Bank")
+		}
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -154,11 +158,13 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.OverAmount = data.OverAmount
 		body.IsAutoCredit = data.IsAutoCredit
 
-		// body.FromAccountId = 0
-		body.FromBankId = &member.BankId
-		body.FromAccountName = &member.AccountName
-		body.FromAccountNumber = &member.AccountNumber
-		toAccount, err := s.repoAccounting.GetBankAccountById(*data.ToAccountId)
+		body.FromBankId = &bank.Id
+		body.FromAccountName = &member.Fullname
+		body.FromAccountNumber = &member.BankAccount
+		if data.ToAccountId == nil {
+			return badRequest("Input Bank Account")
+		}
+		toAccount, err := s.repoAccounting.GetDepositAccountById(*data.ToAccountId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
@@ -167,6 +173,8 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.ToBankId = &toAccount.BankId
 		body.ToAccountName = &toAccount.AccountName
 		body.ToAccountNumber = &toAccount.AccountNumber
+
+		// createBonus + refDeposit
 		body.PromotionId = data.PromotionId
 
 	} else if data.TransferType == "withdraw" {
@@ -175,12 +183,17 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
+		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid User Bank")
+		}
 		body.MemberCode = member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		fromAccount, err := s.repoAccounting.GetBankAccountById(*data.FromAccountId)
+		fromAccount, err := s.repoAccounting.GetWithdrawAccountById(*data.FromAccountId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
@@ -190,11 +203,9 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.FromAccountName = &fromAccount.AccountName
 		body.FromAccountNumber = &fromAccount.AccountNumber
 
-		// body.ToAccountId = 0
-		body.ToBankId = &member.BankId
-		body.ToAccountName = &member.AccountName
-		body.ToAccountNumber = &member.AccountNumber
-
+		body.ToBankId = &bank.Id
+		body.ToAccountName = &member.Fullname
+		body.ToAccountNumber = &member.BankAccount
 	} else if data.TransferType == "getcreditback" {
 		// ดึงยอดสลายไปเลย
 		member, err := s.repoAccounting.GetUserByMemberCode(data.MemberCode)
@@ -202,16 +213,19 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
+		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid User Bank")
+		}
 		body.MemberCode = member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		// body.FromAccountId = 0
-		body.FromBankId = &member.BankId
-		body.FromAccountName = &member.AccountName
-		body.FromAccountNumber = &member.AccountNumber
-
+		body.FromBankId = &bank.Id
+		body.FromAccountName = &member.Fullname
+		body.FromAccountNumber = &member.BankAccount
 	} else {
 		return badRequest("Invalid Transfer Type")
 	}
@@ -234,15 +248,20 @@ func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreat
 		fmt.Println(err)
 		return badRequest("Invalid Member code")
 	}
+	bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+	if err != nil {
+		fmt.Println(err)
+		return badRequest("Invalid User Bank")
+	}
 
 	var body model.BonusTransactionCreateBody
 	body.MemberCode = member.MemberCode
 	body.UserId = member.Id
-	body.TransferType = "deposit"
+	body.TransferType = "bonus"
 	body.ToAccountId = 0
-	body.ToBankId = member.BankId
-	body.ToAccountName = member.AccountName
-	body.ToAccountNumber = member.AccountNumber
+	body.ToBankId = bank.Id
+	body.ToAccountName = member.Fullname
+	body.ToAccountNumber = member.BankAccount
 	// body.BeforeAmount = data.BeforeAmount
 	// body.AfterAmount = data.AfterAmount
 	body.BonusAmount = data.BonusAmount

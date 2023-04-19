@@ -23,12 +23,14 @@ type AccountingRepository interface {
 	GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 	GetAccounTypeById(id int64) (*model.AccountType, error)
 
-	GetUserByMemberCode(memberCode string) (*model.TempUser, error)
+	GetUserByMemberCode(memberCode string) (*model.User, error)
 
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccountByAccountNumber(accountNumber string) (*model.BankAccount, error)
 	GetBankAccountByExternalId(id int64) (*model.BankAccount, error)
+	GetDepositAccountById(id int64) (*model.BankAccount, error)
+	GetWithdrawAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	GetBotBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
@@ -220,7 +222,7 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessW
 
 func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 
-	var result *model.AccountType
+	var result model.AccountType
 	if err := r.db.Table("Bank_account_types").
 		Select("id, name, limit_flag").
 		Where("id = ?", id).
@@ -232,19 +234,21 @@ func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 	if result.Id == 0 {
 		return nil, errors.New("Account type not found")
 	}
-	return result, nil
+	return &result, nil
 }
 
-func (r repo) GetUserByMemberCode(memberCode string) (*model.TempUser, error) {
+func (r repo) GetUserByMemberCode(memberCode string) (*model.User, error) {
 
-	var user model.TempUser
-	user.Id = 88
-	user.MemberCode = memberCode
-	user.BankId = 2
-	user.AccountName = "MOCK TEMP ACCOUNT NAME"
-	user.AccountNumber = "000-111-222-333"
+	var result model.User
+	if err := r.db.Table("Users").
+		Select("id, member_code, fullname, bankname, bank_account, credit").
+		Where("member_code = ?", memberCode).
+		First(&result).
+		Error; err != nil {
+		return nil, err
+	}
 
-	return &user, nil
+	return &result, nil
 }
 
 func (r repo) HasBankAccount(accountNumber string) (bool, error) {
@@ -278,9 +282,47 @@ func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 		Error; err != nil {
 		return nil, err
 	}
+	return &accounting, nil
+}
 
-	if accounting.Id == 0 {
-		return nil, errors.New("Account not found")
+func (r repo) GetDepositAccountById(id int64) (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
+		Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id").
+		Where("accounts.id = ?", id).
+		Where("account_types.allow_deposit = 1").
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
+	}
+	return &accounting, nil
+}
+
+func (r repo) GetWithdrawAccountById(id int64) (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
+		Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id").
+		Where("accounts.id = ?", id).
+		Where("account_types.allow_withdraw = 1").
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
 	}
 	return &accounting, nil
 }
