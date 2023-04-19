@@ -63,6 +63,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	account2Route.POST("/transfer", middleware.Authorize, handler.transferExternalAccount)
 	account2Route.GET("/logs", middleware.Authorize, handler.getExternalAccountLogs)
 	account2Route.GET("/statements", middleware.Authorize, handler.getExternalAccountStatements)
+	account2Route.POST("/config", middleware.Authorize, handler.createBotaccountConfig)
 
 	webhookRoute := root.Group("/webhooks")
 	webhookRoute.POST("/action", handler.webhookAction)
@@ -771,17 +772,17 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 // @Router /accounting/bankaccounts2/list [get]
 func (h accountingController) getExternalAccounts(c *gin.Context) {
 
-	var query model.BankAccountListRequest
-	if err := c.ShouldBind(&query); err != nil {
-		HandleError(c, err)
-		return
-	}
-	if err := validator.New().Struct(query); err != nil {
-		HandleError(c, err)
-		return
-	}
+	// var query model.BankAccountListRequest
+	// if err := c.ShouldBind(&query); err != nil {
+	// 	HandleError(c, err)
+	// 	return
+	// }
+	// if err := validator.New().Struct(query); err != nil {
+	// 	HandleError(c, err)
+	// 	return
+	// }
 
-	data, err := h.accountingService.GetExternalAccounts(query)
+	data, err := h.accountingService.GetExternalAccounts()
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -880,7 +881,7 @@ func (h accountingController) createExternalAccount(c *gin.Context) {
 // @Router /accounting/bankaccounts2/ [put]
 func (h accountingController) updateExternalAccount(c *gin.Context) {
 
-	var query model.ExternalAccountCreateBody
+	var query model.ExternalAccountUpdateBody
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -1112,4 +1113,34 @@ func (h accountingController) webhookNoti(c *gin.Context) {
 		return
 	}
 	c.JSON(200, model.Success{Message: "success"})
+}
+
+// @Summary CreateBankAccount
+// @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
+// @Tags Accounting - Bank Accounts
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body model.BotAccountConfigCreateBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/bankaccounts2/config [post]
+func (h accountingController) createBotaccountConfig(c *gin.Context) {
+
+	var reqCreate model.BotAccountConfigCreateBody
+	if err := c.ShouldBindJSON(&reqCreate); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(reqCreate); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	err := h.accountingService.CreateBotaccountConfig(reqCreate)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Created success"})
 }

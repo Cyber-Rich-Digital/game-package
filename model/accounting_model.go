@@ -68,6 +68,7 @@ type AccountTypeListResponse struct {
 type BankAccount struct {
 	Id                    int64          `json:"id"`
 	BankId                int64          `json:"bankId"`
+	BankCode              string         `json:"bankCode"`
 	BankName              string         `json:"bankName"`
 	BankIconUrl           string         `json:"bankIconUrl"`
 	AccountTypeId         int64          `json:"accountTypeId"`
@@ -80,6 +81,7 @@ type BankAccount struct {
 	DeviceUid             string         `json:"deviceUid"`
 	PinCode               string         `json:"pinCode"`
 	ConnectionStatus      string         `json:"connectionStatus"`
+	ExternalId            string         `json:"-"`
 	LastConnUpdateAt      *time.Time     `json:"lastConnUpdateAt"`
 	AutoCreditFlag        string         `json:"autoCreditFlag"`
 	AutoWithdrawFlag      string         `json:"autoWithdrawFlag"`
@@ -145,6 +147,7 @@ type BankAccountUpdateBody struct {
 	AccountNumber         *string    `json:"-"`
 	DeviceUid             *string    `json:"deviceUid"`
 	PinCode               *string    `json:"pinCode"`
+	ExternalId            *int64     `json:"-"`
 	AutoCreditFlag        *string    `json:"autoCreditFlag"`
 	AutoWithdrawFlag      *string    `json:"autoWithdrawFlag"`
 	AutoWithdrawMaxAmount *string    `json:"autoWithdrawMaxAmount"`
@@ -157,9 +160,15 @@ type BankAccountUpdateBody struct {
 	AccountBalance        *float64   `json:"-"`
 }
 
+type BankAccountDeleteBody struct {
+	AccountNumber string    `json:"-"`
+	DeletedAt     time.Time `json:"-"`
+}
+
 type BankAccountResponse struct {
 	Id               int64          `json:"id"`
 	BankId           int64          `json:"bankId"`
+	BankCode         string         `json:"bankCode"`
 	BankName         string         `json:"bankName"`
 	BankIconUrl      string         `json:"bankIconUrl"`
 	AccountTypeId    int64          `json:"accountTypeId"`
@@ -375,6 +384,17 @@ type ExternalAccountCreateBody struct {
 	WebhookUrl       string `json:"webhookUrl"`
 }
 
+type ExternalAccountUpdateBody struct {
+	AccountNo        string  `json:"accountNo"`
+	BankCode         string  `json:"bankCode"`
+	DeviceId         *string `json:"deviceId"`
+	Password         string  `json:"password"`
+	Pin              *string `json:"pin"`
+	Username         string  `json:"username"`
+	WebhookNotifyUrl string  `json:"webhookNotifyUrl"`
+	WebhookUrl       string  `json:"webhookUrl"`
+}
+
 type ExternalAccountCreateResponse struct {
 	Id               int64  `json:"id"`
 	CustomerId       int64  `json:"customerId"`
@@ -521,4 +541,24 @@ type WebhookStatement struct {
 	IsRead             bool      `json:"isRead"`
 	CreatedDate        string    `json:"createdDate"`
 	UpdatedDate        string    `json:"updatedDate"`
+}
+
+type BotAccountConfig struct {
+	Id        int64  `json:"id"`
+	ConfigKey string `json:"configKey"`
+	ConfigVal string `json:"configVal"`
+}
+
+type BotAccountConfigListRequest struct {
+	SearchKey   *string `form:"searchKey"`
+	SearchValue *string `form:"searchValue"`
+	Page        int     `form:"page" default:"1" min:"1"`
+	Limit       int     `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol     string  `form:"sortCol"`
+	SortAsc     string  `form:"sortAsc"`
+}
+
+type BotAccountConfigCreateBody struct {
+	ConfigKey string `json:"configKey"`
+	ConfigVal string `json:"configVal"`
 }

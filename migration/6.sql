@@ -53,3 +53,19 @@ ALTER TABLE `Bank_statements`
 
 ALTER TABLE `Bank_statements`
     ADD UNIQUE `uni_external_id` (`external_id`);
+
+CREATE TABLE 
+    `Botaccount_config` (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        config_key VARCHAR(255) NOT NULL,
+        config_val VARCHAR(255) NOT NULL,
+    );
+
+ALTER TABLE `Botaccount_config`
+    ADD INDEX `idx_config_key` (`config_key`);
+
+
+INSERT INTO `botaccount_config` (`config_key`, `config_val`) VALUES
+	('allow_create_external_account', '_all'),
+	('allow_create_external_account', '_list'),
+	('allow_external_account_number', 'set to list and set account number');
