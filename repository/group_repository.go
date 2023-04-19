@@ -2,7 +2,9 @@ package repository
 
 import (
 	"cybergame-api/model"
+	"errors"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +15,7 @@ func NewGroupRepository(db *gorm.DB) GroupRepository {
 type GroupRepository interface {
 	CheckGroupByName(name string) (bool, error)
 	CheckGroupExist(id int64) (bool, error)
-	CreateGroup(group model.Group, data []model.Permission) error
+	CreateGroup(group model.Group, data []int64) error
 	DeleteGroup(id int64) error
 }
 
@@ -63,7 +65,7 @@ func (r repo) CheckGroupExist(id int64) (bool, error) {
 	return true, nil
 }
 
-func (r repo) CreateGroup(group model.Group, Permissions []model.Permission) error {
+func (r repo) CreateGroup(group model.Group, Permissions []int64) error {
 
 	tx := r.db.Begin()
 
@@ -71,22 +73,28 @@ func (r repo) CreateGroup(group model.Group, Permissions []model.Permission) err
 		Create(&group).
 		Error; err != nil {
 		tx.Rollback()
+
+		var dup *mysql.MySQLError
+		if errors.As(err, &dup); dup.Number == 1062 {
+			return errors.New("Group name already exists")
+		}
+
 		return err
 	}
 
-	if err := tx.Table("Permissions").
-		Create(&Permissions).
-		Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+	// if err := tx.Table("Permissions").
+	// 	Create(&Permissions).
+	// 	Error; err != nil {
+	// 	tx.Rollback()
+	// 	return err
+	// }
 
 	var adminGroupPerms []model.AdminGroupPermission
 
-	for _, perm := range Permissions {
+	for _, id := range Permissions {
 		adminGroupPerms = append(adminGroupPerms, model.AdminGroupPermission{
 			GroupId:      group.Id,
-			PermissionId: perm.Id,
+			PermissionId: id,
 		})
 	}
 

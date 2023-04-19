@@ -29,7 +29,6 @@ func PermissionController(r *gin.RouterGroup, db *gorm.DB) {
 
 	r = r.Group("/permissions")
 	r.POST("/create", handler.create)
-
 }
 
 // @Summary Create Permission

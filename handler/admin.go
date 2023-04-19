@@ -46,7 +46,6 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	r.PUT("/group/:id", middleware.Authorize, handler.updateGroup)
 	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
 	r.DELETE("/permission", middleware.Authorize, handler.deletePermission)
-
 }
 
 // @Summary Group List
@@ -258,9 +257,7 @@ func (h adminController) updateGroup(c *gin.Context) {
 		return
 	}
 
-	data.GroupId = int64(toInt)
-
-	err = h.adminService.UpdateGroup(data)
+	err = h.adminService.UpdateGroup(int64(toInt), data)
 	if err != nil {
 		HandleError(c, err)
 		return
