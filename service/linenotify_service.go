@@ -19,6 +19,7 @@ type LineNotifyService interface {
 	CreateLineNotify(data model.LinenotifyCreateBody) error
 	GetLineNotify(data model.LinenotifyListRequest) (*model.SuccessWithPagination, error)
 	GetLineNotifyById(data model.LinenotifyParam) (*model.Linenotify, error)
+	UpdateLineNotify(id int64, data model.LinenotifyUpdateBody) error
 }
 
 type lineNotifyService struct {
@@ -73,4 +74,12 @@ func (s *lineNotifyService) GetLineNotifyById(data model.LinenotifyParam) (*mode
 		return nil, internalServerError(err.Error())
 	}
 	return line, nil
+}
+
+func (s *lineNotifyService) UpdateLineNotify(id int64, data model.LinenotifyUpdateBody) error {
+	if err := s.repo.UpdateLineNotify(id, data); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	return nil
 }

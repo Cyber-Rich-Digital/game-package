@@ -44,7 +44,13 @@ type LinenotifyCreateBody struct {
 	Status      string  `json:"status"`
 }
 type LinenotifyUpdateBody struct {
-	Id          int64   `json:"id"`
+	StartCredit float32 `json:"startcredit" sql:"type:decimal(14,2);"`
+	Token       string  `json:"token" validate:"required"`
+	NotifyId    int64   `json:"notifyId" validate:"required"`
+	Status      string  `json:"status"`
+}
+
+type LinenotifyUpdateRequest struct {
 	StartCredit float32 `json:"startcredit" sql:"type:decimal(14,2);"`
 	Token       string  `json:"token" validate:"required"`
 	NotifyId    int64   `json:"notifyId" validate:"required"`

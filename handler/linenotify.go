@@ -4,6 +4,7 @@ import (
 	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
+	"strconv"
 
 	"cybergame-api/repository"
 
@@ -41,6 +42,7 @@ func LineNotifyController(r *gin.RouterGroup, db *gorm.DB) {
 	linenotifRoute := r.Group("/linenotify")
 	linenotifRoute.POST("/create", middleware.Authorize, handler.createLineNotify)
 	linenotifRoute.GET("/detail/:id", middleware.Authorize, handler.getLineNotifyById)
+	linenotifRoute.PUT("/update/:id", middleware.Authorize, handler.updateLineNotify)
 
 }
 func (h linenotifyController) createLineNotify(c *gin.Context) {
@@ -90,4 +92,43 @@ func (h linenotifyController) getLineNotifyById(c *gin.Context) {
 	}
 
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary UpdateNotify
+// @Description แก้ไข แจ้งเตือนไลน์
+// @Tags LineNotify
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Param body body model.LinenotifyUpdateBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /linenotify/update/{id} [put]
+func (h linenotifyController) updateLineNotify(c *gin.Context) {
+
+	var body model.LinenotifyUpdateBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := validator.New().Struct(body); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.linenotifyService.UpdateLineNotify(int64(toInt), body); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Updated success"})
 }
