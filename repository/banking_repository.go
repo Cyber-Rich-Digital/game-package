@@ -18,6 +18,8 @@ type BankingRepository interface {
 	GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error)
 	CreateBankStatement(data model.BankStatementCreateBody) error
 	UpdateBankStatement(id int64, data model.BankStatementUpdateBody) error
+	MatchStatementOwner(id int64, data model.BankStatementUpdateBody) error
+	IgnoreStatementOwner(id int64, data model.BankStatementUpdateBody) error
 	DeleteBankStatement(id int64) error
 
 	GetBankTransactionById(id int64) (*model.BankTransaction, error)
@@ -36,6 +38,7 @@ type BankingRepository interface {
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
 
+	GetMemberById(id int64) (*model.Member, error)
 	GetMemberByCode(code string) (*model.Member, error)
 	GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error)
 	GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error)
@@ -193,6 +196,20 @@ func (r repo) CreateBankStatement(data model.BankStatementCreateBody) error {
 }
 
 func (r repo) UpdateBankStatement(id int64, data model.BankStatementUpdateBody) error {
+	if err := r.db.Table("Bank_statements").Where("id = ?", id).Updates(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) MatchStatementOwner(id int64, data model.BankStatementUpdateBody) error {
+	if err := r.db.Table("Bank_statements").Where("id = ?", id).Updates(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) IgnoreStatementOwner(id int64, data model.BankStatementUpdateBody) error {
 	if err := r.db.Table("Bank_statements").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
@@ -749,6 +766,21 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 	return &result, nil
 }
 
+func (r repo) GetMemberById(id int64) (*model.Member, error) {
+	var record model.Member
+
+	selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
+	if err := r.db.Table("Users as users").
+		Select(selectedFields).
+		Where("users.id = ?", id).
+		Where("users.deleted_at IS NULL").
+		First(&record).
+		Error; err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
 func (r repo) GetMemberByCode(memberCode string) (*model.Member, error) {
 	var record model.Member
 
@@ -766,7 +798,7 @@ func (r repo) GetMemberByCode(memberCode string) (*model.Member, error) {
 
 func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
 
-	var list []model.BankStatementResponse
+	var list []model.Member
 	var total int64
 	var err error
 
@@ -779,7 +811,7 @@ func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPaginat
 	}
 
 	if err = count.
-		Where("statements.deleted_at IS NULL").
+		Where("users.deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
@@ -824,7 +856,7 @@ func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPaginat
 
 func (r repo) GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
 
-	var list []model.BankStatementResponse
+	var list []model.Member
 	var total int64
 	var err error
 
@@ -840,7 +872,7 @@ func (r repo) GetPosibleStatementOwners(req model.MemberListRequest) (*model.Suc
 	}
 
 	if err = count.
-		Where("statements.deleted_at IS NULL").
+		Where("users.deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err

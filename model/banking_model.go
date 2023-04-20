@@ -83,6 +83,10 @@ type BankStatementCreateBody struct {
 	Status        string    `json:"-"`
 }
 
+type BankStatementMatchRequest struct {
+	UserId int64 `json:"userId" validate:"required"`
+}
+
 type BankStatementUpdateBody struct {
 	Status string `json:"status" validate:"required"`
 }

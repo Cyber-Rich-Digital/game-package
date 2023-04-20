@@ -13,6 +13,8 @@ type BankingService interface {
 	GetBankStatements(req model.BankStatementListRequest) (*model.SuccessWithPagination, error)
 	GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error)
 	CreateBankStatement(data model.BankStatementCreateBody) error
+	MatchStatementOwner(id int64, req model.BankStatementMatchRequest) error
+	IgnoreStatementOwner(id int64) error
 	DeleteBankStatement(id int64) error
 
 	GetBankTransactionById(req model.BankTransactionGetRequest) (*model.BankTransaction, error)
@@ -108,6 +110,52 @@ func (s *bankingService) CreateBankStatement(data model.BankStatementCreateBody)
 	body.Status = "pending"
 
 	if err := s.repoBanking.CreateBankStatement(body); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *bankingService) MatchStatementOwner(id int64, req model.BankStatementMatchRequest) error {
+
+	statement, err := s.repoBanking.GetBankStatementById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if statement.Status != "pending" {
+		return badRequest("Statement is not pending")
+	}
+
+	member, err := s.repoBanking.GetMemberById(req.UserId)
+	if err != nil {
+		return badRequest("Invalid Member")
+	}
+
+	var body model.BankStatementUpdateBody
+	body.Status = "confirmed"
+	// todo:
+	member.Id = 0
+
+	if err := s.repoBanking.MatchStatementOwner(id, body); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *bankingService) IgnoreStatementOwner(id int64) error {
+
+	statement, err := s.repoBanking.GetBankStatementById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if statement.Status != "pending" {
+		return badRequest("Statement is not pending")
+	}
+
+	var body model.BankStatementUpdateBody
+	body.Status = "ignored"
+
+	if err := s.repoBanking.IgnoreStatementOwner(id, body); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil

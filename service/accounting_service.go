@@ -560,7 +560,9 @@ func (s *accountingService) DeleteBankAccount(id int64) error {
 	if account.ExternalId != "" && s.HasExternalAccount(account.AccountNumber) {
 		var query model.ExternalAccountStatusRequest
 		query.AccountNumber = account.AccountNumber
-		s.DeleteExternalAccount(query)
+		if err := s.DeleteExternalAccount(query); err != nil {
+			return internalServerError(err.Error())
+		}
 	}
 
 	var updateBody model.BankAccountDeleteBody
