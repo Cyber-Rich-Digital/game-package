@@ -29,10 +29,12 @@ type BankingService interface {
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
 
+	GetMemberByCode(code string) (*model.Member, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
 }
 
+var memberNotFound = "Member not found"
 var bankStatementferNotFound = "Statement not found"
 var bankTransactionferNotFound = "Transaction not found"
 
@@ -146,7 +148,11 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
-		body.MemberCode = member.MemberCode
+		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid User Bank")
+		}
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -154,11 +160,13 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.OverAmount = data.OverAmount
 		body.IsAutoCredit = data.IsAutoCredit
 
-		// body.FromAccountId = 0
-		body.FromBankId = &member.BankId
-		body.FromAccountName = &member.AccountName
-		body.FromAccountNumber = &member.AccountNumber
-		toAccount, err := s.repoAccounting.GetBankAccountById(*data.ToAccountId)
+		body.FromBankId = &bank.Id
+		body.FromAccountName = &member.Fullname
+		body.FromAccountNumber = &member.BankAccount
+		if data.ToAccountId == nil {
+			return badRequest("Input Bank Account")
+		}
+		toAccount, err := s.repoAccounting.GetDepositAccountById(*data.ToAccountId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
@@ -167,6 +175,8 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.ToBankId = &toAccount.BankId
 		body.ToAccountName = &toAccount.AccountName
 		body.ToAccountNumber = &toAccount.AccountNumber
+
+		// todo: createBonus + refDeposit
 		body.PromotionId = data.PromotionId
 
 	} else if data.TransferType == "withdraw" {
@@ -175,12 +185,17 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
+		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid User Bank")
+		}
 		body.MemberCode = member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		fromAccount, err := s.repoAccounting.GetBankAccountById(*data.FromAccountId)
+		fromAccount, err := s.repoAccounting.GetWithdrawAccountById(*data.FromAccountId)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
@@ -190,11 +205,9 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.FromAccountName = &fromAccount.AccountName
 		body.FromAccountNumber = &fromAccount.AccountNumber
 
-		// body.ToAccountId = 0
-		body.ToBankId = &member.BankId
-		body.ToAccountName = &member.AccountName
-		body.ToAccountNumber = &member.AccountNumber
-
+		body.ToBankId = &bank.Id
+		body.ToAccountName = &member.Fullname
+		body.ToAccountNumber = &member.BankAccount
 	} else if data.TransferType == "getcreditback" {
 		// ดึงยอดสลายไปเลย
 		member, err := s.repoAccounting.GetUserByMemberCode(data.MemberCode)
@@ -202,16 +215,19 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
+		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return badRequest("Invalid User Bank")
+		}
 		body.MemberCode = member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		// body.FromAccountId = 0
-		body.FromBankId = &member.BankId
-		body.FromAccountName = &member.AccountName
-		body.FromAccountNumber = &member.AccountNumber
-
+		body.FromBankId = &bank.Id
+		body.FromAccountName = &member.Fullname
+		body.FromAccountNumber = &member.BankAccount
 	} else {
 		return badRequest("Invalid Transfer Type")
 	}
@@ -234,15 +250,20 @@ func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreat
 		fmt.Println(err)
 		return badRequest("Invalid Member code")
 	}
+	bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+	if err != nil {
+		fmt.Println(err)
+		return badRequest("Invalid User Bank")
+	}
 
 	var body model.BonusTransactionCreateBody
 	body.MemberCode = member.MemberCode
 	body.UserId = member.Id
-	body.TransferType = "deposit"
+	body.TransferType = "bonus"
 	body.ToAccountId = 0
-	body.ToBankId = member.BankId
-	body.ToAccountName = member.AccountName
-	body.ToAccountNumber = member.AccountNumber
+	body.ToBankId = bank.Id
+	body.ToAccountName = member.Fullname
+	body.ToAccountNumber = member.BankAccount
 	// body.BeforeAmount = data.BeforeAmount
 	// body.AfterAmount = data.AfterAmount
 	body.BonusAmount = data.BonusAmount
@@ -357,6 +378,39 @@ func (s *bankingService) ConfirmDepositTransaction(id int64, req model.BankConfi
 	if err := s.repoBanking.ConfirmPendingTransaction(id, updateData); err != nil {
 		return internalServerError(err.Error())
 	}
+	if err := s.IncreaseMemberCredit(record.UserId, record.CreditAmount); err != nil {
+		return internalServerError(err.Error())
+	}
+	// todo: Bonus
+	// commit
+	return nil
+}
+
+func (s *bankingService) IncreaseMemberCredit(userId int64, creditAmount float32) error {
+
+	// record, err := s.repoBanking.GetBankTransactionById(id)
+	// if err != nil {
+	// 	return internalServerError(err.Error())
+	// }
+
+	if err := s.repoBanking.IncreaseMemberCredit(userId, creditAmount); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	return nil
+}
+
+func (s *bankingService) DecreaseMemberCredit(userId int64, creditAmount float32) error {
+
+	// record, err := s.repoBanking.GetBankTransactionById(id)
+	// if err != nil {
+	// 	return internalServerError(err.Error())
+	// }
+
+	if err := s.repoBanking.DecreaseMemberCredit(userId, creditAmount); err != nil {
+		return internalServerError(err.Error())
+	}
+
 	return nil
 }
 
@@ -444,6 +498,22 @@ func (s *bankingService) GetRemovedTransactions(req model.RemovedTransactionList
 	return records, nil
 }
 
+func (s *bankingService) GetMemberByCode(code string) (*model.Member, error) {
+
+	if code == "" {
+		return nil, badRequest("Code is required")
+	}
+
+	records, err := s.repoBanking.GetMemberByCode(code)
+	if err != nil {
+		if err.Error() == recordNotFound {
+			return nil, notFound(memberNotFound)
+		}
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
 func (s *bankingService) GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
@@ -463,4 +533,47 @@ func (s *bankingService) GetMemberTransactionSummary(req model.MemberTransaction
 		return nil, internalServerError(err.Error())
 	}
 	return result, nil
+}
+
+func (s *bankingService) MatchDepositTransaction(id int64, req model.BankConfirmDepositRequest) error {
+
+	record, err := s.repoBanking.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+	if record.TransferType != "deposit" {
+		return badRequest("Transaction is not deposit")
+	}
+	// todo: Bonus
+	// commit
+	if err := s.ConfirmDepositTransaction(record.UserId, req); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	return nil
+}
+
+func (s *bankingService) MatchWithdrawTransaction(id int64, req model.BankConfirmWithdrawRequest) error {
+
+	record, err := s.repoBanking.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+	if record.TransferType != "withdraw" {
+		return badRequest("Transaction is not withdraw")
+	}
+
+	// todo: Match
+
+	if err := s.ConfirmWithdrawTransaction(record.UserId, req); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	return nil
 }

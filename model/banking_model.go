@@ -6,12 +6,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type TempUser struct {
-	Id            int64  `json:"id" gorm:"primaryKey"`
-	MemberCode    string `json:"memberCode"`
-	BankId        int64  `json:"bankId"`
-	AccountName   string `json:"accountName"`
-	AccountNumber string `json:"accountNumber"`
+type Member struct {
+	Id            int64     `json:"id"`
+	MemberCode    string    `json:"memberCode"`
+	Username      string    `json:"username"`
+	Phone         string    `json:"phone"`
+	Firstname     string    `json:"firstname"`
+	Lastname      string    `json:"lastname"`
+	Fullname      string    `json:"fullname"`
+	Credit        float64   `json:"credit"`
+	Bankname      string    `json:"bankname"`
+	BankAccount   string    `json:"bankAccount"`
+	Promotion     string    `json:"promotion"`
+	Status        string    `json:"status"`
+	Channel       string    `json:"channel"`
+	TrueWallet    string    `json:"trueWallet"`
+	Note          string    `json:"note"`
+	TurnoverLimit int       `json:"turnoverLimit"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
 
 type BankStatement struct {
@@ -45,6 +57,7 @@ type BankStatementListRequest struct {
 
 type BankStatementCreateBody struct {
 	AccountId     int64     `json:"accountId"`
+	ExternalId    int64     `json:"externalId"`
 	Amount        float32   `json:"amount" sql:"type:decimal(14,2);"`
 	Detail        string    `json:"detail"`
 	StatementType string    `json:"statementType"`

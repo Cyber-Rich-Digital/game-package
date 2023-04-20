@@ -60,6 +60,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	transactionRoute.GET("/removedlist", middleware.Authorize, handler.getRemovedTransactions)
 
 	memberRoute := root.Group("/member")
+	memberRoute.GET("/info/:code", middleware.Authorize, handler.getMemberByCode)
 	memberRoute.GET("/transactionsummary", middleware.Authorize, handler.getMemberTransactionSummary)
 	memberRoute.GET("/transactions", middleware.Authorize, handler.getMemberTransactions)
 
@@ -700,6 +701,28 @@ func (h bankingController) getRemovedTransactions(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
+// @Summary GetMemberByCode
+// @Description ดึงข้อมูลสมาชิกด้วยโค้ด
+// @Tags Banking - Member Transaction
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param code path string true "memberCode"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/member/info/{code} [get]
+func (h bankingController) getMemberByCode(c *gin.Context) {
+
+	memberCode := c.Param("code")
+
+	data, err := h.bankingService.GetMemberByCode(memberCode)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
 // @Summary GetMemberTransactionSummary
 // @Description ดึงข้อมูลสรุปการฝากถอนของสมาชิก
 // @Tags Banking - Member Transaction
@@ -740,7 +763,7 @@ func (h bankingController) getMemberTransactionSummary(c *gin.Context) {
 // @Param _ query model.MemberTransactionListRequest true "query"
 // @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /banking/member/transactions [get]
+// @Router /banking/members/transactions [get]
 func (h bankingController) getMemberTransactions(c *gin.Context) {
 
 	var query model.MemberTransactionListRequest

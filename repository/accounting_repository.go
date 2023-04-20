@@ -23,15 +23,19 @@ type AccountingRepository interface {
 	GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessWithPagination, error)
 	GetAccounTypeById(id int64) (*model.AccountType, error)
 
-	GetUserByMemberCode(memberCode string) (*model.TempUser, error)
+	GetUserByMemberCode(memberCode string) (*model.User, error)
 
 	HasBankAccount(accountNumber string) (bool, error)
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccountByAccountNumber(accountNumber string) (*model.BankAccount, error)
+	GetBankAccountByExternalId(id int64) (*model.BankAccount, error)
+	GetDepositAccountById(id int64) (*model.BankAccount, error)
+	GetWithdrawAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetBotBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
 	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
-	DeleteBankAccount(id int64) error
+	DeleteBankAccount(id int64, data model.BankAccountDeleteBody) error
 
 	GetTransactionById(id int64) (*model.BankAccountTransaction, error)
 	GetTransactions(data model.BankAccountTransactionListRequest) (*model.SuccessWithPagination, error)
@@ -46,6 +50,13 @@ type AccountingRepository interface {
 	DeleteTransfer(id int64) error
 
 	CreateWebhookLog(body model.WebhookLogCreateBody) error
+	GetWebhookStatementByExternalId(id int64) (*model.BankStatement, error)
+	CreateWebhookStatement(body model.BankStatementCreateBody) error
+
+	GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*model.SuccessWithPagination, error)
+	CreateBotaccountConfig(data model.BotAccountConfigCreateBody) error
+	DeleteBotaccountConfigByKey(key string) error
+	DeleteBotaccountConfigById(id int64) error
 }
 
 func (r repo) GetAdminById(id int64) (*model.Admin, error) {
@@ -211,7 +222,7 @@ func (r repo) GetAccountTypes(req model.AccountTypeListRequest) (*model.SuccessW
 
 func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 
-	var result *model.AccountType
+	var result model.AccountType
 	if err := r.db.Table("Bank_account_types").
 		Select("id, name, limit_flag").
 		Where("id = ?", id).
@@ -223,19 +234,21 @@ func (r repo) GetAccounTypeById(id int64) (*model.AccountType, error) {
 	if result.Id == 0 {
 		return nil, errors.New("Account type not found")
 	}
-	return result, nil
+	return &result, nil
 }
 
-func (r repo) GetUserByMemberCode(memberCode string) (*model.TempUser, error) {
+func (r repo) GetUserByMemberCode(memberCode string) (*model.User, error) {
 
-	var user model.TempUser
-	user.Id = 88
-	user.MemberCode = memberCode
-	user.BankId = 2
-	user.AccountName = "MOCK TEMP ACCOUNT NAME"
-	user.AccountNumber = "000-111-222-333"
+	var result model.User
+	if err := r.db.Table("Users").
+		Select("id, member_code, fullname, bankname, bank_account, credit").
+		Where("member_code = ?", memberCode).
+		First(&result).
+		Error; err != nil {
+		return nil, err
+	}
 
-	return &user, nil
+	return &result, nil
 }
 
 func (r repo) HasBankAccount(accountNumber string) (bool, error) {
@@ -257,7 +270,7 @@ func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 	var accounting model.BankAccount
 	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
-	selectedFields += ", banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
@@ -269,9 +282,47 @@ func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 		Error; err != nil {
 		return nil, err
 	}
+	return &accounting, nil
+}
 
-	if accounting.Id == 0 {
-		return nil, errors.New("Account not found")
+func (r repo) GetDepositAccountById(id int64) (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
+		Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id").
+		Where("accounts.id = ?", id).
+		Where("account_types.allow_deposit = 1").
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
+	}
+	return &accounting, nil
+}
+
+func (r repo) GetWithdrawAccountById(id int64) (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
+		Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id").
+		Where("accounts.id = ?", id).
+		Where("account_types.allow_withdraw = 1").
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
 	}
 	return &accounting, nil
 }
@@ -281,7 +332,7 @@ func (r repo) GetBankAccountByAccountNumber(accountNumber string) (*model.BankAc
 	var accounting model.BankAccount
 	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
-	selectedFields += ", banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
@@ -293,9 +344,21 @@ func (r repo) GetBankAccountByAccountNumber(accountNumber string) (*model.BankAc
 		Error; err != nil {
 		return nil, err
 	}
+	return &accounting, nil
+}
 
-	if accounting.Id == 0 {
-		return nil, errors.New("Account not found")
+func (r repo) GetBankAccountByExternalId(external_id int64) (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Where("accounts.external_id = ?", external_id).
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
 	}
 	return &accounting, nil
 }
@@ -310,7 +373,7 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 	query := r.db.Table("Bank_accounts AS accounts")
 	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
-	selectedFields += ", banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
 	query = query.Select(selectedFields)
 	query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
@@ -361,6 +424,74 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 	return &result, nil
 }
 
+func (r repo) GetBotBankAccounts(req model.BankAccountListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BankAccountResponse
+	var total int64
+	var err error
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Bank_accounts")
+	count = count.Select("id")
+	count = count.Where("device_uid != ?", "")
+	count = count.Where("pin_code != ?", "")
+	count = count.Where("external_id IS NOT NULL")
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where("account_name LIKE ?", search_like).Or("account_number LIKE ?", search_like)
+	}
+	if err = count.
+		Where("deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+
+	if total > 0 {
+		// SELECT //
+		query := r.db.Table("Bank_accounts AS accounts")
+		selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+		selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+		selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
+		selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
+		query = query.Select(selectedFields)
+		query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
+		query = query.Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id")
+		query = query.Where("accounts.device_uid != ?", "")
+		query = query.Where("accounts.pin_code != ?", "")
+		query = query.Where("accounts.external_id IS NOT NULL")
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("accounts.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
 func (r repo) CreateBankAccount(data model.BankAccountCreateBody) error {
 	if err := r.db.Table("Bank_accounts").Create(&data).Error; err != nil {
 		return err
@@ -375,8 +506,8 @@ func (r repo) UpdateBankAccount(id int64, data model.BankAccountUpdateBody) erro
 	return nil
 }
 
-func (r repo) DeleteBankAccount(id int64) error {
-	if err := r.db.Table("Bank_accounts").Where("id = ?", id).Delete(&model.BankAccount{}).Error; err != nil {
+func (r repo) DeleteBankAccount(id int64, data model.BankAccountDeleteBody) error {
+	if err := r.db.Table("Bank_accounts").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
 	return nil
@@ -386,7 +517,7 @@ func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error
 	var record model.BankAccountTransaction
 	selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
 	selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
-	selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+	selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	if err := r.db.Table("Bank_account_transactions as transactions").
 		Select(selectedFields).
 		Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = transactions.account_id").
@@ -440,7 +571,7 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 		// SELECT //
 		selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
 		selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
-		selectedFields += ",banks.name as bank_name, banks.code, banks.icon_url as bank_icon_url, banks.type_flag"
+		selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 		query := r.db.Table("Bank_account_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = transactions.account_id")
@@ -653,6 +784,111 @@ func (r repo) DeleteTransfer(id int64) error {
 
 func (r repo) CreateWebhookLog(data model.WebhookLogCreateBody) error {
 	if err := r.db.Table("Webhook_logs").Create(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) GetWebhookStatementByExternalId(external_id int64) (*model.BankStatement, error) {
+
+	var record model.BankStatement
+	selectedFields := "statements.id, statements.external_id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
+	if err := r.db.Table("Bank_statements as statements").
+		Select(selectedFields).
+		Where("statements.external_id = ?", external_id).
+		Where("statements.deleted_at IS NULL").
+		First(&record).
+		Error; err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (r repo) CreateWebhookStatement(data model.BankStatementCreateBody) error {
+	if err := r.db.Table("Bank_statements").Create(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BotAccountConfig
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Botaccount_config as configs")
+	count = count.Select("configs.id")
+	if req.SearchKey != nil {
+		count = count.Where("configs.config_key = ?", req.SearchKey)
+	}
+	if req.SearchValue != nil {
+		count = count.Where("configs.config_value = ?", req.SearchValue)
+	}
+
+	if err = count.
+		Where("configs.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "configs.id, configs.config_key, configs.config_value, configs.created_at, configs.updated_at"
+		query := r.db.Table("Botaccount_config as configs")
+		query = query.Select(selectedFields)
+		if req.SearchKey != nil {
+			query = query.Where("configs.config_key = ?", req.SearchKey)
+		}
+		if req.SearchValue != nil {
+			query = query.Where("configs.config_value = ?", req.SearchValue)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("configs.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
+func (r repo) CreateBotaccountConfig(data model.BotAccountConfigCreateBody) error {
+	if err := r.db.Table("Botaccount_config").Create(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) DeleteBotaccountConfigByKey(key string) error {
+	if err := r.db.Table("Botaccount_config").Where("config_key = ?", key).Delete(&model.BankAccountTransfer{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) DeleteBotaccountConfigById(id int64) error {
+	if err := r.db.Table("Botaccount_config").Where("id = ?", id).Delete(&model.BankAccountTransfer{}).Error; err != nil {
 		return err
 	}
 	return nil
