@@ -56,3 +56,31 @@ type LinenotifyUpdateRequest struct {
 	NotifyId    int64   `json:"notifyId" validate:"required"`
 	Status      string  `json:"status"`
 }
+
+type LinenotifyGame struct {
+	Id           int64      `json:"id"`
+	Name         string     `json:"name" validate:"required"`
+	ClientId     string     `json:"clientid" validate:"required"`
+	ClientSecret string     `json:"clientsecret" validate:"required"`
+	ResponseType string     `json:"responsetype" validate:"required"`
+	RedirectUri  string     `json:"redirecturi" validate:"required"`
+	Scope        string     `json:"scope" validate:"required"`
+	State        string     `json:"state" validate:"required"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    *time.Time `json:"updatedAt"`
+}
+
+type LinenotifyGameResponse struct {
+	Id           int64  `json:"id"`
+	Name         string `json:"name" validate:"required"`
+	Clientid     string `json:"clientid" validate:"required"`
+	Clientsecret string `json:"clientsecret" validate:"required"`
+	Responsetype string `json:"responsetype" validate:"required"`
+	Redirecturi  string `json:"redirecturi" validate:"required"`
+	Scope        string `json:"scope" validate:"required"`
+	State        string `json:"state" validate:"required"`
+}
+
+type LinenotifyGameParam struct {
+	Id int64 `uri:"id" binding:"required"`
+}

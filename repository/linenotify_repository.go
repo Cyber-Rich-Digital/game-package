@@ -13,10 +13,14 @@ func NewLineNotifyRepository(db *gorm.DB) LineNotifyRepository {
 }
 
 type LineNotifyRepository interface {
+	//linenotify
 	GetLineNotify(req model.LinenotifyListRequest) (*model.SuccessWithPagination, error)
 	GetLineNotifyById(id int64) (*model.Linenotify, error)
 	CreateLineNotify(data model.LinenotifyCreateBody) error
 	UpdateLineNotify(id int64, data model.LinenotifyUpdateBody) error
+
+	//linenotifygame
+	GetLinenotifyGameById(id int64) (*model.LinenotifyGame, error)
 }
 
 func (r repo) GetLineNotifyById(id int64) (*model.Linenotify, error) {
@@ -100,4 +104,17 @@ func (r repo) UpdateLineNotify(id int64, data model.LinenotifyUpdateBody) error 
 		return err
 	}
 	return nil
+}
+
+func (r repo) GetLinenotifyGameById(id int64) (*model.LinenotifyGame, error) {
+	var linenotifygame model.LinenotifyGame
+
+	if err := r.db.Table("type_notify").
+		Select("id, name, client_id, client_secret, response_type, redirect_uri, scope, state, created_at , updated_at").
+		Where("id = ?", id).
+		First(&linenotifygame).
+		Error; err != nil {
+		return nil, err
+	}
+	return &linenotifygame, nil
 }

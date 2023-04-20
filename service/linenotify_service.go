@@ -16,10 +16,14 @@ func NewLineNotifyService(
 }
 
 type LineNotifyService interface {
+	//line notify group
 	CreateLineNotify(data model.LinenotifyCreateBody) error
 	GetLineNotify(data model.LinenotifyListRequest) (*model.SuccessWithPagination, error)
 	GetLineNotifyById(data model.LinenotifyParam) (*model.Linenotify, error)
 	UpdateLineNotify(id int64, data model.LinenotifyUpdateBody) error
+
+	//line notify game
+	GetLineNotifyGameById(model.LinenotifyGameParam) (*model.LinenotifyGame, error)
 }
 
 type lineNotifyService struct {
@@ -82,4 +86,19 @@ func (s *lineNotifyService) UpdateLineNotify(id int64, data model.LinenotifyUpda
 	}
 
 	return nil
+}
+
+func (s *lineNotifyService) GetLineNotifyGameById(data model.LinenotifyGameParam) (*model.LinenotifyGame, error) {
+
+	linegame, err := s.repo.GetLinenotifyGameById(data.Id)
+	if err != nil {
+		if err.Error() == "record not found" {
+			return nil, notFound("record NotFound")
+		}
+		if err.Error() == "record not found" {
+			return nil, notFound("record NotFound")
+		}
+		return nil, internalServerError(err.Error())
+	}
+	return linegame, nil
 }

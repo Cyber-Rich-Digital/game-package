@@ -44,6 +44,7 @@ func LineNotifyController(r *gin.RouterGroup, db *gorm.DB) {
 	linenotifRoute.GET("/detail/:id", middleware.Authorize, handler.getLineNotifyById)
 	linenotifRoute.PUT("/update/:id", middleware.Authorize, handler.updateLineNotify)
 
+	linenotifRoute.GET("/typegame/detail/:id", middleware.Authorize, handler.GetLineNotifyGameById)
 }
 func (h linenotifyController) createLineNotify(c *gin.Context) {
 
@@ -131,4 +132,32 @@ func (h linenotifyController) updateLineNotify(c *gin.Context) {
 	}
 
 	c.JSON(201, model.Success{Message: "Updated success"})
+}
+
+// @Summary GetLineNotifyGameById
+// @Description ดึงข้อมูลการแจ้งเตือนไลน์ ด้วย id
+// @Tags LineNotify
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /linenotify/typegame/detail/{id} [get]
+func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
+
+	var linegame model.LinenotifyGameParam
+
+	if err := c.ShouldBindUri(&linegame); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.linenotifyService.GetLineNotifyGameById(linegame)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
