@@ -46,10 +46,11 @@ ALTER TABLE `Bank_accounts`
 	ADD COLUMN `external_id` BIGINT NULL AFTER `pin_code`;
 
 ALTER TABLE `Bank_accounts`
-    ADD INDEX `idx_external_id` (`external_id`),
+    ADD INDEX `idx_external_id` (`external_id`);
 
 ALTER TABLE `Bank_statements`
-	ADD COLUMN `external_id` BIGINT(19) NOT NULL AFTER `account_id`;
+	ADD COLUMN `external_id` BIGINT(19) NOT NULL AFTER `account_id`,
+	ADD COLUMN `from_bank_id` BIGINT(19) NOT NULL AFTER `detail`;
 
 ALTER TABLE `Bank_statements`
     ADD UNIQUE `uni_external_id` (`external_id`);
@@ -58,7 +59,7 @@ CREATE TABLE
     `Botaccount_config` (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         config_key VARCHAR(255) NOT NULL,
-        config_val VARCHAR(255) NOT NULL,
+        config_val VARCHAR(255) NOT NULL
     );
 
 ALTER TABLE `Botaccount_config`
@@ -74,6 +75,6 @@ ALTER TABLE `Bank_account_types`
 	ADD COLUMN `allow_deposit` TINYINT NOT NULL DEFAULT 0 AFTER `limit_flag`,
 	ADD COLUMN `allow_withdraw` TINYINT NOT NULL DEFAULT 0 AFTER `allow_deposit`;
 
-UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=0 WHERE `limit_flag`="00001000";
-UPDATE `Bank_account_types` SET `allow_deposit`=0, `allow_withdraw`=1 WHERE `limit_flag`="00000100";
-UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=1 WHERE `limit_flag`="00001100";
+UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=0 WHERE `limit_flag`='00001000';
+UPDATE `Bank_account_types` SET `allow_deposit`=0, `allow_withdraw`=1 WHERE `limit_flag`='00000100';
+UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=1 WHERE `limit_flag`='00001100';
