@@ -99,6 +99,7 @@ type BankAccountParam struct {
 
 type BankAccountListRequest struct {
 	AccountNumber string `form:"accountNumber"`
+	AccountType   string `form:"accountType"`
 	Page          int    `form:"page" default:"1" min:"1"`
 	Limit         int    `form:"limit" default:"10" min:"1" max:"100"`
 	Search        string `form:"search"`

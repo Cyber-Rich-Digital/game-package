@@ -40,6 +40,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 
 	statementRoute := root.Group("/statements")
 	statementRoute.GET("/list", middleware.Authorize, handler.getBankStatements)
+	statementRoute.GET("/summary", middleware.Authorize, handler.getBankStatementSummary)
 	statementRoute.GET("/detail/:id", middleware.Authorize, handler.getBankStatementById)
 	statementRoute.POST("", middleware.Authorize, handler.createBankStatement)
 	statementRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankStatement)
@@ -61,6 +62,8 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 
 	memberRoute := root.Group("/member")
 	memberRoute.GET("/info/:code", middleware.Authorize, handler.getMemberByCode)
+	memberRoute.GET("/list", middleware.Authorize, handler.getMembers)
+	memberRoute.GET("/posibleowner", middleware.Authorize, handler.getPosibleStatementOwners)
 	memberRoute.GET("/transactionsummary", middleware.Authorize, handler.getMemberTransactionSummary)
 	memberRoute.GET("/transactions", middleware.Authorize, handler.getMemberTransactions)
 
@@ -145,6 +148,36 @@ func (h bankingController) getBankStatements(c *gin.Context) {
 	}
 
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetBankStatementSummary
+// @Description ดึงข้อมูลจำนวนรายการสรุป เช่น รายการโอนรอดำเนินการ
+// @Tags Banking - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.BankStatementListRequest true "BankStatementListRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/statements/summary [get]
+func (h bankingController) getBankStatementSummary(c *gin.Context) {
+
+	var query model.BankStatementListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetBankStatementSummary(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
 // @Summary GetStatementByID
@@ -721,6 +754,68 @@ func (h bankingController) getMemberByCode(c *gin.Context) {
 		return
 	}
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary GetMembers
+// @Description ดึงข้อมูลลิสการโอนเงิน ที่รอดำเนินการ ที่ใกล้เคียงกับรายการที่เลือก
+// @Tags Banking - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.MemberListRequest true "MemberListRequest"
+// @Success 200 {object} model.SuccessWithPagination
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/member/list [get]
+func (h bankingController) getMembers(c *gin.Context) {
+
+	var query model.MemberListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetMembers(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetPosibleStatementOwners
+// @Description ดึงข้อมูลลิสการโอนเงิน ที่รอดำเนินการ ที่ใกล้เคียงกับรายการที่เลือก
+// @Tags Banking - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.MemberListRequest true "MemberListRequest"
+// @Success 200 {object} model.SuccessWithPagination
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/member/posibleowner [get]
+func (h bankingController) getPosibleStatementOwners(c *gin.Context) {
+
+	var query model.MemberListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.bankingService.GetPosibleStatementOwners(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
 // @Summary GetMemberTransactionSummary

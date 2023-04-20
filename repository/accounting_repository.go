@@ -369,52 +369,73 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 	var total int64
 	var err error
 
-	// SELECT //
-	query := r.db.Table("Bank_accounts AS accounts")
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
-	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
-	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
-	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
-	query = query.Select(selectedFields)
-	query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
-	query = query.Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id")
-	if req.Search != "" {
-		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		query = query.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like)
-	}
-
-	// Sort by ANY //
-	req.SortCol = strings.TrimSpace(req.SortCol)
-	if req.SortCol != "" {
-		if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
-			req.SortAsc = "DESC"
-		} else {
-			req.SortAsc = "ASC"
-		}
-		query = query.Order(req.SortCol + " " + req.SortAsc)
-	}
-
-	if err = query.
-		Where("accounts.deleted_at IS NULL").
-		Limit(req.Limit).
-		Offset(req.Page * req.Limit).
-		Scan(&list).
-		Error; err != nil {
-		return nil, err
-	}
-
 	// Count total records for pagination purposes (without limit and offset) //
-	count := r.db.Table("Bank_accounts")
-	count = count.Select("id")
+	count := r.db.Table("Bank_accounts AS accounts")
+	count = count.Select("accounts.id")
+	count = count.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
+	count = count.Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where("account_name LIKE ?", search_like).Or("account_number LIKE ?", search_like)
+		count = count.Where(r.db.Where("account_name LIKE ?", search_like).Or("account_number LIKE ?", search_like))
 	}
+	if req.AccountNumber != "" {
+		count = count.Where("account_number = ?", req.AccountNumber)
+	}
+	if req.AccountType == "deposit" {
+		count = count.Where("account_types.allow_deposit = 1")
+	} else if req.AccountType == "withdraw" {
+		count = count.Where("account_types.allow_withdraw = 1")
+	}
+
 	if err = count.
-		Where("deleted_at IS NULL").
+		Where("accounts.deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
+	}
+
+	if total > 0 {
+		// SELECT //
+		query := r.db.Table("Bank_accounts AS accounts")
+		selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+		selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+		selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
+		selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
+		query = query.Select(selectedFields)
+		query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
+		query = query.Joins("LEFT JOIN Bank_account_types AS account_types ON account_types.id = accounts.account_type_id")
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where(r.db.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like))
+		}
+		if req.AccountNumber != "" {
+			query = query.Where("accounts.account_number = ?", req.AccountNumber)
+		}
+		if req.AccountType == "deposit" {
+			query = query.Where("account_types.allow_deposit = 1")
+		} else if req.AccountType == "withdraw" {
+			query = query.Where("account_types.allow_withdraw = 1")
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("accounts.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
 	}
 
 	// End count total records for pagination purposes (without limit and offset) //

@@ -11,6 +11,7 @@ import (
 type BankingService interface {
 	GetBankStatementById(req model.BankStatementGetRequest) (*model.BankStatement, error)
 	GetBankStatements(req model.BankStatementListRequest) (*model.SuccessWithPagination, error)
+	GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error)
 	CreateBankStatement(data model.BankStatementCreateBody) error
 	DeleteBankStatement(id int64) error
 
@@ -30,6 +31,8 @@ type BankingService interface {
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
 
 	GetMemberByCode(code string) (*model.Member, error)
+	GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error)
+	GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
 }
@@ -68,6 +71,15 @@ func (s *bankingService) GetBankStatements(req model.BankStatementListRequest) (
 		return nil, badRequest(err.Error())
 	}
 	records, err := s.repoBanking.GetBankStatements(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
+func (s *bankingService) GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error) {
+
+	records, err := s.repoBanking.GetBankStatementSummary(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
@@ -509,6 +521,40 @@ func (s *bankingService) GetMemberByCode(code string) (*model.Member, error) {
 		if err.Error() == recordNotFound {
 			return nil, notFound(memberNotFound)
 		}
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
+func (s *bankingService) GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+	records, err := s.repoBanking.GetMembers(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return records, nil
+}
+
+func (s *bankingService) GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
+		return nil, badRequest(err.Error())
+	}
+
+	statement, err := s.repoBanking.GetBankStatementById(req.UnknownStatementId)
+	if err != nil {
+		if err.Error() == recordNotFound {
+			return nil, notFound(memberNotFound)
+		}
+		return nil, internalServerError(err.Error())
+	}
+	req.UserBankId = statement.BankId
+
+	records, err := s.repoBanking.GetPosibleStatementOwners(req)
+	if err != nil {
 		return nil, internalServerError(err.Error())
 	}
 	return records, nil
