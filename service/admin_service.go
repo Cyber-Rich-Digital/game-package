@@ -288,8 +288,8 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 		list = append(list, model.AdminPermissionList{
 			GroupId:      data.GroupId,
 			PermissionId: v.Id,
-			IsRead:       v.Read,
-			IsWrite:      v.Write,
+			IsRead:       v.IsRead,
+			IsWrite:      v.IsWrite,
 		})
 	}
 
@@ -363,8 +363,8 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 				{
 					AdminId:      adminId,
 					PermissionId: v.Id,
-					IsRead:       v.Read,
-					IsWrite:      v.Write,
+					IsRead:       v.IsRead,
+					IsWrite:      v.IsWrite,
 				},
 			}
 		}
@@ -432,8 +432,8 @@ func (s *adminService) UpdateGroup(groupId int64, data *model.AdminUpdateGroup) 
 		list = append(list, model.AdminPermissionList{
 			GroupId:      groupId,
 			PermissionId: v.Id,
-			IsRead:       v.Read,
-			IsWrite:      v.Write,
+			IsRead:       v.IsRead,
+			IsWrite:      v.IsWrite,
 		})
 	}
 
