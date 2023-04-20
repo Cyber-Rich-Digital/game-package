@@ -35,8 +35,11 @@ type BankingRepository interface {
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
 
+	GetMemberByCode(code string) (*model.Member, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
+	IncreaseMemberCredit(id int64, amount float32) error
+	DecreaseMemberCredit(id int64, amount float32) error
 }
 
 func (r repo) GetBankStatementById(id int64) (*model.BankStatement, error) {
@@ -708,6 +711,21 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 	return &result, nil
 }
 
+func (r repo) GetMemberByCode(memberCode string) (*model.Member, error) {
+	var record model.Member
+
+	selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
+	if err := r.db.Table("Users as users").
+		Select(selectedFields).
+		Where("users.member_code = ?", memberCode).
+		Where("users.deleted_at IS NULL").
+		First(&record).
+		Error; err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
 func (r repo) GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.MemberTransaction
@@ -834,4 +852,20 @@ func (r repo) GetMemberTransactionSummary(req model.MemberTransactionListRequest
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (r repo) IncreaseMemberCredit(userId int64, amount float32) error {
+
+	if err := r.db.Table("Bank_transactions").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit + ?", amount)).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) DecreaseMemberCredit(userId int64, amount float32) error {
+
+	if err := r.db.Table("Bank_transactions").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit - ?", amount)).Error; err != nil {
+		return err
+	}
+	return nil
 }
