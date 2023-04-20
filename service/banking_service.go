@@ -34,7 +34,7 @@ type BankingService interface {
 
 	GetMemberByCode(code string) (*model.Member, error)
 	GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error)
-	GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error)
+	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
 }
@@ -213,6 +213,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
 		}
+		body.MemberCode = member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -586,7 +587,7 @@ func (s *bankingService) GetMembers(req model.MemberListRequest) (*model.Success
 	return records, nil
 }
 
-func (s *bankingService) GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+func (s *bankingService) GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
@@ -595,13 +596,15 @@ func (s *bankingService) GetPosibleStatementOwners(req model.MemberListRequest) 
 	statement, err := s.repoBanking.GetBankStatementById(req.UnknownStatementId)
 	if err != nil {
 		if err.Error() == recordNotFound {
-			return nil, notFound(memberNotFound)
+			return nil, notFound(bankStatementferNotFound)
 		}
 		return nil, internalServerError(err.Error())
 	}
-	req.UserBankId = statement.BankId
+	fmt.Println(statement)
+	req.UserBankId = &statement.FromBankId
+	req.UserAccountNumber = &statement.FromAccountNumber
 
-	records, err := s.repoBanking.GetPosibleStatementOwners(req)
+	records, err := s.repoBanking.GetPossibleStatementOwners(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}

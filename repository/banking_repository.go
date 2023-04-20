@@ -41,7 +41,7 @@ type BankingRepository interface {
 	GetMemberById(id int64) (*model.Member, error)
 	GetMemberByCode(code string) (*model.Member, error)
 	GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error)
-	GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error)
+	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
 	IncreaseMemberCredit(id int64, amount float32) error
@@ -50,7 +50,7 @@ type BankingRepository interface {
 
 func (r repo) GetBankStatementById(id int64) (*model.BankStatement, error) {
 	var record model.BankStatement
-	selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
+	selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.from_bank_id, statements.from_account_number, statements.amount, statements.status, statements.created_at, statements.updated_at"
 	selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id, banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
 	if err := r.db.Table("Bank_statements as statements").
 		Select(selectedFields).
@@ -100,7 +100,7 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.amount, statements.status, statements.created_at, statements.updated_at"
+		selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.from_bank_id, statements.from_account_number, statements.amount, statements.status, statements.created_at, statements.updated_at"
 		selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id, banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
 		query := r.db.Table("Bank_statements as statements")
 		query = query.Select(selectedFields)
@@ -854,21 +854,23 @@ func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPaginat
 	return &result, nil
 }
 
-func (r repo) GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+func (r repo) GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.Member
 	var total int64
 	var err error
 
+	fmt.Println(req)
+
 	// Count total records for pagination purposes (without limit and offset) //
 	count := r.db.Table("Users as users")
 	count = count.Select("users.id")
-	if req.Search != "" {
-		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+	if req.UserBankId != nil {
+		count = count.Where("users.bank_id = ?", *req.UserBankId)
 	}
-	if req.UserBankId != 0 {
-		// count = count.Where("users.id = ?", req.UserBankId)
+	if req.UserAccountNumber != nil && *req.UserAccountNumber != "" {
+		search_like := fmt.Sprintf("%%%s%%", *req.UserAccountNumber)
+		count = count.Where("users.bank_account LIKE ?", search_like)
 	}
 
 	if err = count.
@@ -882,12 +884,12 @@ func (r repo) GetPosibleStatementOwners(req model.MemberListRequest) (*model.Suc
 		selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
 		query := r.db.Table("Users as users")
 		query = query.Select(selectedFields)
-		if req.Search != "" {
-			search_like := fmt.Sprintf("%%%s%%", req.Search)
-			query = query.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+		if req.UserBankId != nil {
+			query = query.Where("users.bank_id = ?", req.UserBankId)
 		}
-		if req.UserBankId != 0 {
-			// query = query.Where("users.id = ?", req.UserBankId)
+		if req.UserAccountNumber != nil && *req.UserAccountNumber != "" {
+			search_like := fmt.Sprintf("%%%s%%", *req.UserAccountNumber)
+			query = query.Where("users.bank_account LIKE ?", search_like)
 		}
 
 		// Sort by ANY //

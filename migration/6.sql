@@ -50,7 +50,8 @@ ALTER TABLE `Bank_accounts`
 
 ALTER TABLE `Bank_statements`
 	ADD COLUMN `external_id` BIGINT(19) NOT NULL AFTER `account_id`,
-	ADD COLUMN `from_bank_id` BIGINT(19) NOT NULL AFTER `detail`;
+	ADD COLUMN `from_bank_id` BIGINT(19) NULL AFTER `detail`,
+	ADD COLUMN `from_account_number` VARCHAR(255) NULL AFTER `from_bank_id`;
 
 ALTER TABLE `Bank_statements`
     ADD UNIQUE `uni_external_id` (`external_id`);

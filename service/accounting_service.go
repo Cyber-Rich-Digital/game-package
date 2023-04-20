@@ -1140,12 +1140,6 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 		return badRequest("Invalid Bank Account")
 	}
 
-	fromBank, err := s.repo.GetBankByCode(data.BankCode)
-	if err != nil {
-		fmt.Println(err)
-		return badRequest("Invalid User Bank")
-	}
-
 	_, errOldStatement := s.repo.GetWebhookStatementByExternalId(data.Id)
 	if errOldStatement != nil && errOldStatement.Error() == recordNotFound {
 		var body model.BankStatementCreateBody
@@ -1160,7 +1154,13 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 		} else {
 			return badRequest("Invalid TxnCode")
 		}
-		body.FromBankId = fromBank.Id
+
+		bankId, _ := s.GetBankIdFromWebhook(data)
+		body.FromBankId = bankId
+
+		accountNumber, _ := s.GetAccountNoFromWebhook(data)
+		body.FromAccountNumber = accountNumber
+
 		body.Detail = data.TxnDescription + " " + data.Info
 		body.TransferAt = data.DateTime
 		body.Status = "pending"
@@ -1170,6 +1170,20 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 	}
 
 	return nil
+}
+
+func (s *accountingService) GetBankIdFromWebhook(data model.WebhookStatement) (int64, error) {
+
+	// todo :
+
+	return 2, nil
+}
+
+func (s *accountingService) GetAccountNoFromWebhook(data model.WebhookStatement) (string, error) {
+
+	// todo :
+
+	return "123123", nil
 }
 
 func (s *accountingService) CreateWebhookLog(logType string, jsonRequest string) error {

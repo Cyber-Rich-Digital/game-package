@@ -65,7 +65,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	memberRoute := root.Group("/member")
 	memberRoute.GET("/info/:code", middleware.Authorize, handler.getMemberByCode)
 	memberRoute.GET("/list", middleware.Authorize, handler.getMembers)
-	memberRoute.GET("/posibleowner", middleware.Authorize, handler.getPosibleStatementOwners)
+	memberRoute.GET("/possibleowner", middleware.Authorize, handler.getPossibleStatementOwners)
 	memberRoute.GET("/transactionsummary", middleware.Authorize, handler.getMemberTransactionSummary)
 	memberRoute.GET("/transactions", middleware.Authorize, handler.getMemberTransactions)
 
@@ -854,19 +854,19 @@ func (h bankingController) getMembers(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetPosibleStatementOwners
+// @Summary GetPossibleStatementOwners
 // @Description ดึงข้อมูลลิสสมาชิก ที่มีข้อมูลใกล้เคียงกับรายการสเตทเม้นที่รอดำเนินการ
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.MemberListRequest true "MemberListRequest"
+// @Param _ query model.MemberPossibleListRequest true "MemberPossibleListRequest"
 // @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /banking/member/posibleowner [get]
-func (h bankingController) getPosibleStatementOwners(c *gin.Context) {
+// @Router /banking/member/possibleowner [get]
+func (h bankingController) getPossibleStatementOwners(c *gin.Context) {
 
-	var query model.MemberListRequest
+	var query model.MemberPossibleListRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -876,7 +876,7 @@ func (h bankingController) getPosibleStatementOwners(c *gin.Context) {
 		return
 	}
 
-	data, err := h.bankingService.GetPosibleStatementOwners(query)
+	data, err := h.bankingService.GetPossibleStatementOwners(query)
 	if err != nil {
 		HandleError(c, err)
 		return
