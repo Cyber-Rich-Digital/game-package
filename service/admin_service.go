@@ -17,7 +17,7 @@ type AdminService interface {
 	Create(user *model.CreateAdmin) error
 	CreateGroup(data *model.AdminCreateGroup) error
 	UpdateAdmin(adminId int64, data model.AdminBody) error
-	UpdateGroup(data *model.AdminUpdateGroup) error
+	UpdateGroup(groupId int64, data *model.AdminUpdateGroup) error
 	ResetPassword(adminId int64, body model.AdminUpdatePassword) error
 	DeleteGroup(id int64) error
 	DeletePermission(perm model.DeletePermission) error
@@ -184,24 +184,29 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 		return badRequest(AdminGroupNotFound)
 	}
 
-	checkPermission, err := s.perRepo.CheckPerListAndGroupId(data.AdminGroupId, *data.PermissionIds)
+	var perIds []int64
+	for _, j := range *data.Permissions {
+		perIds = append(perIds, j.Id)
+	}
+
+	checkPermission, err := s.perRepo.CheckPerListAndGroupId(data.AdminGroupId, perIds)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
 	var idNotFound []string
-	for _, j := range *data.PermissionIds {
+	for _, j := range *data.Permissions {
 
 		exist := false
 
 		for _, k := range checkPermission {
-			if j == k {
+			if j.Id == k {
 				exist = true
 			}
 		}
 
 		if !exist {
-			idNotFound = append(idNotFound, fmt.Sprintf("%d", j))
+			idNotFound = append(idNotFound, fmt.Sprintf("%d", j.Id))
 		}
 	}
 
@@ -233,7 +238,7 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 	newUser.Phone = data.Phone
 	newUser.AdminGroupId = data.AdminGroupId
 
-	return s.repo.CreateAdmin(newUser, data.PermissionIds)
+	return s.repo.CreateAdmin(newUser, data.Permissions)
 }
 
 func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
@@ -247,18 +252,18 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 		return badRequest(AdminGroupNotFound)
 	}
 
-	var groupIds []int64
-	for _, v := range data.PermissionIds {
-		groupIds = append(groupIds, int64(v))
+	var perIds []int64
+	for _, v := range data.Permissions {
+		perIds = append(perIds, int64(v.Id))
 	}
 
-	checkPermission, err := s.perRepo.CheckPerListExist(groupIds)
+	checkPermission, err := s.perRepo.CheckPerListExist(perIds)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
 	var idNotFound []string
-	for _, j := range groupIds {
+	for _, j := range perIds {
 
 		exist := false
 
@@ -279,10 +284,12 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 
 	var list []model.AdminPermissionList
 
-	for _, v := range data.PermissionIds {
+	for _, v := range data.Permissions {
 		list = append(list, model.AdminPermissionList{
 			GroupId:      data.GroupId,
-			PermissionId: v,
+			PermissionId: v.Id,
+			IsRead:       v.Read,
+			IsWrite:      v.Write,
 		})
 	}
 
@@ -310,19 +317,10 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 		data.AdminGroupId = body.GroupId
 	}
 
-	// checkPhone, err := s.repo.CheckPhone(body.Phone)
-	// if err != nil {
-	// 	return internalServerError(err.Error())
-	// }
-
-	// if checkPhone {
-	// 	return badRequest(AdminPhoneExist)
-	// }
-
 	var adminPer *[]model.AdminPermission
 	var oldGroupId *int
 
-	if body.GroupId != nil && body.PermissionIds != nil {
+	if body.GroupId != nil && body.Permissions != nil {
 
 		getGroupId, err := s.repo.GetAdminGroup(adminId)
 		if err != nil {
@@ -330,25 +328,29 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 		}
 
 		oldGroupId = &getGroupId.AdminGroupId
+		var perIds []int64
+		for _, j := range *body.Permissions {
+			perIds = append(perIds, j.Id)
+		}
 
-		checkPermission, err := s.perRepo.CheckPerListAndGroupId(*body.GroupId, *body.PermissionIds)
+		checkPermission, err := s.perRepo.CheckPerListAndGroupId(*body.GroupId, perIds)
 		if err != nil {
 			return internalServerError(err.Error())
 		}
 
 		var idNotFound []string
-		for _, j := range *body.PermissionIds {
+		for _, j := range *body.Permissions {
 
 			exist := false
 
 			for _, k := range checkPermission {
-				if j == k {
+				if j.Id == k {
 					exist = true
 				}
 			}
 
 			if !exist {
-				idNotFound = append(idNotFound, fmt.Sprintf("%d", j))
+				idNotFound = append(idNotFound, fmt.Sprintf("%v", j))
 			}
 		}
 
@@ -356,17 +358,18 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 			return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
 		}
 
-		for _, v := range *body.PermissionIds {
+		for _, v := range *body.Permissions {
 			adminPer = &[]model.AdminPermission{
 				{
 					AdminId:      adminId,
-					PermissionId: v,
+					PermissionId: v.Id,
+					IsRead:       v.Read,
+					IsWrite:      v.Write,
 				},
 			}
 		}
 	}
 
-	// data.Phone = body.Phone
 	data.Email = body.Email
 	data.Status = body.Status
 
@@ -382,9 +385,9 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 	return s.repo.UpdateAdmin(adminId, oldGroupId, data, adminPer)
 }
 
-func (s *adminService) UpdateGroup(data *model.AdminUpdateGroup) error {
+func (s *adminService) UpdateGroup(groupId int64, data *model.AdminUpdateGroup) error {
 
-	checkGroup, err := s.groupRepo.CheckGroupExist(data.GroupId)
+	checkGroup, err := s.groupRepo.CheckGroupExist(groupId)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -394,8 +397,8 @@ func (s *adminService) UpdateGroup(data *model.AdminUpdateGroup) error {
 	}
 
 	var permissionIds []int64
-	for _, v := range data.PermissionIds {
-		permissionIds = append(permissionIds, int64(v))
+	for _, v := range data.Permissions {
+		permissionIds = append(permissionIds, int64(v.Id))
 	}
 
 	checkPermission, err := s.perRepo.CheckPerListExist(permissionIds)
@@ -425,14 +428,16 @@ func (s *adminService) UpdateGroup(data *model.AdminUpdateGroup) error {
 
 	var list []model.AdminPermissionList
 
-	for _, v := range data.PermissionIds {
+	for _, v := range data.Permissions {
 		list = append(list, model.AdminPermissionList{
-			GroupId:      data.GroupId,
-			PermissionId: v,
+			GroupId:      groupId,
+			PermissionId: v.Id,
+			IsRead:       v.Read,
+			IsWrite:      v.Write,
 		})
 	}
 
-	if err := s.repo.UpdateGroup(data.GroupId, list, permissionIds); err != nil {
+	if err := s.repo.UpdateGroup(groupId, list, permissionIds); err != nil {
 		return err
 	}
 
