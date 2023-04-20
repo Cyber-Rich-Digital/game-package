@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"cybergame-api/middleware"
 	"cybergame-api/model"
 	"cybergame-api/service"
 
@@ -24,12 +25,12 @@ func newGroupController(
 func GroupController(r *gin.RouterGroup, db *gorm.DB) {
 
 	repo := repository.NewGroupRepository(db)
-	service := service.NewGroupService(repo)
+	perRepo := repository.NewPermissionRepository(db)
+	service := service.NewGroupService(repo, perRepo)
 	handler := newGroupController(service)
 
 	r = r.Group("/groups")
-	r.POST("/create", handler.create)
-
+	r.POST("/create", middleware.Authorize, handler.create)
 }
 
 // @Summary Create Group And Permission
