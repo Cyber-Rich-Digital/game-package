@@ -182,7 +182,7 @@ func (r repo) GetAdminByUsername(data model.LoginAdmin) (*model.Admin, error) {
 		if err := r.db.Table("Admins").
 			Where("id = ?", admin.Id).
 			Updates(model.AdminLoginUpdate{
-				IP:        data.IP,
+				Ip:        data.Ip,
 				LogedinAt: time.Now(),
 			}).
 			Error; err != nil {
@@ -289,8 +289,8 @@ func (r repo) CreateAdmin(admin model.Admin, permissions *[]model.PermissionObj)
 			adminPer = append(adminPer, model.AdminPermission{
 				AdminId:      admin.Id,
 				PermissionId: v.Id,
-				IsRead:       v.Read,
-				IsWrite:      v.Write,
+				IsRead:       v.IsRead,
+				IsWrite:      v.IsWrite,
 			})
 		}
 

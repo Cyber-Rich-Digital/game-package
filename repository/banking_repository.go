@@ -15,6 +15,7 @@ func NewBankingRepository(db *gorm.DB) BankingRepository {
 type BankingRepository interface {
 	GetBankStatementById(id int64) (*model.BankStatement, error)
 	GetBankStatements(req model.BankStatementListRequest) (*model.SuccessWithPagination, error)
+	GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error)
 	CreateBankStatement(data model.BankStatementCreateBody) error
 	UpdateBankStatement(id int64, data model.BankStatementUpdateBody) error
 	DeleteBankStatement(id int64) error
@@ -35,8 +36,13 @@ type BankingRepository interface {
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
 	GetRemovedTransactions(req model.RemovedTransactionListRequest) (*model.SuccessWithPagination, error)
 
+	GetMemberByCode(code string) (*model.Member, error)
+	GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error)
+	GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
+	IncreaseMemberCredit(id int64, amount float32) error
+	DecreaseMemberCredit(id int64, amount float32) error
 }
 
 func (r repo) GetBankStatementById(id int64) (*model.BankStatement, error) {
@@ -80,8 +86,7 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	}
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where("accounts.account_name LIKE ?", search_like)
-		count = count.Or("accounts.account_number LIKE ?", search_like)
+		count = count.Where(r.db.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like))
 	}
 
 	if err = count.
@@ -112,8 +117,7 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 		}
 		if req.Search != "" {
 			search_like := fmt.Sprintf("%%%s%%", req.Search)
-			query = query.Where("accounts.account_name LIKE ?", search_like)
-			query = query.Or("accounts.account_number LIKE ?", search_like)
+			query = query.Where(r.db.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like))
 		}
 
 		// Sort by ANY //
@@ -141,6 +145,43 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	var result model.SuccessWithPagination
 	result.List = list
 	result.Total = total
+	return &result, nil
+}
+
+func (r repo) GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error) {
+
+	var result model.BankStatementSummary
+	var totalPendingCount int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Bank_statements as statements")
+	count = count.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = statements.account_id")
+	count = count.Select("statements.id")
+	count = count.Where("statements.status = ?", "pending")
+	if req.AccountId != "" {
+		count = count.Where("statements.account_id = ?", req.AccountId)
+	}
+	if req.StatementType != "" {
+		count = count.Where("statements.statement_type = ?", req.StatementType)
+	}
+	if req.FromTransferDate != "" {
+		count = count.Where("statements.transfer_at >= ?", req.FromTransferDate)
+	}
+	if req.ToTransferDate != "" {
+		count = count.Where("statements.transfer_at <= ?", req.ToTransferDate)
+	}
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where(r.db.Where("accounts.account_name LIKE ?", search_like).Or("accounts.account_number LIKE ?", search_like))
+	}
+	if err = count.
+		Where("statements.deleted_at IS NULL").
+		Count(&totalPendingCount).
+		Error; err != nil {
+		return nil, err
+	}
+
 	return &result, nil
 }
 
@@ -708,6 +749,143 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 	return &result, nil
 }
 
+func (r repo) GetMemberByCode(memberCode string) (*model.Member, error) {
+	var record model.Member
+
+	selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
+	if err := r.db.Table("Users as users").
+		Select(selectedFields).
+		Where("users.member_code = ?", memberCode).
+		Where("users.deleted_at IS NULL").
+		First(&record).
+		Error; err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BankStatementResponse
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Users as users")
+	count = count.Select("users.id")
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+	}
+
+	if err = count.
+		Where("statements.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
+		query := r.db.Table("Users as users")
+		query = query.Select(selectedFields)
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("users.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
+func (r repo) GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+
+	var list []model.BankStatementResponse
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Users as users")
+	count = count.Select("users.id")
+	if req.Search != "" {
+		search_like := fmt.Sprintf("%%%s%%", req.Search)
+		count = count.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+	}
+	if req.UserBankId != 0 {
+		// count = count.Where("users.id = ?", req.UserBankId)
+	}
+
+	if err = count.
+		Where("statements.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+	if total > 0 {
+		// SELECT //
+		selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
+		query := r.db.Table("Users as users")
+		query = query.Select(selectedFields)
+		if req.Search != "" {
+			search_like := fmt.Sprintf("%%%s%%", req.Search)
+			query = query.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+		}
+		if req.UserBankId != 0 {
+			// query = query.Where("users.id = ?", req.UserBankId)
+		}
+
+		// Sort by ANY //
+		req.SortCol = strings.TrimSpace(req.SortCol)
+		if req.SortCol != "" {
+			if strings.ToLower(strings.TrimSpace(req.SortAsc)) == "desc" {
+				req.SortAsc = "DESC"
+			} else {
+				req.SortAsc = "ASC"
+			}
+			query = query.Order(req.SortCol + " " + req.SortAsc)
+		}
+
+		if err = query.
+			Where("users.deleted_at IS NULL").
+			Limit(req.Limit).
+			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
 func (r repo) GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error) {
 
 	var list []model.MemberTransaction
@@ -834,4 +1012,20 @@ func (r repo) GetMemberTransactionSummary(req model.MemberTransactionListRequest
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (r repo) IncreaseMemberCredit(userId int64, amount float32) error {
+
+	if err := r.db.Table("Bank_transactions").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit + ?", amount)).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) DecreaseMemberCredit(userId int64, amount float32) error {
+
+	if err := r.db.Table("Bank_transactions").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit - ?", amount)).Error; err != nil {
+		return err
+	}
+	return nil
 }

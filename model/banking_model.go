@@ -6,12 +6,34 @@ import (
 	"gorm.io/gorm"
 )
 
-type TempUser struct {
-	Id            int64  `json:"id" gorm:"primaryKey"`
-	MemberCode    string `json:"memberCode"`
-	BankId        int64  `json:"bankId"`
-	AccountName   string `json:"accountName"`
-	AccountNumber string `json:"accountNumber"`
+type Member struct {
+	Id            int64     `json:"id"`
+	MemberCode    string    `json:"memberCode"`
+	Username      string    `json:"username"`
+	Phone         string    `json:"phone"`
+	Firstname     string    `json:"firstname"`
+	Lastname      string    `json:"lastname"`
+	Fullname      string    `json:"fullname"`
+	Credit        float64   `json:"credit"`
+	Bankname      string    `json:"bankname"`
+	BankAccount   string    `json:"bankAccount"`
+	Promotion     string    `json:"promotion"`
+	Status        string    `json:"status"`
+	Channel       string    `json:"channel"`
+	TrueWallet    string    `json:"trueWallet"`
+	Note          string    `json:"note"`
+	TurnoverLimit int       `json:"turnoverLimit"`
+	CreatedAt     time.Time `json:"createdAt"`
+}
+
+type MemberListRequest struct {
+	Search             string `form:"search" extensions:"x-order:1"`
+	UnknownStatementId int64  `form:"unknownStatementId" extensions:"x-order:2"`
+	UserBankId         int64  `form:"userBankId" extensions:"x-order:3"`
+	Page               int    `form:"page" extensions:"x-order:7" default:"1" min:"1"`
+	Limit              int    `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
+	SortCol            string `form:"sortCol" extensions:"x-order:9"`
+	SortAsc            string `form:"sortAsc" extensions:"x-order:10"`
 }
 
 type BankStatement struct {
@@ -19,6 +41,7 @@ type BankStatement struct {
 	AccountId     int64          `json:"accountId"`
 	Amount        float32        `json:"amount" sql:"type:decimal(14,2);"`
 	Detail        string         `json:"detail"`
+	BankId        int64          `json:"bankId"`
 	StatementType string         `json:"statementType"`
 	TransferAt    time.Time      `json:"transferAt"`
 	Status        string         `json:"status"`
@@ -31,22 +54,30 @@ type BankStatementGetRequest struct {
 	Id int64 `uri:"id" binding:"required"`
 }
 
+type BankStatementSummary struct {
+	TotalPendingCount int `json:"totalPendingCount"`
+}
+
 type BankStatementListRequest struct {
 	AccountId        string `form:"accountId" extensions:"x-order:1"`
 	StatementType    string `form:"statementType" extensions:"x-order:2"`
 	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:3"`
 	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:4"`
 	Search           string `form:"search" extensions:"x-order:5"`
-	Page             int    `form:"page" extensions:"x-order:6" default:"1" min:"1"`
-	Limit            int    `form:"limit" extensions:"x-order:7" default:"10" min:"1" max:"100"`
-	SortCol          string `form:"sortCol" extensions:"x-order:8"`
-	SortAsc          string `form:"sortAsc" extensions:"x-order:9"`
+	SimilarId        int64  `form:"similarId" extensions:"x-order:6"`
+	Status           string `form:"status" extensions:"x-order:7"`
+	Page             int    `form:"page" extensions:"x-order:7" default:"1" min:"1"`
+	Limit            int    `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol" extensions:"x-order:9"`
+	SortAsc          string `form:"sortAsc" extensions:"x-order:10"`
 }
 
 type BankStatementCreateBody struct {
 	AccountId     int64     `json:"accountId"`
+	ExternalId    int64     `json:"externalId"`
 	Amount        float32   `json:"amount" sql:"type:decimal(14,2);"`
 	Detail        string    `json:"detail"`
+	FromBankId    int64     `json:"fromBankId"`
 	StatementType string    `json:"statementType"`
 	TransferAt    time.Time `json:"transferAt"`
 	Status        string    `json:"-"`
