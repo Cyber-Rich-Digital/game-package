@@ -7,7 +7,7 @@ RUN apk update
 RUN apk add alpine-sdk
 RUN mkdir $HOME/bin 
 RUN echo "export PATH=$HOME/bin:$HOME/go/bin:$PATH" >> $HOME/.profile
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN go install github.com/swaggo/swag/cmd/swag
 RUN swag init
 RUN go build -o ./build/API
 
