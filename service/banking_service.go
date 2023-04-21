@@ -202,7 +202,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
 		}
-		body.MemberCode = member.MemberCode
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -232,7 +232,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
 		}
-		body.MemberCode = member.MemberCode
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -269,7 +269,7 @@ func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreat
 	}
 
 	var body model.BonusTransactionCreateBody
-	body.MemberCode = member.MemberCode
+	body.MemberCode = *member.MemberCode
 	body.UserId = member.Id
 	body.TransferType = "bonus"
 	body.ToAccountId = 0

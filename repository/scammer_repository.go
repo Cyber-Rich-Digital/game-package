@@ -21,7 +21,7 @@ func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, er
 
 	db := r.db.Table("Scammers")
 
-	if query.DateStart != nil && query.DateEnd != nil {
+	if query.DateStart != "" && query.DateEnd != "" {
 		db = db.Where("created_at BETWEEN ? AND ?", query.DateStart, query.DateEnd)
 	}
 
