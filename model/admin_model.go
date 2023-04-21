@@ -27,7 +27,7 @@ type Admin struct {
 type CreateAdmin struct {
 	Username     string           `json:"username" validate:"required,min=8,max=30"`
 	Password     string           `json:"password" validate:"required,min=8,max=30"`
-	Fullname     string           `json:"fullname" validate:"required,min=8,max=30"`
+	Fullname     string           `json:"fullname" validate:"required,min=5,max=30"`
 	Phone        string           `json:"phone" validate:"required,min=10,max=12"`
 	Email        string           `json:"email" validate:"required,email"`
 	Status       string           `json:"status" validate:"required" default:"ACTIVE"`
@@ -38,7 +38,7 @@ type CreateAdmin struct {
 type LoginAdmin struct {
 	Username string `json:"username" validate:"required,min=8,max=30"`
 	Password string `json:"password" validate:"required,min=8,max=30"`
-	IP       string `json:"ip"`
+	Ip       string `json:"ip"`
 }
 
 type LoginResponse struct {
@@ -46,7 +46,7 @@ type LoginResponse struct {
 }
 
 type AdminLoginUpdate struct {
-	IP        string    `json:"ip"`
+	Ip        string    `json:"ip"`
 	LogedinAt time.Time `json:"logedinAt"`
 }
 
@@ -102,22 +102,21 @@ type AdminGroupPagination struct {
 }
 
 type UpdateAdmin struct {
-	Fullname     string `json:"fullname" validate:"required,min=8,max=30"`
-	Firstname    string `json:"firstname" validate:"required,min=8,max=30"`
-	Lastname     string `json:"lastname" validate:"required,min=8,max=30"`
-	Phone        string `json:"phone" validate:"required,min=10,max=12"`
-	Email        string `json:"email" validate:"required,email"`
-	Role         string `json:"roleId" validate:"required"`
-	Status       string `json:"status" validate:"required"`
-	AdminGroupId *int64 `json:"adminGroupId" validate:"required"`
+	Fullname     string
+	Firstname    string
+	Lastname     string
+	Phone        string
+	Email        string
+	Role         string
+	Status       string
+	AdminGroupId *int64
 }
 
 type AdminBody struct {
-	Fullname string `json:"fullname" validate:"required,min=8,max=30"`
-	// Phone         string   `json:"phone" validate:"required,number,min=10,max=12"`
+	Fullname    string           `json:"fullname" validate:"required,min=5,max=30"`
 	Email       string           `json:"email" validate:"required,email"`
 	GroupId     *int64           `json:"groupId"`
-	Status      string           `json:"status" validate:"required"`
+	Status      string           `json:"status" validate:"required" default:"ACTIVE"`
 	Permissions *[]PermissionObj `json:"permissions"`
 }
 

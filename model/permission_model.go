@@ -32,9 +32,9 @@ type PermissionList struct {
 }
 
 type PermissionObj struct {
-	Id    int64 `json:"id"`
-	Read  bool  `json:"read" default:"false"`
-	Write bool  `json:"write" default:"false"`
+	Id      int64 `json:"id"`
+	IsRead  bool  `json:"read" default:"false"`
+	IsWrite bool  `json:"write" default:"false"`
 }
 
 type DeletePermission struct {

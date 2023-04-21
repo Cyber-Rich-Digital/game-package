@@ -1,6 +1,6 @@
 ALTER TABLE `Permissions` 
 ADD UNIQUE INDEX `uni_permission_key` (`permission_key`) VISIBLE,
-DROP INDEX `uni_name` ;
+ADD COLUMN `main` TINYINT NULL DEFAULT 0 AFTER `permission_key`;
 
 INSERT INTO `Permissions` (`name`, `permission_key`, `main`) VALUES
 ('คู่มือ', 'guide', 1),
