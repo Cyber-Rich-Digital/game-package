@@ -11,11 +11,11 @@ func NewScammerRepository(db *gorm.DB) ScammerRepository {
 }
 
 type ScammerRepository interface {
-	GetScammerList(query model.ScammerQuery) ([]model.ScammertList, error)
+	GetScammerList(query model.ScammerQuery) ([]model.ScammertList, int64, error)
 	CreateScammer(scammer model.Scammer) error
 }
 
-func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, error) {
+func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, int64, error) {
 
 	var scammers []model.ScammertList
 
@@ -25,11 +25,11 @@ func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, er
 		db = db.Where("created_at BETWEEN ? AND ?", query.DateStart, query.DateEnd)
 	}
 
-	if query.BankName != nil {
+	if query.BankName != nil && *query.BankName != "" {
 		db = db.Where("bankname = ?", query.BankName)
 	}
 
-	if query.Filter != nil {
+	if query.Filter != nil && *query.Filter != "" {
 		db = db.Where("fullname LIKE ? OR bankname LIKE ? OR bank_account LIKE ?", "%"+*query.Filter+"%", "%"+*query.Filter+"%", "%"+*query.Filter+"%")
 	}
 
@@ -39,10 +39,17 @@ func (r repo) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, er
 		Find(&scammers).
 		Order("id desc").
 		Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return scammers, nil
+	var total int64
+	queryTotal := r.db.Table("Scammers")
+
+	if err := queryTotal.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return scammers, total, nil
 }
 
 func (r repo) CreateScammer(scammer model.Scammer) error {

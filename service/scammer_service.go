@@ -8,7 +8,7 @@ import (
 )
 
 type ScammerService interface {
-	GetScammerList(query model.ScammerQuery) ([]model.ScammertList, error)
+	GetScammerList(query model.ScammerQuery) ([]model.ScammertList, int64, error)
 	Create(user model.CreateScammer) error
 }
 
@@ -22,10 +22,10 @@ func NewScammerService(
 	return &scammerService{repo}
 }
 
-func (s *scammerService) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, error) {
+func (s *scammerService) GetScammerList(query model.ScammerQuery) ([]model.ScammertList, int64, error) {
 
 	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	return s.repo.GetScammerList(query)
