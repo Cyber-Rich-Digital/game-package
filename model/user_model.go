@@ -8,17 +8,18 @@ import (
 
 type User struct {
 	Id            int64          `json:"id"`
-	Partner       string         `json:"partner"`
-	MemberCode    string         `json:"memberCode"`
+	Partner       *string        `json:"partner"`
+	MemberCode    *string        `json:"memberCode"`
 	Username      string         `json:"username"`
 	Phone         string         `json:"phone"`
-	Promotion     string         `json:"promotion"`
+	Promotion     *string        `json:"promotion"`
 	Password      string         `json:"password"`
 	Status        string         `json:"status"`
 	Firstname     string         `json:"firstname"`
 	Lastname      string         `json:"lastname"`
 	Fullname      string         `json:"fullname"`
 	Bankname      string         `json:"bankname"`
+	BankCode      string         `json:"bankCode"`
 	BankAccount   string         `json:"bankAccount"`
 	Channel       string         `json:"channel"`
 	TrueWallet    string         `json:"trueWallet"`
@@ -36,13 +37,14 @@ type User struct {
 }
 
 type CreateUser struct {
-	Partner      string `json:"partner" validate:"required,max=20"`
-	MemberCode   string `json:"memberCode" validate:"max=255"`
+	Partner      string `json:"partner" validate:"max=20"  default:""`
+	MemberCode   string `json:"memberCode" validate:"max=255" default:""`
 	Phone        string `json:"phone" validate:"required,min=10,max=12" example:"0812345678"`
-	Promotion    string `json:"promotion" validate:"max=20"`
+	Promotion    string `json:"promotion" validate:"max=20"  default:""`
 	Password     string `json:"password" validate:"required,min=8,max=255"`
 	Fullname     string `json:"fullname" validate:"required,max=255"`
 	Bankname     string `json:"bankname" validate:"required,max=50"`
+	BankCode     string `json:"bankCode" validate:"required,max=10"`
 	BankAccount  string `json:"bankAccount" validate:"required,max=15"`
 	Channel      string `json:"channel" validate:"required,max=20" enum:"Google,Youtube,Facebook" example:"Google"`
 	TrueWallet   string `json:"trueWallet" validate:"required,max=20"`
