@@ -73,13 +73,13 @@ type UserListQuery struct {
 }
 
 type UpdateUser struct {
-	Partner     string `json:"partner" validate:"required,max=20"`
+	Partner     string `json:"partner" validate:"max=20"`
 	MemberCode  string `json:"memberCode" validate:"max=255"`
 	Promotion   string `json:"promotion" validate:"max=20"`
-	Bankname    string `json:"bankname" validate:"required,max=50"`
-	BankAccount string `json:"bankAccount" validate:"required,max=15"`
-	Channel     string `json:"channel" validate:"required,max=20" enum:"Google,Youtube,Facebook" example:"Google"`
-	TrueWallet  string `json:"trueWallet" validate:"required,max=20"`
+	Bankname    string `json:"bankname" validate:"max=50"`
+	BankAccount string `json:"bankAccount" validate:"max=15"`
+	Channel     string `json:"channel" validate:"max=20" enum:"Google,Youtube,Facebook" example:"Google"`
+	TrueWallet  string `json:"trueWallet" validate:"max=20"`
 	Contact     string `json:"contact" validate:"max=255"`
 	Note        string `json:"note" validate:"max=255"`
 	Course      string `json:"course" validate:"max=50"`
