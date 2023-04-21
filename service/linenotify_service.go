@@ -24,6 +24,8 @@ type LineNotifyService interface {
 
 	//line notify game
 	GetLineNotifyGameById(model.LinenotifyGameParam) (*model.LinenotifyGame, error)
+	CreateNotifyGame(data model.LineNoifyUsergameBody) error
+	GetLineNoifyUserGameById(model.LineNotifyUserGameParam) (*model.LineNoifyUsergame, error)
 }
 
 type lineNotifyService struct {
@@ -91,6 +93,11 @@ func (s *lineNotifyService) UpdateLineNotify(id int64, data model.LinenotifyUpda
 func (s *lineNotifyService) GetLineNotifyGameById(data model.LinenotifyGameParam) (*model.LinenotifyGame, error) {
 
 	linegame, err := s.repo.GetLinenotifyGameById(data.Id)
+
+	if err != nil {
+		return nil, notFound("record NotFound")
+	}
+
 	if err != nil {
 		if err.Error() == "record not found" {
 			return nil, notFound("record NotFound")
@@ -101,4 +108,39 @@ func (s *lineNotifyService) GetLineNotifyGameById(data model.LinenotifyGameParam
 		return nil, internalServerError(err.Error())
 	}
 	return linegame, nil
+}
+
+func (s *lineNotifyService) CreateNotifyGame(data model.LineNoifyUsergameBody) error {
+
+	//reqURL := "https://notify-bot.line.me/oauth/authorize?response_type=code&client_id=VGtxc8xQ2ghbxd71y6zSB3&redirect_uri=https://cyberrichdigital.com/&scope=notify&state=testdata"
+	var bot model.LinenotifyGame
+	bot.ResponseType = "code"
+	bot.ClientId = "VGtxc8xQ2ghbxd71y6zSB3"
+	bot.RedirectUri = "https://cyberrichdigital.com/"
+	bot.Scope = "notify"
+	bot.State = "1"
+	if err := s.repo.CreateLinenotifyGame(data); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *lineNotifyService) GetLineNoifyUserGameById(data model.LineNotifyUserGameParam) (*model.LineNoifyUsergame, error) {
+
+	botuser, err := s.repo.GetLinenotifyUserGameById(data.Id)
+
+	if err != nil {
+		return nil, notFound("record NotFound")
+	}
+
+	if err != nil {
+		if err.Error() == "record not found" {
+			return nil, notFound("record NotFound")
+		}
+		if err.Error() == "record not found" {
+			return nil, notFound("record NotFound")
+		}
+		return nil, internalServerError(err.Error())
+	}
+	return botuser, nil
 }

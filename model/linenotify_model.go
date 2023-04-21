@@ -84,3 +84,21 @@ type LinenotifyGameResponse struct {
 type LinenotifyGameParam struct {
 	Id int64 `uri:"id" binding:"required"`
 }
+
+type LineNoifyUsergame struct {
+	UserId       int64      `json:"name" validate:"required"`
+	TypeNotifyId string     `json:"TypeNotifyId" validate:"required"`
+	Token        string     `json:"token" validate:"required"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    *time.Time `json:"updatedAt"`
+}
+
+type LineNoifyUsergameBody struct {
+	UserId       int64  `json:"name" validate:"required"`
+	TypeNotifyId string `json:"TypeNotifyId" validate:"required"`
+	Token        string `json:"token" validate:"required"`
+}
+
+type LineNotifyUserGameParam struct {
+	Id int64 `uri:"id" binding:"required"`
+}
