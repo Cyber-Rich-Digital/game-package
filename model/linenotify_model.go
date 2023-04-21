@@ -102,3 +102,8 @@ type LineNoifyUsergameBody struct {
 type LineNotifyUserGameParam struct {
 	Id int64 `uri:"id" binding:"required"`
 }
+
+type LineNotifyUserGametDeleteBody struct {
+	Id        string    `json:"-"`
+	DeletedAt time.Time `json:"-"`
+}

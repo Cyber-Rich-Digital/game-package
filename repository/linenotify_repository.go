@@ -23,6 +23,7 @@ type LineNotifyRepository interface {
 	GetLinenotifyGameById(id int64) (*model.LinenotifyGame, error)
 	CreateLinenotifyGame(data model.LineNoifyUsergameBody) error
 	GetLinenotifyUserGameById(id int64) (*model.LineNoifyUsergame, error)
+	DeleteLinenotifyGame(id int64) error
 }
 
 func (r repo) GetLineNotifyById(id int64) (*model.Linenotify, error) {
@@ -141,4 +142,11 @@ func (r repo) GetLinenotifyUserGameById(id int64) (*model.LineNoifyUsergame, err
 		return nil, err
 	}
 	return &bot, nil
+}
+
+func (r repo) DeleteLinenotifyGame(id int64) error {
+	if err := r.db.Table("user_linenotify").Where("id = ?", id).Delete(&model.LineNoifyUsergame{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

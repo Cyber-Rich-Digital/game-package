@@ -26,6 +26,7 @@ type LineNotifyService interface {
 	GetLineNotifyGameById(model.LinenotifyGameParam) (*model.LinenotifyGame, error)
 	CreateNotifyGame(data model.LineNoifyUsergameBody) error
 	GetLineNoifyUserGameById(model.LineNotifyUserGameParam) (*model.LineNoifyUsergame, error)
+	DeleteLineNoifyUserGame(id int64) error
 }
 
 type lineNotifyService struct {
@@ -143,4 +144,17 @@ func (s *lineNotifyService) GetLineNoifyUserGameById(data model.LineNotifyUserGa
 		return nil, internalServerError(err.Error())
 	}
 	return botuser, nil
+}
+
+func (s *lineNotifyService) DeleteLineNoifyUserGame(id int64) error {
+
+	_, err := s.repo.GetLinenotifyUserGameById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if err := s.repo.DeleteLinenotifyGame(id); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
 }
