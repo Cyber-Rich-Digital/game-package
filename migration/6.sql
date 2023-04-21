@@ -50,7 +50,8 @@ ALTER TABLE `Bank_accounts`
 
 ALTER TABLE `Bank_statements`
 	ADD COLUMN `external_id` BIGINT(19) NOT NULL AFTER `account_id`,
-	ADD COLUMN `from_bank_id` BIGINT(19) NOT NULL AFTER `detail`;
+	ADD COLUMN `from_bank_id` BIGINT(19) NULL AFTER `detail`,
+	ADD COLUMN `from_account_number` VARCHAR(255) NULL AFTER `from_bank_id`;
 
 ALTER TABLE `Bank_statements`
     ADD UNIQUE `uni_external_id` (`external_id`);
@@ -78,3 +79,10 @@ ALTER TABLE `Bank_account_types`
 UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=0 WHERE `limit_flag`='00001000';
 UPDATE `Bank_account_types` SET `allow_deposit`=0, `allow_withdraw`=1 WHERE `limit_flag`='00000100';
 UPDATE `Bank_account_types` SET `allow_deposit`=1, `allow_withdraw`=1 WHERE `limit_flag`='00001100';
+
+ALTER TABLE `Bank_confirm_transactions`
+	ADD COLUMN `credit_amount` DECIMAL(14,2) NULL DEFAULT NULL AFTER `slip_url`,
+	CHANGE COLUMN `bonus_amount` `bonus_amount` DECIMAL(14,2) NOT NULL DEFAULT 0 AFTER `credit_amount`;
+
+ALTER TABLE `Bank_confirm_transactions`
+	ADD COLUMN `bank_charge_amount` DECIMAL(14,2) NOT NULL DEFAULT '0.00' AFTER `bonus_amount`;
