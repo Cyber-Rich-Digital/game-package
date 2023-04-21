@@ -43,6 +43,8 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	statementRoute.GET("/summary", middleware.Authorize, handler.getBankStatementSummary)
 	statementRoute.GET("/detail/:id", middleware.Authorize, handler.getBankStatementById)
 	statementRoute.POST("", middleware.Authorize, handler.createBankStatement)
+	statementRoute.POST("/matchowner/:id", middleware.Authorize, handler.matchStatementOwner)
+	statementRoute.POST("/ignoreowner/:id", middleware.Authorize, handler.ignoreStatementOwner)
 	statementRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankStatement)
 
 	transactionRoute := root.Group("/transactions")
@@ -63,7 +65,7 @@ func BankingController(r *gin.RouterGroup, db *gorm.DB) {
 	memberRoute := root.Group("/member")
 	memberRoute.GET("/info/:code", middleware.Authorize, handler.getMemberByCode)
 	memberRoute.GET("/list", middleware.Authorize, handler.getMembers)
-	memberRoute.GET("/posibleowner", middleware.Authorize, handler.getPosibleStatementOwners)
+	memberRoute.GET("/possibleowner", middleware.Authorize, handler.getPossibleStatementOwners)
 	memberRoute.GET("/transactionsummary", middleware.Authorize, handler.getMemberTransactionSummary)
 	memberRoute.GET("/transactions", middleware.Authorize, handler.getMemberTransactions)
 
@@ -119,7 +121,7 @@ func (h bankingController) getStatementTypes(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary GetStatementList
+// @Summary GetStatementList รายการเดินบัญชี
 // @Description ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
@@ -235,6 +237,71 @@ func (h bankingController) createBankStatement(c *gin.Context) {
 		return
 	}
 	c.JSON(201, model.Success{Message: "Created success"})
+}
+
+// @Summary MatchStatementOwner ดำเนินการข้อมูลการเดินบัญชี
+// @Description ดำเนินการข้อมูลการเดินบัญชี
+// @Tags Banking - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Param body body model.BankStatementMatchRequest true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/statements/matchowner/{id} [post]
+func (h bankingController) matchStatementOwner(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var req model.BankStatementMatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(req); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	actionErr := h.bankingService.MatchStatementOwner(identifier, req)
+	if actionErr != nil {
+		HandleError(c, actionErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Confirm success"})
+}
+
+// @Summary IgnoreStatementOwner เพิกเฉยข้อมูลการเดินบัญชี
+// @Description เพิกเฉยข้อมูลการเดินบัญชี
+// @Tags Banking - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /banking/statements/ignoreowner/{id} [post]
+func (h bankingController) ignoreStatementOwner(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	actionErr := h.bankingService.IgnoreStatementOwner(identifier)
+	if actionErr != nil {
+		HandleError(c, actionErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Ignore success"})
 }
 
 // @Summary DeleteStatement
@@ -757,7 +824,7 @@ func (h bankingController) getMemberByCode(c *gin.Context) {
 }
 
 // @Summary GetMembers
-// @Description ดึงข้อมูลลิสการโอนเงิน ที่รอดำเนินการ ที่ใกล้เคียงกับรายการที่เลือก
+// @Description ดึงข้อมูลลิสมาชิก
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
 // @Accept json
@@ -787,19 +854,19 @@ func (h bankingController) getMembers(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetPosibleStatementOwners
-// @Description ดึงข้อมูลลิสการโอนเงิน ที่รอดำเนินการ ที่ใกล้เคียงกับรายการที่เลือก
+// @Summary GetPossibleStatementOwners
+// @Description ดึงข้อมูลลิสสมาชิก ที่มีข้อมูลใกล้เคียงกับรายการสเตทเม้นที่รอดำเนินการ
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.MemberListRequest true "MemberListRequest"
+// @Param _ query model.MemberPossibleListRequest true "MemberPossibleListRequest"
 // @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
-// @Router /banking/member/posibleowner [get]
-func (h bankingController) getPosibleStatementOwners(c *gin.Context) {
+// @Router /banking/member/possibleowner [get]
+func (h bankingController) getPossibleStatementOwners(c *gin.Context) {
 
-	var query model.MemberListRequest
+	var query model.MemberPossibleListRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -809,7 +876,7 @@ func (h bankingController) getPosibleStatementOwners(c *gin.Context) {
 		return
 	}
 
-	data, err := h.bankingService.GetPosibleStatementOwners(query)
+	data, err := h.bankingService.GetPossibleStatementOwners(query)
 	if err != nil {
 		HandleError(c, err)
 		return

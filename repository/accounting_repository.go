@@ -29,6 +29,7 @@ type AccountingRepository interface {
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccountByAccountNumber(accountNumber string) (*model.BankAccount, error)
 	GetBankAccountByExternalId(id int64) (*model.BankAccount, error)
+	GetActiveExternalAccount() (*model.BankAccount, error)
 	GetDepositAccountById(id int64) (*model.BankAccount, error)
 	GetWithdrawAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
@@ -51,12 +52,21 @@ type AccountingRepository interface {
 
 	CreateWebhookLog(body model.WebhookLogCreateBody) error
 	GetWebhookStatementByExternalId(id int64) (*model.BankStatement, error)
-	CreateWebhookStatement(body model.BankStatementCreateBody) error
+	CreateWebhookStatement(body model.BankStatementCreateBody) (*int64, error)
 
 	GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*model.SuccessWithPagination, error)
 	CreateBotaccountConfig(data model.BotAccountConfigCreateBody) error
 	DeleteBotaccountConfigByKey(key string) error
 	DeleteBotaccountConfigById(id int64) error
+
+	// Banking REPO
+	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
+	GetBankStatementById(id int64) (*model.BankStatement, error)
+	CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error)
+	GetBankTransactionById(id int64) (*model.BankTransaction, error)
+	CreateConfirmTransaction(data model.BankTransactionCreateConfirmBody) error
+	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
+	IncreaseMemberCredit(id int64, amount float32) error
 }
 
 func (r repo) GetAdminById(id int64) (*model.Admin, error) {
@@ -355,6 +365,23 @@ func (r repo) GetBankAccountByExternalId(external_id int64) (*model.BankAccount,
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
 		Where("accounts.external_id = ?", external_id).
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
+	}
+	return &accounting, nil
+}
+
+func (r repo) GetActiveExternalAccount() (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Where("accounts.connection_status = 'active'").
+		Where("accounts.external_id IS NOT NULL").
 		Where("accounts.deleted_at IS NULL").
 		First(&accounting).
 		Error; err != nil {
@@ -825,11 +852,11 @@ func (r repo) GetWebhookStatementByExternalId(external_id int64) (*model.BankSta
 	return &record, nil
 }
 
-func (r repo) CreateWebhookStatement(data model.BankStatementCreateBody) error {
+func (r repo) CreateWebhookStatement(data model.BankStatementCreateBody) (*int64, error) {
 	if err := r.db.Table("Bank_statements").Create(&data).Error; err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &data.Id, nil
 }
 
 func (r repo) GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*model.SuccessWithPagination, error) {
@@ -910,6 +937,13 @@ func (r repo) DeleteBotaccountConfigByKey(key string) error {
 
 func (r repo) DeleteBotaccountConfigById(id int64) error {
 	if err := r.db.Table("Botaccount_config").Where("id = ?", id).Delete(&model.BankAccountTransfer{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) MatchAutoStatementOwner(id int64, data model.BankStatementUpdateBody) error {
+	if err := r.db.Table("Bank_statements").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
 	return nil

@@ -27,27 +27,37 @@ type Member struct {
 }
 
 type MemberListRequest struct {
-	Search             string `form:"search" extensions:"x-order:1"`
-	UnknownStatementId int64  `form:"unknownStatementId" extensions:"x-order:2"`
-	UserBankId         int64  `form:"userBankId" extensions:"x-order:3"`
-	Page               int    `form:"page" extensions:"x-order:7" default:"1" min:"1"`
-	Limit              int    `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
-	SortCol            string `form:"sortCol" extensions:"x-order:9"`
-	SortAsc            string `form:"sortAsc" extensions:"x-order:10"`
+	Search  string `form:"search" extensions:"x-order:1"`
+	Page    int    `form:"page" extensions:"x-order:7" default:"1" min:"1"`
+	Limit   int    `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
+	SortCol string `form:"sortCol" extensions:"x-order:9"`
+	SortAsc string `form:"sortAsc" extensions:"x-order:10"`
+}
+
+type MemberPossibleListRequest struct {
+	UnknownStatementId int64   `form:"unknownStatementId" extensions:"x-order:1"`
+	UserAccountNumber  *string `form:"userAccountNumber" extensions:"x-order:2"`
+	UserBankId         *int64  `form:"userBankId" extensions:"x-order:3"`
+	Page               int     `form:"page" extensions:"x-order:7" default:"1" min:"1"`
+	Limit              int     `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
+	SortCol            string  `form:"sortCol" extensions:"x-order:9"`
+	SortAsc            string  `form:"sortAsc" extensions:"x-order:10"`
 }
 
 type BankStatement struct {
-	Id            int64          `json:"id" gorm:"primaryKey"`
-	AccountId     int64          `json:"accountId"`
-	Amount        float32        `json:"amount" sql:"type:decimal(14,2);"`
-	Detail        string         `json:"detail"`
-	BankId        int64          `json:"bankId"`
-	StatementType string         `json:"statementType"`
-	TransferAt    time.Time      `json:"transferAt"`
-	Status        string         `json:"status"`
-	CreatedAt     time.Time      `json:"createAt"`
-	UpdatedAt     *time.Time     `json:"updateAt"`
-	DeletedAt     gorm.DeletedAt `json:"deleteAt"`
+	Id                int64          `json:"id" gorm:"primaryKey"`
+	AccountId         int64          `json:"accountId"`
+	Amount            float32        `json:"amount" sql:"type:decimal(14,2);"`
+	Detail            string         `json:"detail"`
+	BankId            int64          `json:"bankId"`
+	StatementType     string         `json:"statementType"`
+	FromBankId        int64          `json:"fromBankId"`
+	FromAccountNumber string         `json:"fromAccountNumber"`
+	TransferAt        time.Time      `json:"transferAt"`
+	Status            string         `json:"status"`
+	CreatedAt         time.Time      `json:"createAt"`
+	UpdatedAt         *time.Time     `json:"updateAt"`
+	DeletedAt         gorm.DeletedAt `json:"deleteAt"`
 }
 
 type BankStatementGetRequest struct {
@@ -73,14 +83,20 @@ type BankStatementListRequest struct {
 }
 
 type BankStatementCreateBody struct {
-	AccountId     int64     `json:"accountId"`
-	ExternalId    int64     `json:"externalId"`
-	Amount        float32   `json:"amount" sql:"type:decimal(14,2);"`
-	Detail        string    `json:"detail"`
-	FromBankId    int64     `json:"fromBankId"`
-	StatementType string    `json:"statementType"`
-	TransferAt    time.Time `json:"transferAt"`
-	Status        string    `json:"-"`
+	Id                int64     `json:"id"`
+	AccountId         int64     `json:"accountId"`
+	ExternalId        int64     `json:"externalId"`
+	Amount            float32   `json:"amount" sql:"type:decimal(14,2);"`
+	Detail            string    `json:"detail"`
+	FromBankId        int64     `json:"fromBankId"`
+	FromAccountNumber string    `json:"fromAccountNumber"`
+	StatementType     string    `json:"statementType"`
+	TransferAt        time.Time `json:"transferAt"`
+	Status            string    `json:"-"`
+}
+
+type BankStatementMatchRequest struct {
+	UserId int64 `json:"userId" validate:"required"`
 }
 
 type BankStatementUpdateBody struct {
@@ -165,6 +181,7 @@ type BankTransactionListRequest struct {
 }
 
 type BankTransactionCreateBody struct {
+	Id                int64     `json:"id"`
 	MemberCode        string    `json:"memberCode" validate:"required"`
 	UserId            int64     `json:"-"`
 	TransferType      string    `json:"transferType" validate:"required" example:"deposit"`
@@ -218,8 +235,10 @@ type BankTransactionUpdateBody struct {
 
 type BankTransactionResponse struct {
 	Id                  int64          `json:"id" gorm:"primaryKey"`
-	MemberCode          string         `json:"memberCode"`
 	UserId              int64          `json:"userId"`
+	MemberCode          string         `json:"memberCode"`
+	UserUsername        string         `json:"userUsername"`
+	UserFullname        string         `json:"userFullname"`
 	TransferType        string         `json:"transferType"`
 	PromotionId         int64          `json:"promotionId"`
 	FromAccountId       int64          `json:"fromAccountId"`
@@ -385,8 +404,9 @@ type MemberTransactionSummary struct {
 
 type MemberTransaction struct {
 	Id                  int64          `json:"id" gorm:"primaryKey"`
-	MemberCode          string         `json:"memberCode"`
 	UserId              int64          `json:"userId"`
+	MemberCode          string         `json:"memberCode"`
+	UserUsername        string         `json:"userUsername"`
 	UserFullname        string         `json:"userFullname"`
 	TransferType        string         `json:"transferType"`
 	PromotionId         int64          `json:"promotionId"`
