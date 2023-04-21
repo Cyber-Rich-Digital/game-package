@@ -121,7 +121,7 @@ func (h bankingController) getStatementTypes(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary GetStatementList
+// @Summary GetStatementList รายการเดินบัญชี
 // @Description ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth

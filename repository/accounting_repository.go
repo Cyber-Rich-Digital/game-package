@@ -29,6 +29,7 @@ type AccountingRepository interface {
 	GetBankAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccountByAccountNumber(accountNumber string) (*model.BankAccount, error)
 	GetBankAccountByExternalId(id int64) (*model.BankAccount, error)
+	GetActiveExternalAccount() (*model.BankAccount, error)
 	GetDepositAccountById(id int64) (*model.BankAccount, error)
 	GetWithdrawAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
@@ -355,6 +356,23 @@ func (r repo) GetBankAccountByExternalId(external_id int64) (*model.BankAccount,
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
 		Where("accounts.external_id = ?", external_id).
+		Where("accounts.deleted_at IS NULL").
+		First(&accounting).
+		Error; err != nil {
+		return nil, err
+	}
+	return &accounting, nil
+}
+
+func (r repo) GetActiveExternalAccount() (*model.BankAccount, error) {
+
+	var accounting model.BankAccount
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
+	if err := r.db.Table("Bank_accounts as accounts").
+		Select(selectedFields).
+		Where("accounts.connection_status = 'active'").
+		Where("accounts.external_id IS NOT NULL").
 		Where("accounts.deleted_at IS NULL").
 		First(&accounting).
 		Error; err != nil {

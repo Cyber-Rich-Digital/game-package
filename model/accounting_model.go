@@ -323,6 +323,29 @@ type BankAccountTransferResponse struct {
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
+type CustomerAccountInfoRequest struct {
+	AccountFrom string `form:"-" json:"accountFrom"`
+	AccountTo   string `form:"accountTo" json:"accountTo" validate:"required"`
+	BankCode    string `form:"bankCode" json:"bankCode" validate:"required"`
+}
+
+type ExternalReponseStatus struct {
+	Code        int64  `json:"code"`
+	Header      string `json:"header"`
+	Description string `json:"description"`
+}
+
+type CustomerAccountInfoReponse struct {
+	Data   CustomerAccountInfo   `json:"data"`
+	Status ExternalReponseStatus `json:"status"`
+}
+
+type CustomerAccountInfo struct {
+	AccountToName        string `json:"accountToName"`
+	AccountTo            string `json:"accountTo"`
+	AccountToDisplayName string `json:"accountToDisplayName"`
+}
+
 type ExternalAccount struct {
 	BankId           int64   `json:"bankId"`
 	BankCode         string  `json:"bankCode"`

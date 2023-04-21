@@ -27,13 +27,11 @@ type Member struct {
 }
 
 type MemberListRequest struct {
-	Search             string `form:"search" extensions:"x-order:1"`
-	UnknownStatementId int64  `form:"unknownStatementId" extensions:"x-order:2"`
-	UserBankId         int64  `form:"userBankId" extensions:"x-order:3"`
-	Page               int    `form:"page" extensions:"x-order:7" default:"1" min:"1"`
-	Limit              int    `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
-	SortCol            string `form:"sortCol" extensions:"x-order:9"`
-	SortAsc            string `form:"sortAsc" extensions:"x-order:10"`
+	Search  string `form:"search" extensions:"x-order:1"`
+	Page    int    `form:"page" extensions:"x-order:7" default:"1" min:"1"`
+	Limit   int    `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
+	SortCol string `form:"sortCol" extensions:"x-order:9"`
+	SortAsc string `form:"sortAsc" extensions:"x-order:10"`
 }
 
 type MemberPossibleListRequest struct {

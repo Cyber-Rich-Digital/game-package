@@ -78,14 +78,17 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	if req.AccountId != "" {
 		count = count.Where("statements.account_id = ?", req.AccountId)
 	}
-	if req.StatementType != "" {
-		count = count.Where("statements.statement_type = ?", req.StatementType)
-	}
 	if req.FromTransferDate != "" {
 		count = count.Where("statements.transfer_at >= ?", req.FromTransferDate)
 	}
 	if req.ToTransferDate != "" {
 		count = count.Where("statements.transfer_at <= ?", req.ToTransferDate)
+	}
+	if req.StatementType != "" {
+		count = count.Where("statements.statement_type = ?", req.StatementType)
+	}
+	if req.Status != "" {
+		count = count.Where("statements.status = ?", req.Status)
 	}
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
@@ -109,14 +112,17 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 		if req.AccountId != "" {
 			query = query.Where("statements.account_id = ?", req.AccountId)
 		}
-		if req.StatementType != "" {
-			query = query.Where("statements.statement_type = ?", req.StatementType)
-		}
 		if req.FromTransferDate != "" {
 			query = query.Where("statements.transfer_at >= ?", req.FromTransferDate)
 		}
 		if req.ToTransferDate != "" {
 			query = query.Where("statements.transfer_at <= ?", req.ToTransferDate)
+		}
+		if req.StatementType != "" {
+			query = query.Where("statements.statement_type = ?", req.StatementType)
+		}
+		if req.Status != "" {
+			query = query.Where("statements.status = ?", req.Status)
 		}
 		if req.Search != "" {
 			search_like := fmt.Sprintf("%%%s%%", req.Search)

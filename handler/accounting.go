@@ -6,7 +6,7 @@ import (
 	"cybergame-api/repository"
 	"cybergame-api/service"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -53,6 +53,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	accountRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankAccount)
 
 	account2Route := root.Group("/bankaccounts2")
+	account2Route.GET("/customeraccount", middleware.Authorize, handler.getCustomerAccountsInfo)
 	account2Route.GET("/list", middleware.Authorize, handler.getExternalAccounts)
 	account2Route.GET("/status/:account", middleware.Authorize, handler.getExternalAccountStatus)
 	account2Route.GET("/balance/:account", middleware.Authorize, handler.getExternalAccountBalance)
@@ -756,6 +757,37 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Deleted success"})
 }
 
+// @Summary GetCustomerAccountsInfo เช็คชื่อบัญชีธนาคารลูกค้า
+// @Description ดึงข้อมูลบัญชีธนาคารของลูกค้า เพื่อเช็คชื่อบัญชีธนาคาร
+// @Tags Accounting - TEST
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.CustomerAccountInfoRequest true "CustomerAccountInfoRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/bankaccounts2/customeraccount [post]
+func (h accountingController) getCustomerAccountsInfo(c *gin.Context) {
+
+	var query model.CustomerAccountInfoRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetCustomerAccountsInfo(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
 // @Summary GetExternalAccounts
 // @Description ดึงข้อมูลลิสบัญชีธนาคาร บอท
 // @Tags Accounting - TEST
@@ -763,7 +795,7 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
-// @Success 200 {object} model.SuccessWithData
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/list [get]
 func (h accountingController) getExternalAccounts(c *gin.Context) {
@@ -1053,7 +1085,7 @@ func (h accountingController) getExternalAccountStatements(c *gin.Context) {
 // @Router /accounting/webhooks/action [post]
 func (h accountingController) webhookAction(c *gin.Context) {
 
-	jsonData, errValidate := ioutil.ReadAll(c.Request.Body)
+	jsonData, errValidate := io.ReadAll(c.Request.Body)
 	if errValidate != nil {
 		HandleError(c, errValidate)
 		return
@@ -1096,7 +1128,7 @@ func (h accountingController) webhookAction(c *gin.Context) {
 // @Router /accounting/webhooks/noti [post]
 func (h accountingController) webhookNoti(c *gin.Context) {
 
-	jsonData, errValidate := ioutil.ReadAll(c.Request.Body)
+	jsonData, errValidate := io.ReadAll(c.Request.Body)
 	if errValidate != nil {
 		HandleError(c, errValidate)
 		return

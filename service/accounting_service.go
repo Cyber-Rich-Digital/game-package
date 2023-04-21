@@ -42,6 +42,7 @@ type AccountingService interface {
 	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
 
+	GetCustomerAccountsInfo(data model.CustomerAccountInfoRequest) (*model.CustomerAccountInfo, error)
 	GetExternalAccounts() (*model.SuccessWithPagination, error)
 	GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error)
 	GetExternalAccountStatus(query model.ExternalAccountStatusRequest) (*model.ExternalAccountStatus, error)
@@ -786,6 +787,48 @@ func (s *accountingService) HasExternalAccountConfig(key string, value string) (
 		}
 	}
 	return nil, notFound("Config not found")
+}
+
+func (s *accountingService) GetCustomerAccountsInfo(body model.CustomerAccountInfoRequest) (*model.CustomerAccountInfo, error) {
+
+	botAccount, err := s.repo.GetActiveExternalAccount()
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	body.AccountFrom = botAccount.AccountNumber
+	b, err := json.Marshal(body)
+	if err != nil {
+		fmt.Println(err)
+		return nil, internalServerError("Error from JSON")
+	}
+	fmt.Println(string(b))
+
+	client := &http.Client{}
+	// curl -X POST "https://api.fastbankapi.com/api/v2/statement/verifyTransfer" -H "accept: */*" -H "apiKey: aa.bb" -H "Content-Type: application/json" -d "{ \"accountFrom\": \"cccc\", \"accountTo\": \"dddd\", \"bankCode\": \"bay\"}"
+	data, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement/verifyTransfer", bytes.NewBuffer(data))
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result model.CustomerAccountInfoReponse
+	errJson := json.Unmarshal(responseData, &result)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
+	return &result.Data, nil
 }
 
 func (s *accountingService) GetExternalAccounts() (*model.SuccessWithPagination, error) {
