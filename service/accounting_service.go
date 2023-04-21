@@ -1291,7 +1291,7 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 			fmt.Println(err)
 			return nil, badRequest("Invalid User Bank")
 		}
-		body.MemberCode = member.MemberCode
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -1329,7 +1329,7 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 			fmt.Println(err)
 			return nil, badRequest("Invalid User Bank")
 		}
-		body.MemberCode = member.MemberCode
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
