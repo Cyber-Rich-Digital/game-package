@@ -152,7 +152,7 @@ func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*mo
 
 	err := s.UpdateBankAccountBotStatusById(data.Id)
 	if err != nil {
-		return nil, internalServerError(err.Error())
+		// return nil, internalServerError(err.Error())
 	}
 
 	record, err := s.repo.GetBankAccountById(data.Id)
@@ -964,6 +964,7 @@ func (s *accountingService) UpdateExternalAccount(body model.ExternalAccountUpda
 
 	client := &http.Client{}
 	data, _ := json.Marshal(body)
+	fmt.Println(string(data))
 	req, _ := http.NewRequest("PUT", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", bytes.NewBuffer(data))
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	req.Header.Set("Content-Type", "application/json")
