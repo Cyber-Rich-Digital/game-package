@@ -58,6 +58,7 @@ func LineNotifyController(r *gin.RouterGroup, db *gorm.DB) {
 	linenotifRoute.GET("/typegame/detail/:id", middleware.Authorize, handler.GetLineNotifyGameById)
 	linenotifRoute.POST("usergame/create", middleware.Authorize, handler.createLineNotifyGame)
 	linenotifRoute.GET("/usergame/detail/:id", middleware.Authorize, handler.GetLineNotifyGameUserById)
+	linenotifRoute.DELETE("/usergame/:id", middleware.Authorize, handler.DeleteNotifyGameUser)
 }
 func (h linenotifyController) createLineNotify(c *gin.Context) {
 
@@ -282,4 +283,31 @@ func (h linenotifyController) SendNotify(c *fiber.Ctx) error {
 			"body": resp.Body.Close(),
 		})
 	}
+}
+
+// @Summary DeleteLineNoifyUserGame
+// @Description ลบข้อมูลการ TOKEN ด้วย id user
+// @Tags LineNotify
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Param body body model.LineNoifyUsergameBody true "body"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /linenotify/usergame/{id} [delete]
+func (h linenotifyController) DeleteNotifyGameUser(c *gin.Context) {
+
+	id := c.Param("id")
+	identifier, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	delErr := h.linenotifyService.DeleteLineNoifyUserGame(identifier)
+	if delErr != nil {
+		HandleError(c, delErr)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Deleted success"})
 }
