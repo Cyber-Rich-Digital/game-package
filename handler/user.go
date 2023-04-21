@@ -105,10 +105,7 @@ func (h userController) GetUser(c *gin.Context) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param page query int false "Page"
-// @Param limit query int false "Limit"
-// @Param search query string false "Search"
-// @Param status query string false "Status"
+// @Param _ query model.UserListQuery false "Queries"
 // @Success 200 {object} model.SuccessWithList
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /users/list [get]

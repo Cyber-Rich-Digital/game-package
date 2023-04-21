@@ -33,6 +33,7 @@ func RecommendController(r *gin.RouterGroup, db *gorm.DB) {
 	r.GET("/list", middleware.Authorize, handler.getRecommendList)
 	r.POST("/create", middleware.Authorize, handler.createRecommend)
 	r.PUT("/update/:id", middleware.Authorize, handler.updateRecommend)
+	r.DELETE("/:id", middleware.Authorize, handler.deleteRecommend)
 
 }
 
@@ -131,4 +132,31 @@ func (h recommendController) updateRecommend(c *gin.Context) {
 	}
 
 	c.JSON(201, model.Success{Message: "Updated success"})
+}
+
+// @Summary Delete Recommend
+// @Description Delete Recommend
+// @Tags Recommends
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Recommend ID"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /recommends/{id} [delete]
+func (h recommendController) deleteRecommend(c *gin.Context) {
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.recommendService.DeleteRecommend(int64(toInt)); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Deleted success"})
 }

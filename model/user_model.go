@@ -66,10 +66,11 @@ type UserLoginUpdate struct {
 }
 
 type UserListQuery struct {
-	Page   int    `form:"page" validate:"required,min=1"`
-	Limit  int    `form:"limit" validate:"required,min=1,max=100"`
-	Search string `form:"search"`
-	Status string `form:"status"`
+	Page      int    `form:"page" validate:"min=1"`
+	Limit     int    `form:"limit" validate:"min=1,max=100"`
+	NonMember bool   `form:"nonMember" default:"false"`
+	Search    string `form:"search"`
+	Status    string `form:"status"`
 }
 
 type UpdateUser struct {
@@ -77,6 +78,7 @@ type UpdateUser struct {
 	MemberCode  string `json:"memberCode" validate:"max=255"`
 	Promotion   string `json:"promotion" validate:"max=20"`
 	Bankname    string `json:"bankname" validate:"max=50"`
+	BankCode    string `json:"bankCode" validate:"max=10"`
 	BankAccount string `json:"bankAccount" validate:"max=15"`
 	Channel     string `json:"channel" validate:"max=20" enum:"Google,Youtube,Facebook" example:"Google"`
 	TrueWallet  string `json:"trueWallet" validate:"max=20"`

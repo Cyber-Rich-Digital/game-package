@@ -27,8 +27,8 @@ type RecommendList struct {
 }
 
 type RecommendQuery struct {
-	Page   int    `form:"page" validate:"required,min=1" example:"1"`
-	Limit  int    `form:"limit" validate:"required,min=1,max=100" example:"10"`
+	Page   int    `form:"page" validate:"min=1" default:"1"`
+	Limit  int    `form:"limit" validate:"min=1,max=100" default:"10"`
 	Status string `form:"status" example:""`
 	Filter string `form:"filter" example:""`
 }

@@ -58,6 +58,14 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 		exec = exec.Where("status = ?", query.Status)
 	}
 
+	if query.NonMember {
+		exec = exec.Where("member_code = ?", "")
+	}
+
+	if !query.NonMember {
+		exec = exec.Where("member_code != ?", "")
+	}
+
 	if err := exec.
 		Limit(query.Limit).
 		Offset(query.Limit * query.Page).
@@ -75,6 +83,14 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 
 	if query.Status != "" {
 		execTotal = execTotal.Where("status = ?", query.Status)
+	}
+
+	if query.NonMember {
+		execTotal = execTotal.Where("member_code = ?", "")
+	}
+
+	if !query.NonMember {
+		execTotal = execTotal.Where("member_code != ?", "")
 	}
 
 	if err = execTotal.
