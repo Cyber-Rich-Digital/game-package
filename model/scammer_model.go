@@ -40,10 +40,10 @@ type ScammerDetail struct {
 }
 
 type ScammerQuery struct {
-	Page      int        `form:"page" example:"1"`
-	Limit     int        `form:"limit" example:"10"`
-	DateStart *time.Time `form:"dateStart" example:"2020-01-01 00:00:00"`
-	DateEnd   *time.Time `form:"dateEnd" example:"2020-01-01 00:00:00"`
-	BankName  *string    `form:"bankName" example:"-"`
-	Filter    *string    `form:"filter" example:""`
+	Page      int        `form:"page" default:"1"`
+	Limit     int        `form:"limit" default:"10"`
+	DateStart *time.Time `form:"dateStart" time_format:"2006-01-02T15:04:05Z" default:"2021-01-01T00:00:00Z"`
+	DateEnd   *time.Time `form:"dateEnd" time_format:"2006-01-02T15:04:05Z" default:"2021-01-01T00:00:00Z"`
+	BankName  *string    `form:"bankName" default:""`
+	Filter    *string    `form:"filter" default:""`
 }
