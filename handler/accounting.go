@@ -271,12 +271,8 @@ func (h accountingController) getTransferTypes(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param page query int false "page"
-// @Param limit query int false "limit"
-// @Param search query string false "search"
-// @Param sortCol query string false "sortCol"
-// @Param sortAsc query string false "sortAsc"
-// @Success 200 {object} model.SuccessWithData
+// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Success 200 {object} model.SuccessWithPagination
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts/list [get]
 func (h accountingController) getBankAccounts(c *gin.Context) {
