@@ -329,6 +329,12 @@ type CustomerAccountInfoRequest struct {
 	BankCode    string `form:"bankCode" json:"bankCode" validate:"required"`
 }
 
+type ExternalSettings struct {
+	ApiEndpoint          string `json:"apiEndpoint"`
+	ApiKey               string `json:"apiKey"`
+	LocalWebhookEndpoint string `json:"localWebhookEndpoint"`
+}
+
 type ExternalReponseStatus struct {
 	Code        int64  `json:"code"`
 	Header      string `json:"header"`

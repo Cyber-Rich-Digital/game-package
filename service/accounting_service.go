@@ -42,6 +42,7 @@ type AccountingService interface {
 	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
 
+	GetExternalSettings() (*model.ExternalSettings, error)
 	GetCustomerAccountsInfo(data model.CustomerAccountInfoRequest) (*model.CustomerAccountInfo, error)
 	GetExternalAccounts() (*model.SuccessWithPagination, error)
 	GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error)
@@ -737,6 +738,16 @@ func (s *accountingService) DeleteTransfer(id int64) error {
 	return nil
 }
 
+func (s *accountingService) GetExternalSettings() (*model.ExternalSettings, error) {
+
+	var body model.ExternalSettings
+	body.ApiEndpoint = os.Getenv("ACCOUNTING_API_ENDPOINT")
+	body.ApiKey = os.Getenv("ACCOUNTING_API_KEY")
+	body.LocalWebhookEndpoint = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT")
+
+	return &body, nil
+}
+
 func (s *accountingService) HasExternalAccount(accountNumber string) bool {
 
 	data, err := s.GetExternalAccounts()
@@ -964,7 +975,6 @@ func (s *accountingService) UpdateExternalAccount(body model.ExternalAccountUpda
 
 	client := &http.Client{}
 	data, _ := json.Marshal(body)
-	fmt.Println(string(data))
 	req, _ := http.NewRequest("PUT", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/site/bankAccount", bytes.NewBuffer(data))
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	req.Header.Set("Content-Type", "application/json")
