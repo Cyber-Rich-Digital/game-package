@@ -24,7 +24,7 @@ type BankingRepository interface {
 
 	GetBankTransactionById(id int64) (*model.BankTransaction, error)
 	GetBankTransactions(req model.BankTransactionListRequest) (*model.SuccessWithPagination, error)
-	CreateBankTransaction(data model.BankTransactionCreateBody) error
+	CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error)
 	CreateBonusTransaction(data model.BonusTransactionCreateBody) error
 	UpdateBankTransaction(id int64, data model.BankTransactionUpdateBody) error
 	DeleteBankTransaction(id int64) error
@@ -231,15 +231,17 @@ func (r repo) DeleteBankStatement(id int64) error {
 
 func (r repo) GetBankTransactionById(id int64) (*model.BankTransaction, error) {
 	var record model.BankTransaction
-	selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+	selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 	selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 	selectedFields += ", transactions.created_at, transactions.updated_at"
 	selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 	selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
+	selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 	if err := r.db.Table("Bank_transactions as transactions").
 		Select(selectedFields).
 		Joins("LEFT JOIN Banks AS from_banks ON from_banks.id = transactions.from_bank_id").
 		Joins("LEFT JOIN Banks AS to_banks ON to_banks.id = transactions.to_bank_id").
+		Joins("LEFT JOIN Users AS users ON users.id = transactions.user_id").
 		Where("transactions.id = ?", id).
 		Where("transactions.deleted_at IS NULL").
 		First(&record).
@@ -290,15 +292,17 @@ func (r repo) GetBankTransactions(req model.BankTransactionListRequest) (*model.
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 		selectedFields += ", transactions.created_at, transactions.updated_at"
 		selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
+		selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks AS from_banks ON from_banks.id = transactions.from_bank_id")
 		query = query.Joins("LEFT JOIN Banks AS to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Users AS users ON users.id = transactions.user_id")
 		query = query.Where("transactions.removed_at IS NULL")
 		if req.MemberCode != "" {
 			query = query.Where("transactions.member_code = ?", req.MemberCode)
@@ -352,11 +356,11 @@ func (r repo) GetBankTransactions(req model.BankTransactionListRequest) (*model.
 	return &result, nil
 }
 
-func (r repo) CreateBankTransaction(data model.BankTransactionCreateBody) error {
+func (r repo) CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error) {
 	if err := r.db.Table("Bank_transactions").Create(&data).Error; err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &data.Id, nil
 }
 
 func (r repo) CreateBonusTransaction(data model.BonusTransactionCreateBody) error {
@@ -414,15 +418,17 @@ func (r repo) GetPendingDepositTransactions(req model.PendingDepositTransactionL
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 		selectedFields += ", transactions.created_at, transactions.updated_at"
 		selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
+		selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
 		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Users as users ON users.id = transactions.user_id")
 		query = query.Where("transactions.transfer_type = ?", "deposit")
 		query = query.Where("transactions.status = ?", "pending")
 		query = query.Where("transactions.removed_at IS NULL")
@@ -502,15 +508,17 @@ func (r repo) GetPendingWithdrawTransactions(req model.PendingWithdrawTransactio
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 		selectedFields += ", transactions.created_at, transactions.updated_at"
 		selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
+		selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
 		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Users as users ON users.id = transactions.user_id")
 		query = query.Where("transactions.transfer_type = ?", "withdraw")
 		query = query.Where("transactions.status = ?", "pending")
 		query = query.Where("transactions.removed_at IS NULL")
@@ -616,15 +624,17 @@ func (r repo) GetFinishedTransactions(req model.FinishedTransactionListRequest) 
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 		selectedFields += ", transactions.created_at, transactions.updated_at"
 		selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
+		selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
 		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Users as users ON users.id = transactions.user_id")
 		query = query.Where("transactions.status = ?", "finished")
 		query = query.Where("transactions.removed_at IS NULL")
 		if req.AccountId != "" {
@@ -717,15 +727,17 @@ func (r repo) GetRemovedTransactions(req model.RemovedTransactionListRequest) (*
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 		selectedFields += ", transactions.created_at, transactions.updated_at"
 		selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
+		selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
 		query = query.Joins("LEFT JOIN Banks as to_banks ON to_banks.id = transactions.to_bank_id")
+		query = query.Joins("LEFT JOIN Users as users ON users.id = transactions.user_id")
 		query = query.Where("transactions.removed_at IS NOT NULL")
 		if req.FromTransferDate != "" {
 			query = query.Where("transactions.transfer_at >= ?", req.FromTransferDate)
@@ -866,8 +878,6 @@ func (r repo) GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*
 	var total int64
 	var err error
 
-	fmt.Println(req)
-
 	// Count total records for pagination purposes (without limit and offset) //
 	count := r.db.Table("Users as users")
 	count = count.Select("users.id")
@@ -961,12 +971,12 @@ func (r repo) GetMemberTransactions(req model.MemberTransactionListRequest) (*mo
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "transactions.id, transactions.member_code, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
+		selectedFields := "transactions.id, transactions.user_id, transactions.transfer_type, transactions.promotion_id, transactions.from_account_id, transactions.from_bank_id, transactions.from_account_name, transactions.from_account_number, transactions.to_account_id, transactions.to_bank_id, transactions.to_account_name, transactions.to_account_number"
 		selectedFields += ", transactions.credit_amount, transactions.paid_amount, transactions.over_amount, transactions.before_amount, transactions.after_amount, transactions.bank_charge_amount, transactions.transfer_at, transactions.created_by_user_id, transactions.created_by_username, transactions.removed_at, transactions.removed_by_user_id, transactions.removed_by_username, transactions.status, transactions.status_detail, transactions.is_auto_credit"
 		selectedFields += ", transactions.created_at, transactions.updated_at"
 		selectedFields += ", from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url, from_banks.type_flag as from_bank_type_flag"
 		selectedFields += ", to_banks.name as to_bank_name, to_banks.code as to_bank_code, to_banks.icon_url as to_bank_icon_url, to_banks.type_flag as to_bank_type_flag"
-		selectedFields += ", users.fullname as user_fullname "
+		selectedFields += ", users.member_code as member_code, users.username as user_username, users.firstname as user_firstname, users.lastname as user_lastname, users.fullname as user_fullname, users.phone as user_phone"
 		query := r.db.Table("Bank_transactions as transactions")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Banks as from_banks ON from_banks.id = transactions.from_bank_id")
@@ -1056,7 +1066,7 @@ func (r repo) GetMemberTransactionSummary(req model.MemberTransactionListRequest
 
 func (r repo) IncreaseMemberCredit(userId int64, amount float32) error {
 
-	if err := r.db.Table("Bank_transactions").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit + ?", amount)).Error; err != nil {
+	if err := r.db.Table("Users").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit + ?", amount)).Error; err != nil {
 		return err
 	}
 	return nil
@@ -1064,7 +1074,7 @@ func (r repo) IncreaseMemberCredit(userId int64, amount float32) error {
 
 func (r repo) DecreaseMemberCredit(userId int64, amount float32) error {
 
-	if err := r.db.Table("Bank_transactions").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit - ?", amount)).Error; err != nil {
+	if err := r.db.Table("Users").Where("id = ?", userId).UpdateColumn("credit", gorm.Expr("credit - ?", amount)).Error; err != nil {
 		return err
 	}
 	return nil

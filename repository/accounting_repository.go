@@ -52,12 +52,21 @@ type AccountingRepository interface {
 
 	CreateWebhookLog(body model.WebhookLogCreateBody) error
 	GetWebhookStatementByExternalId(id int64) (*model.BankStatement, error)
-	CreateWebhookStatement(body model.BankStatementCreateBody) error
+	CreateWebhookStatement(body model.BankStatementCreateBody) (*int64, error)
 
 	GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*model.SuccessWithPagination, error)
 	CreateBotaccountConfig(data model.BotAccountConfigCreateBody) error
 	DeleteBotaccountConfigByKey(key string) error
 	DeleteBotaccountConfigById(id int64) error
+
+	// Banking REPO
+	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
+	GetBankStatementById(id int64) (*model.BankStatement, error)
+	CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error)
+	GetBankTransactionById(id int64) (*model.BankTransaction, error)
+	CreateConfirmTransaction(data model.BankTransactionCreateConfirmBody) error
+	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
+	IncreaseMemberCredit(id int64, amount float32) error
 }
 
 func (r repo) GetAdminById(id int64) (*model.Admin, error) {
@@ -843,11 +852,11 @@ func (r repo) GetWebhookStatementByExternalId(external_id int64) (*model.BankSta
 	return &record, nil
 }
 
-func (r repo) CreateWebhookStatement(data model.BankStatementCreateBody) error {
+func (r repo) CreateWebhookStatement(data model.BankStatementCreateBody) (*int64, error) {
 	if err := r.db.Table("Bank_statements").Create(&data).Error; err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &data.Id, nil
 }
 
 func (r repo) GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*model.SuccessWithPagination, error) {
@@ -928,6 +937,13 @@ func (r repo) DeleteBotaccountConfigByKey(key string) error {
 
 func (r repo) DeleteBotaccountConfigById(id int64) error {
 	if err := r.db.Table("Botaccount_config").Where("id = ?", id).Delete(&model.BankAccountTransfer{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) MatchAutoStatementOwner(id int64, data model.BankStatementUpdateBody) error {
+	if err := r.db.Table("Bank_statements").Where("id = ?", id).Updates(&data).Error; err != nil {
 		return err
 	}
 	return nil

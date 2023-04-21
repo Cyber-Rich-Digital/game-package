@@ -83,6 +83,7 @@ type BankStatementListRequest struct {
 }
 
 type BankStatementCreateBody struct {
+	Id                int64     `json:"id"`
 	AccountId         int64     `json:"accountId"`
 	ExternalId        int64     `json:"externalId"`
 	Amount            float32   `json:"amount" sql:"type:decimal(14,2);"`
@@ -180,6 +181,7 @@ type BankTransactionListRequest struct {
 }
 
 type BankTransactionCreateBody struct {
+	Id                int64     `json:"id"`
 	MemberCode        string    `json:"memberCode" validate:"required"`
 	UserId            int64     `json:"-"`
 	TransferType      string    `json:"transferType" validate:"required" example:"deposit"`
@@ -233,8 +235,10 @@ type BankTransactionUpdateBody struct {
 
 type BankTransactionResponse struct {
 	Id                  int64          `json:"id" gorm:"primaryKey"`
-	MemberCode          string         `json:"memberCode"`
 	UserId              int64          `json:"userId"`
+	MemberCode          string         `json:"memberCode"`
+	UserUsername        string         `json:"userUsername"`
+	UserFullname        string         `json:"userFullname"`
 	TransferType        string         `json:"transferType"`
 	PromotionId         int64          `json:"promotionId"`
 	FromAccountId       int64          `json:"fromAccountId"`
@@ -400,8 +404,9 @@ type MemberTransactionSummary struct {
 
 type MemberTransaction struct {
 	Id                  int64          `json:"id" gorm:"primaryKey"`
-	MemberCode          string         `json:"memberCode"`
 	UserId              int64          `json:"userId"`
+	MemberCode          string         `json:"memberCode"`
+	UserUsername        string         `json:"userUsername"`
 	UserFullname        string         `json:"userFullname"`
 	TransferType        string         `json:"transferType"`
 	PromotionId         int64          `json:"promotionId"`

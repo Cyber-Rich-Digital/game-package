@@ -298,7 +298,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 	body.CreatedByUsername = data.CreatedByUsername
 	body.Status = "pending"
 
-	if err := s.repoBanking.CreateBankTransaction(body); err != nil {
+	if _, err := s.repoBanking.CreateBankTransaction(body); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
@@ -600,7 +600,6 @@ func (s *bankingService) GetPossibleStatementOwners(req model.MemberPossibleList
 		}
 		return nil, internalServerError(err.Error())
 	}
-	fmt.Println(statement)
 	req.UserBankId = &statement.FromBankId
 	req.UserAccountNumber = &statement.FromAccountNumber
 
