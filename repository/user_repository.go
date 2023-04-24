@@ -54,8 +54,8 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 		exec = exec.Where("username LIKE ?", "%"+query.Search+"%")
 	}
 
-	if query.Status != "" {
-		exec = exec.Where("status = ?", query.Status)
+	if query.From != nil && query.To != nil {
+		exec = exec.Where("created_at BETWEEN ? AND ?", query.From, query.To)
 	}
 
 	if query.NonMember {
@@ -81,8 +81,8 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 		execTotal = execTotal.Where("username LIKE ?", "%"+query.Search+"%")
 	}
 
-	if query.Status != "" {
-		execTotal = execTotal.Where("status = ?", query.Status)
+	if query.From != nil && query.To != nil {
+		execTotal = execTotal.Where("created_at BETWEEN ? AND ?", query.From, query.To)
 	}
 
 	if query.NonMember {
