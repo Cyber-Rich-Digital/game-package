@@ -5,19 +5,15 @@ import (
 	"cybergame-api/model"
 	"cybergame-api/service"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
-	"strings"
 
 	"cybergame-api/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
@@ -30,8 +26,6 @@ func newLineNotifyController(
 ) linenotifyController {
 	return linenotifyController{linenotifyService}
 }
-
-const urlLINEAPI = "https://notify-api.line.me/api"
 
 // @Summary CreateLineNotify
 // @Description ตั้งค่าแจ้งเตือนไลน์
@@ -55,7 +49,7 @@ func LineNotifyController(r *gin.RouterGroup, db *gorm.DB) {
 	linenotifRoute.PUT("/update/:id", middleware.Authorize, handler.updateLineNotify)
 
 	//GameCyberNoitfy
-	linenotifRoute.GET("/typegame/detail/:id", middleware.Authorize, handler.GetLineNotifyGameById)
+	linenotifRoute.GET("/typegame/detail/:id", handler.GetLineNotifyGameById)
 	linenotifRoute.POST("usergame/create", middleware.Authorize, handler.createLineNotifyGame)
 	linenotifRoute.GET("/usergame/detail/:id", middleware.Authorize, handler.GetLineNotifyGameUserById)
 	linenotifRoute.DELETE("/usergame/:id", middleware.Authorize, handler.DeleteNotifyGameUser)
@@ -161,6 +155,7 @@ func (h linenotifyController) updateLineNotify(c *gin.Context) {
 func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
 
 	var linegame model.LinenotifyGameParam
+	typeNotify_Id := fmt.Sprintf("%d", linegame.Id)
 
 	if err := c.ShouldBindUri(&linegame); err != nil {
 		HandleError(c, err)
@@ -168,25 +163,43 @@ func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
 	}
 	var game model.LinenotifyGame
 
+	var user model.User
+	user_id := fmt.Sprintf("%d", user.Id)
+
 	data, err := h.linenotifyService.GetLineNotifyGameById(linegame)
 	data.ResponseType = game.ResponseType
 	data.ClientId = game.ClientId
 	data.RedirectUri = game.RedirectUri
 	data.Scope = game.Scope
-	data.State = game.State
+	data.State = user_id
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	response, error := http.Get("https://reqres.in/api/products")
-	if error != nil {
-		fmt.Println(error)
+	// line auth
+	newURL := os.Getenv("URL_LINE") + "/oauth/authorize?response_type=" + data.ResponseType + "&client_id=" + data.ClientId + "&redirect_uri=" + data.RedirectUri + "&scope=notify&state=" + data.State + c.Request.URL.Query().Encode()
+	c.Redirect(http.StatusMovedPermanently, newURL)
+
+	var bot model.LineNoifyUsergameBody
+	bot.UserId = user.Id
+	bot.TypeNotifyId = typeNotify_Id
+	bot.Token = ""
+
+	if err := c.ShouldBindJSON(&bot); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(bot); err != nil {
+		HandleError(c, err)
+		return
 	}
 
-	// print response
-	fmt.Println(response)
-
-	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+	errline := h.linenotifyService.CreateNotifyGame(bot)
+	if errline != nil {
+		HandleError(c, errline)
+		return
+	}
+	c.JSON(201, model.Success{Message: "Created success"})
 }
 
 // @Summary CreateLineNotifyGame
@@ -200,7 +213,6 @@ func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /linenotify/usergame/create [post]
 func (h linenotifyController) createLineNotifyGame(c *gin.Context) {
-
 	var bot model.LineNoifyUsergameBody
 	if err := c.ShouldBindJSON(&bot); err != nil {
 		HandleError(c, err)
@@ -246,43 +258,6 @@ func (h linenotifyController) GetLineNotifyGameUserById(c *gin.Context) {
 	}
 
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
-}
-
-func (h linenotifyController) SendNotify(c *fiber.Ctx) error {
-	var body = new(model.LineNoifyUsergame)
-	var token = c.Params("token")
-	if err := c.BodyParser(&body); err != nil {
-		return err
-	}
-
-	message := "connect"
-
-	params := url.Values{}
-	params.Add("message", message)
-
-	req, _ := http.NewRequest(http.MethodPost, os.Getenv("URL_LINE_AUTH")+"/notify", strings.NewReader(params.Encode()))
-
-	req.Header.Add("Authorization", "Bearer "+token)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		fmt.Printf("%v", err)
-		return c.Status(500).JSON(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		respBody, _ := ioutil.ReadAll(resp.Body)
-		return c.Status(resp.StatusCode).JSON(fiber.Map{
-			"body": respBody,
-		})
-	} else {
-		return c.Status(resp.StatusCode).JSON(fiber.Map{
-			"body": resp.Body.Close(),
-		})
-	}
 }
 
 // @Summary DeleteLineNoifyUserGame
