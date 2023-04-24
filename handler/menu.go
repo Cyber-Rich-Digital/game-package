@@ -27,9 +27,8 @@ func MenuController(r *gin.RouterGroup, db *gorm.DB) {
 	service := service.NewMenuService(repo)
 	handler := newMenuController(service)
 
-	r = r.Group("/menu")
-	r.GET("/", middleware.Authorize, handler.GetMenu)
-
+	// r = r.Group("/menu")
+	r.GET("/menu", middleware.Authorize, handler.GetMenu)
 }
 
 // @Summary Get Menu
