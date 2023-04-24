@@ -66,11 +66,12 @@ type UserLoginUpdate struct {
 }
 
 type UserListQuery struct {
-	Page      int    `form:"page" validate:"min=1"`
-	Limit     int    `form:"limit" validate:"min=1,max=100"`
-	NonMember bool   `form:"nonMember" default:"false"`
-	Search    string `form:"search"`
-	Status    string `form:"status"`
+	Page      int        `form:"page" validate:"min=1"`
+	Limit     int        `form:"limit" validate:"min=1,max=100"`
+	NonMember bool       `form:"nonMember" default:"false"`
+	Search    string     `form:"search"`
+	From      *time.Time `form:"from" time_format:"2006-01-02T15:04:05+07:00" default:"2023-04-01T00:00:00+07:00"`
+	To        *time.Time `form:"to" time_format:"2006-01-02T15:04:05+07:00" default:"2023-04-30T00:00:00+07:00"`
 }
 
 type UpdateUser struct {
