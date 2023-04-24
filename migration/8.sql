@@ -1,3 +1,6 @@
+ALTER TABLE `setting_web`
+ADD COLUMN `auto_withdraw` VARCHAR(20) DEFAULT NULL AFTER `otp_register`;
+
 CREATE TABLE
     `Line_notify` (
         `id` bigint PRIMARY KEY AUTO_INCREMENT,
