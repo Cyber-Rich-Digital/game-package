@@ -64,7 +64,7 @@ func main() {
 	handler.MenuController(backRoute, db)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	port := fmt.Sprintf(":%s")
+	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	err := r.Run(port)
 	if err != nil {
 		panic(err)
