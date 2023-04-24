@@ -180,10 +180,12 @@ func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
 	newURL := os.Getenv("URL_LINE") + "/oauth/authorize?response_type=" + data.ResponseType + "&client_id=" + data.ClientId + "&redirect_uri=" + data.RedirectUri + "&scope=notify&state=" + data.State + c.Request.URL.Query().Encode()
 	c.Redirect(http.StatusMovedPermanently, newURL)
 
+	code := c.DefaultQuery("code", newURL)
+
 	var bot model.LineNoifyUsergameBody
 	bot.UserId = user.Id
 	bot.TypeNotifyId = typeNotify_Id
-	bot.Token = ""
+	bot.Token = code
 
 	if err := c.ShouldBindJSON(&bot); err != nil {
 		HandleError(c, err)

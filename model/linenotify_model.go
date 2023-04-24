@@ -107,3 +107,8 @@ type LineNotifyUserGametDeleteBody struct {
 	Id        string    `json:"-"`
 	DeletedAt time.Time `json:"-"`
 }
+
+type LineNotifyRedirectReponse struct {
+	Code  string `json:"code"`
+	State string `json:"state"`
+}
