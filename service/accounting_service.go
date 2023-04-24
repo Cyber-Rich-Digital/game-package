@@ -42,6 +42,8 @@ type AccountingService interface {
 	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
 
+	GetExternalSettings() (*model.ExternalSettings, error)
+	GetCustomerAccountsInfo(data model.CustomerAccountInfoRequest) (*model.CustomerAccountInfo, error)
 	GetExternalAccounts() (*model.SuccessWithPagination, error)
 	GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error)
 	GetExternalAccountStatus(query model.ExternalAccountStatusRequest) (*model.ExternalAccountStatus, error)
@@ -151,7 +153,7 @@ func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*mo
 
 	err := s.UpdateBankAccountBotStatusById(data.Id)
 	if err != nil {
-		return nil, internalServerError(err.Error())
+		// return nil, internalServerError(err.Error())
 	}
 
 	record, err := s.repo.GetBankAccountById(data.Id)
@@ -560,7 +562,9 @@ func (s *accountingService) DeleteBankAccount(id int64) error {
 	if account.ExternalId != "" && s.HasExternalAccount(account.AccountNumber) {
 		var query model.ExternalAccountStatusRequest
 		query.AccountNumber = account.AccountNumber
-		s.DeleteExternalAccount(query)
+		if err := s.DeleteExternalAccount(query); err != nil {
+			return internalServerError(err.Error())
+		}
 	}
 
 	var updateBody model.BankAccountDeleteBody
@@ -734,6 +738,16 @@ func (s *accountingService) DeleteTransfer(id int64) error {
 	return nil
 }
 
+func (s *accountingService) GetExternalSettings() (*model.ExternalSettings, error) {
+
+	var body model.ExternalSettings
+	body.ApiEndpoint = os.Getenv("ACCOUNTING_API_ENDPOINT")
+	body.ApiKey = os.Getenv("ACCOUNTING_API_KEY")
+	body.LocalWebhookEndpoint = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT")
+
+	return &body, nil
+}
+
 func (s *accountingService) HasExternalAccount(accountNumber string) bool {
 
 	data, err := s.GetExternalAccounts()
@@ -784,6 +798,48 @@ func (s *accountingService) HasExternalAccountConfig(key string, value string) (
 		}
 	}
 	return nil, notFound("Config not found")
+}
+
+func (s *accountingService) GetCustomerAccountsInfo(body model.CustomerAccountInfoRequest) (*model.CustomerAccountInfo, error) {
+
+	botAccount, err := s.repo.GetActiveExternalAccount()
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	body.AccountFrom = botAccount.AccountNumber
+	b, err := json.Marshal(body)
+	if err != nil {
+		fmt.Println(err)
+		return nil, internalServerError("Error from JSON")
+	}
+	fmt.Println(string(b))
+
+	client := &http.Client{}
+	// curl -X POST "https://api.fastbankapi.com/api/v2/statement/verifyTransfer" -H "accept: */*" -H "apiKey: aa.bb" -H "Content-Type: application/json" -d "{ \"accountFrom\": \"cccc\", \"accountTo\": \"dddd\", \"bankCode\": \"bay\"}"
+	data, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement/verifyTransfer", bytes.NewBuffer(data))
+	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	if response.StatusCode != 200 {
+		fmt.Println(response)
+		return nil, internalServerError("Error from external API")
+	}
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result model.CustomerAccountInfoReponse
+	errJson := json.Unmarshal(responseData, &result)
+	if errJson != nil {
+		return nil, internalServerError("Error from JSON response")
+	}
+	return &result.Data, nil
 }
 
 func (s *accountingService) GetExternalAccounts() (*model.SuccessWithPagination, error) {
@@ -1138,36 +1194,310 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 		return badRequest("Invalid Bank Account")
 	}
 
-	fromBank, err := s.repo.GetBankByCode(data.BankCode)
-	if err != nil {
-		fmt.Println(err)
-		return badRequest("Invalid User Bank")
-	}
-
 	_, errOldStatement := s.repo.GetWebhookStatementByExternalId(data.Id)
 	if errOldStatement != nil && errOldStatement.Error() == recordNotFound {
-		var body model.BankStatementCreateBody
-		body.AccountId = systemAccount.Id
-		body.ExternalId = data.Id
+		var bodyCreateState model.BankStatementCreateBody
+		bodyCreateState.AccountId = systemAccount.Id
+		bodyCreateState.ExternalId = data.Id
 		if data.TxnCode == "X1" || data.TxnCode == "CR" {
-			body.StatementType = "transfer_in"
-			body.Amount = data.Amount
+			bodyCreateState.StatementType = "transfer_in"
+			bodyCreateState.Amount = data.Amount
 		} else if data.TxnCode == "X2" || data.TxnCode == "DR" {
-			body.StatementType = "transfer_out"
-			body.Amount = data.Amount * -1
+			bodyCreateState.StatementType = "transfer_out"
+			bodyCreateState.Amount = data.Amount * -1
 		} else {
 			return badRequest("Invalid TxnCode")
 		}
-		body.FromBankId = fromBank.Id
-		body.Detail = data.TxnDescription + " " + data.Info
-		body.TransferAt = data.DateTime
-		body.Status = "pending"
-		if err := s.repo.CreateWebhookStatement(body); err != nil {
+
+		bankId, _ := s.GetBankIdFromWebhook(data)
+		bodyCreateState.FromBankId = bankId
+
+		accountNumber, _ := s.GetAccountNoFromWebhook(data)
+		bodyCreateState.FromAccountNumber = accountNumber
+
+		bodyCreateState.Detail = data.TxnDescription + " " + data.Info
+		bodyCreateState.TransferAt = data.DateTime
+		bodyCreateState.Status = "pending"
+
+		insertId, err := s.repo.CreateWebhookStatement(bodyCreateState)
+		if err != nil {
 			return internalServerError(err.Error())
+		}
+
+		// Auto Match if == 1
+		var reqPosibleList model.MemberPossibleListRequest
+		statement, err := s.repo.GetBankStatementById(*insertId)
+		if err != nil {
+			return nil
+		}
+		reqPosibleList.UnknownStatementId = statement.Id
+		reqPosibleList.UserBankId = &statement.FromBankId
+		reqPosibleList.UserAccountNumber = &statement.FromAccountNumber
+
+		records, err := s.repo.GetPossibleStatementOwners(reqPosibleList)
+		if err != nil {
+			return nil
+		}
+		if records.Total == 1 {
+			for _, record := range records.List.([]model.Member) {
+				// Auto create transaction
+				if bodyCreateState.StatementType == "transfer_in" {
+					var createDepositBody model.BankTransactionCreateBody
+					createDepositBody.MemberCode = record.MemberCode
+					createDepositBody.TransferType = "deposit"
+					createDepositBody.CreditAmount = bodyCreateState.Amount
+					createDepositBody.TransferAt = bodyCreateState.TransferAt
+					createDepositBody.IsAutoCredit = true
+					// promotionId  bonusAmount
+					createDepositBody.ToAccountId = &systemAccount.Id
+					transId, err := s.CreateBankTransaction(createDepositBody)
+					if err != nil {
+						return internalServerError(err.Error())
+					}
+					var body model.BankConfirmDepositRequest
+					body.TransferAt = &bodyCreateState.TransferAt
+					body.BonusAmount = 0
+					if err := s.ConfirmDepositTransaction(*transId, body); err != nil {
+						return internalServerError(err.Error())
+					}
+				} else if bodyCreateState.StatementType == "transfer_out" {
+					var createWithdrawBody model.BankTransactionCreateBody
+					createWithdrawBody.MemberCode = record.MemberCode
+					createWithdrawBody.TransferType = "withdraw"
+					createWithdrawBody.CreditAmount = bodyCreateState.Amount
+					createWithdrawBody.TransferAt = bodyCreateState.TransferAt
+					createWithdrawBody.FromAccountId = &systemAccount.Id
+					transId, err := s.CreateBankTransaction(createWithdrawBody)
+					if err != nil {
+						return internalServerError(err.Error())
+					}
+					var body model.BankConfirmWithdrawRequest
+					body.CreditAmount = bodyCreateState.Amount
+					body.BankChargeAmount = 0
+					if err := s.ConfirmWithdrawTransaction(*transId, body); err != nil {
+						return internalServerError(err.Error())
+					}
+				}
+			}
+			var body model.BankStatementUpdateBody
+			body.Status = "confirmed"
 		}
 	}
 
 	return nil
+}
+
+func (s *accountingService) CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error) {
+
+	var body model.BankTransactionCreateBody
+
+	if data.TransferType == "deposit" {
+		member, err := s.repo.GetUserByMemberCode(data.MemberCode)
+		if err != nil {
+			fmt.Println(err)
+			return nil, badRequest("Invalid Member code")
+		}
+		bank, err := s.repo.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return nil, badRequest("Invalid User Bank")
+		}
+		body.MemberCode = *member.MemberCode
+		body.UserId = member.Id
+		body.CreditAmount = data.CreditAmount
+		body.TransferType = data.TransferType
+		body.DepositChannel = data.DepositChannel
+		body.OverAmount = data.OverAmount
+		body.IsAutoCredit = data.IsAutoCredit
+
+		body.FromBankId = &bank.Id
+		body.FromAccountName = &member.Fullname
+		body.FromAccountNumber = &member.BankAccount
+		if data.ToAccountId == nil {
+			return nil, badRequest("Input Bank Account")
+		}
+		toAccount, err := s.repo.GetDepositAccountById(*data.ToAccountId)
+		if err != nil {
+			fmt.Println(err)
+			return nil, badRequest("Invalid Bank Account")
+		}
+		body.ToAccountId = &toAccount.Id
+		body.ToBankId = &toAccount.BankId
+		body.ToAccountName = &toAccount.AccountName
+		body.ToAccountNumber = &toAccount.AccountNumber
+
+		// todo: createBonus + refDeposit
+		body.PromotionId = data.PromotionId
+
+	} else if data.TransferType == "withdraw" {
+		member, err := s.repo.GetUserByMemberCode(data.MemberCode)
+		if err != nil {
+			fmt.Println(err)
+			return nil, badRequest("Invalid Member code")
+		}
+		bank, err := s.repo.GetBankByCode(member.Bankname)
+		if err != nil {
+			fmt.Println(err)
+			return nil, badRequest("Invalid User Bank")
+		}
+		body.MemberCode = *member.MemberCode
+		body.UserId = member.Id
+		body.CreditAmount = data.CreditAmount
+		body.TransferType = data.TransferType
+
+		fromAccount, err := s.repo.GetWithdrawAccountById(*data.FromAccountId)
+		if err != nil {
+			fmt.Println(err)
+			return nil, badRequest("Invalid Bank Account")
+		}
+		body.FromAccountId = &fromAccount.Id
+		body.FromBankId = &fromAccount.BankId
+		body.FromAccountName = &fromAccount.AccountName
+		body.FromAccountNumber = &fromAccount.AccountNumber
+
+		body.ToBankId = &bank.Id
+		body.ToAccountName = &member.Fullname
+		body.ToAccountNumber = &member.BankAccount
+	} else {
+		return nil, badRequest("Invalid Transfer Type")
+	}
+
+	body.TransferAt = data.TransferAt
+	body.CreatedByUserId = data.CreatedByUserId
+	body.CreatedByUsername = data.CreatedByUsername
+	body.Status = "pending"
+
+	insertId, err := s.repo.CreateBankTransaction(body)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return insertId, nil
+}
+
+func (s *accountingService) ConfirmDepositTransaction(id int64, req model.BankConfirmDepositRequest) error {
+
+	record, err := s.repo.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+	if record.TransferType != "deposit" {
+		return badRequest("Transaction is not deposit")
+	}
+	jsonBefore, _ := json.Marshal(record)
+
+	var updateData model.BankTransactionConfirmBody
+	updateData.Status = "finished"
+	updateData.ConfirmedAt = req.ConfirmedAt
+	updateData.ConfirmedByUserId = req.ConfirmedByUserId
+	updateData.ConfirmedByUsername = req.ConfirmedByUsername
+	updateData.BonusAmount = req.BonusAmount
+
+	var createData model.BankTransactionCreateConfirmBody
+	createData.TransactionId = record.Id
+	createData.UserId = record.UserId
+	createData.TransferType = record.TransferType
+	createData.FromAccountId = record.FromAccountId
+	createData.ToAccountId = record.ToAccountId
+	createData.JsonBefore = string(jsonBefore)
+	if req.TransferAt == nil {
+		createData.TransferAt = record.TransferAt
+	} else {
+		TransferAt := req.TransferAt
+		createData.TransferAt = *TransferAt
+		updateData.TransferAt = *TransferAt
+	}
+	createData.SlipUrl = req.SlipUrl
+	createData.BonusAmount = req.BonusAmount
+	createData.ConfirmedAt = req.ConfirmedAt
+	createData.ConfirmedByUserId = req.ConfirmedByUserId
+	createData.ConfirmedByUsername = req.ConfirmedByUsername
+	if err := s.repo.CreateConfirmTransaction(createData); err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := s.repo.ConfirmPendingTransaction(id, updateData); err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := s.IncreaseMemberCredit(record.UserId, record.CreditAmount); err != nil {
+		return internalServerError(err.Error())
+	}
+	// todo: Bonus
+	// commit
+	return nil
+}
+
+func (s *accountingService) ConfirmWithdrawTransaction(id int64, req model.BankConfirmWithdrawRequest) error {
+
+	record, err := s.repo.GetBankTransactionById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if record.Status != "pending" {
+		return badRequest("Transaction is not pending")
+	}
+	if record.TransferType != "withdraw" {
+		return badRequest("Transaction is not withdraw")
+	}
+	jsonBefore, _ := json.Marshal(record)
+
+	var updateData model.BankTransactionConfirmBody
+	updateData.Status = "finished"
+	updateData.ConfirmedAt = req.ConfirmedAt
+	updateData.ConfirmedByUserId = req.ConfirmedByUserId
+	updateData.ConfirmedByUsername = req.ConfirmedByUsername
+	updateData.BankChargeAmount = req.BankChargeAmount
+	updateData.CreditAmount = req.CreditAmount
+
+	var createData model.BankTransactionCreateConfirmBody
+	createData.TransactionId = record.Id
+	createData.UserId = record.UserId
+	createData.TransferType = record.TransferType
+	createData.FromAccountId = record.FromAccountId
+	createData.ToAccountId = record.ToAccountId
+	createData.JsonBefore = string(jsonBefore)
+	createData.TransferAt = record.TransferAt
+	createData.CreditAmount = req.CreditAmount
+	createData.BankChargeAmount = req.BankChargeAmount
+	createData.ConfirmedAt = req.ConfirmedAt
+	createData.ConfirmedByUserId = req.ConfirmedByUserId
+	createData.ConfirmedByUsername = req.ConfirmedByUsername
+	if err := s.repo.CreateConfirmTransaction(createData); err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := s.repo.ConfirmPendingTransaction(id, updateData); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *accountingService) IncreaseMemberCredit(userId int64, creditAmount float32) error {
+
+	// record, err := s.repoBanking.GetBankTransactionById(id)
+	// if err != nil {
+	// 	return internalServerError(err.Error())
+	// }
+
+	if err := s.repo.IncreaseMemberCredit(userId, creditAmount); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	return nil
+}
+
+func (s *accountingService) GetBankIdFromWebhook(data model.WebhookStatement) (int64, error) {
+
+	// todo :
+
+	return 4, nil
+}
+
+func (s *accountingService) GetAccountNoFromWebhook(data model.WebhookStatement) (string, error) {
+
+	// todo :
+
+	return "3002", nil
 }
 
 func (s *accountingService) CreateWebhookLog(logType string, jsonRequest string) error {

@@ -85,12 +85,12 @@ func (s *userService) GetUserList(query model.UserListQuery) (*model.SuccessWith
 
 func (s *userService) Create(data *model.CreateUser) error {
 
-	userByPhone, err := s.repo.CheckUserPhone(data.Phone)
+	phone, err := s.repo.CheckUserPhone(data.Phone)
 	if err != nil {
 		return err
 	}
 
-	if userByPhone {
+	if phone {
 		return badRequest("Phone already exist")
 	}
 
@@ -100,15 +100,16 @@ func (s *userService) Create(data *model.CreateUser) error {
 	}
 
 	var newUser model.User
-	newUser.Partner = data.Partner
-	newUser.MemberCode = data.MemberCode
+	newUser.Partner = &data.Partner
+	newUser.MemberCode = &data.MemberCode
 	newUser.Username = data.Phone
 	newUser.Phone = data.Phone
-	newUser.Promotion = data.Promotion
+	newUser.Promotion = &data.Promotion
 	newUser.Password = string(hashedPassword)
 	newUser.Status = "ACTIVE"
 	newUser.Fullname = data.Fullname
 	newUser.Bankname = data.Bankname
+	newUser.BankCode = data.BankCode
 	newUser.BankAccount = data.BankAccount
 	newUser.Channel = data.Channel
 	newUser.TrueWallet = data.TrueWallet
@@ -118,10 +119,22 @@ func (s *userService) Create(data *model.CreateUser) error {
 	newUser.IpRegistered = data.IpRegistered
 
 	splitFullname := strings.Split(data.Fullname, " ")
+	println(len(splitFullname))
+	if len(splitFullname) == 1 {
+		return badRequest("Fullname must be firstname lastname")
+	}
+
 	var firstname, lastname *string
-	if len(splitFullname) > 1 {
+	if len(splitFullname) == 2 {
 		firstname = &splitFullname[0]
 		lastname = &splitFullname[1]
+		newUser.Firstname = *firstname
+		newUser.Lastname = *lastname
+	}
+
+	if len(splitFullname) == 3 {
+		firstname = &splitFullname[1]
+		lastname = &splitFullname[2]
 		newUser.Firstname = *firstname
 		newUser.Lastname = *lastname
 	}

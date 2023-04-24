@@ -10,6 +10,7 @@ type RecommendService interface {
 	GetRecommendList(query model.RecommendQuery) ([]model.RecommendList, int64, error)
 	CreateRecommend(user model.CreateRecommend) error
 	UpdateRecommend(id int64, body model.CreateRecommend) error
+	DeleteRecommend(id int64) error
 }
 
 type recommendService struct {
@@ -43,6 +44,15 @@ func (s *recommendService) CreateRecommend(body model.CreateRecommend) error {
 func (s *recommendService) UpdateRecommend(id int64, body model.CreateRecommend) error {
 
 	if err := s.repo.UpdateRecommend(id, body); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *recommendService) DeleteRecommend(id int64) error {
+
+	if err := s.repo.DeleteRecommend(id); err != nil {
 		return err
 	}
 

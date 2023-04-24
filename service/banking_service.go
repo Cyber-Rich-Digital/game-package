@@ -13,6 +13,8 @@ type BankingService interface {
 	GetBankStatements(req model.BankStatementListRequest) (*model.SuccessWithPagination, error)
 	GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error)
 	CreateBankStatement(data model.BankStatementCreateBody) error
+	MatchStatementOwner(id int64, req model.BankStatementMatchRequest) error
+	IgnoreStatementOwner(id int64) error
 	DeleteBankStatement(id int64) error
 
 	GetBankTransactionById(req model.BankTransactionGetRequest) (*model.BankTransaction, error)
@@ -32,7 +34,7 @@ type BankingService interface {
 
 	GetMemberByCode(code string) (*model.Member, error)
 	GetMembers(req model.MemberListRequest) (*model.SuccessWithPagination, error)
-	GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error)
+	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactions(req model.MemberTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetMemberTransactionSummary(req model.MemberTransactionListRequest) (*model.MemberTransactionSummary, error)
 }
@@ -113,6 +115,52 @@ func (s *bankingService) CreateBankStatement(data model.BankStatementCreateBody)
 	return nil
 }
 
+func (s *bankingService) MatchStatementOwner(id int64, req model.BankStatementMatchRequest) error {
+
+	statement, err := s.repoBanking.GetBankStatementById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if statement.Status != "pending" {
+		return badRequest("Statement is not pending")
+	}
+
+	member, err := s.repoBanking.GetMemberById(req.UserId)
+	if err != nil {
+		return badRequest("Invalid Member")
+	}
+
+	var body model.BankStatementUpdateBody
+	body.Status = "confirmed"
+	// todo:
+	member.Id = 0
+
+	if err := s.repoBanking.MatchStatementOwner(id, body); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
+func (s *bankingService) IgnoreStatementOwner(id int64) error {
+
+	statement, err := s.repoBanking.GetBankStatementById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if statement.Status != "pending" {
+		return badRequest("Statement is not pending")
+	}
+
+	var body model.BankStatementUpdateBody
+	body.Status = "ignored"
+
+	if err := s.repoBanking.IgnoreStatementOwner(id, body); err != nil {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
 func (s *bankingService) DeleteBankStatement(id int64) error {
 
 	_, err := s.repoBanking.GetBankStatementById(id)
@@ -165,6 +213,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
 		}
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -202,7 +251,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
 		}
-		body.MemberCode = member.MemberCode
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -232,7 +281,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
 		}
-		body.MemberCode = member.MemberCode
+		body.MemberCode = *member.MemberCode
 		body.UserId = member.Id
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
@@ -249,7 +298,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 	body.CreatedByUsername = data.CreatedByUsername
 	body.Status = "pending"
 
-	if err := s.repoBanking.CreateBankTransaction(body); err != nil {
+	if _, err := s.repoBanking.CreateBankTransaction(body); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
@@ -269,7 +318,7 @@ func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreat
 	}
 
 	var body model.BonusTransactionCreateBody
-	body.MemberCode = member.MemberCode
+	body.MemberCode = *member.MemberCode
 	body.UserId = member.Id
 	body.TransferType = "bonus"
 	body.ToAccountId = 0
@@ -538,7 +587,7 @@ func (s *bankingService) GetMembers(req model.MemberListRequest) (*model.Success
 	return records, nil
 }
 
-func (s *bankingService) GetPosibleStatementOwners(req model.MemberListRequest) (*model.SuccessWithPagination, error) {
+func (s *bankingService) GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error) {
 
 	if err := helper.Pagination(&req.Page, &req.Limit); err != nil {
 		return nil, badRequest(err.Error())
@@ -547,13 +596,14 @@ func (s *bankingService) GetPosibleStatementOwners(req model.MemberListRequest) 
 	statement, err := s.repoBanking.GetBankStatementById(req.UnknownStatementId)
 	if err != nil {
 		if err.Error() == recordNotFound {
-			return nil, notFound(memberNotFound)
+			return nil, notFound(bankStatementferNotFound)
 		}
 		return nil, internalServerError(err.Error())
 	}
-	req.UserBankId = statement.BankId
+	req.UserBankId = &statement.FromBankId
+	req.UserAccountNumber = &statement.FromAccountNumber
 
-	records, err := s.repoBanking.GetPosibleStatementOwners(req)
+	records, err := s.repoBanking.GetPossibleStatementOwners(req)
 	if err != nil {
 		return nil, internalServerError(err.Error())
 	}

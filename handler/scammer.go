@@ -52,13 +52,13 @@ func (h scammerController) getScammerList(c *gin.Context) {
 		return
 	}
 
-	list, err := h.scammerService.GetScammerList(query)
+	list, total, err := h.scammerService.GetScammerList(query)
 	if err != nil {
 		HandleError(c, err)
 		return
 	}
 
-	c.JSON(200, model.SuccessWithList{Message: "Success", List: list})
+	c.JSON(200, model.SuccessWithPagination{Message: "Success", List: list, Total: total})
 }
 
 // @Summary Create Scammer
