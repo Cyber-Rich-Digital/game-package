@@ -53,6 +53,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	accountRoute.DELETE("/:id", middleware.Authorize, handler.deleteBankAccount)
 
 	account2Route := root.Group("/bankaccounts2")
+	account2Route.GET("/settings", middleware.Authorize, handler.getExternalSettings)
 	account2Route.GET("/customeraccount", middleware.Authorize, handler.getCustomerAccountsInfo)
 	account2Route.GET("/list", middleware.Authorize, handler.getExternalAccounts)
 	account2Route.GET("/status/:account", middleware.Authorize, handler.getExternalAccountStatus)
@@ -780,6 +781,26 @@ func (h accountingController) getCustomerAccountsInfo(c *gin.Context) {
 	}
 
 	data, err := h.accountingService.GetCustomerAccountsInfo(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+}
+
+// @Summary GetExternalSettings
+// @Description อัพเดทข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
+// @Tags Accounting - TEST
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/bankaccounts2/settings [get]
+func (h accountingController) getExternalSettings(c *gin.Context) {
+
+	data, err := h.accountingService.GetExternalSettings()
 	if err != nil {
 		HandleError(c, err)
 		return

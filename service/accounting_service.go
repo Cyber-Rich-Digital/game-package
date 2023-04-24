@@ -42,6 +42,7 @@ type AccountingService interface {
 	ConfirmTransfer(id int64, actorId int64) error
 	DeleteTransfer(id int64) error
 
+	GetExternalSettings() (*model.ExternalSettings, error)
 	GetCustomerAccountsInfo(data model.CustomerAccountInfoRequest) (*model.CustomerAccountInfo, error)
 	GetExternalAccounts() (*model.SuccessWithPagination, error)
 	GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error)
@@ -152,7 +153,7 @@ func (s *accountingService) GetBankAccountById(data model.BankAccountParam) (*mo
 
 	err := s.UpdateBankAccountBotStatusById(data.Id)
 	if err != nil {
-		return nil, internalServerError(err.Error())
+		// return nil, internalServerError(err.Error())
 	}
 
 	record, err := s.repo.GetBankAccountById(data.Id)
@@ -735,6 +736,16 @@ func (s *accountingService) DeleteTransfer(id int64) error {
 		return internalServerError(err.Error())
 	}
 	return nil
+}
+
+func (s *accountingService) GetExternalSettings() (*model.ExternalSettings, error) {
+
+	var body model.ExternalSettings
+	body.ApiEndpoint = os.Getenv("ACCOUNTING_API_ENDPOINT")
+	body.ApiKey = os.Getenv("ACCOUNTING_API_KEY")
+	body.LocalWebhookEndpoint = os.Getenv("ACCOUNTING_LOCAL_WEBHOOK_ENDPOINT")
+
+	return &body, nil
 }
 
 func (s *accountingService) HasExternalAccount(accountNumber string) bool {
