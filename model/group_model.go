@@ -13,8 +13,8 @@ type Group struct {
 }
 
 type CreateGroup struct {
-	Name          string  `json:"name" validate:"required"`
-	PermissionIds []int64 `json:"permissionIds" validate:"required"`
+	Name        string          `json:"name" validate:"required"`
+	Permissions []PermissionObj `json:"permissions" validate:"required"`
 }
 
 type GroupCountList struct {

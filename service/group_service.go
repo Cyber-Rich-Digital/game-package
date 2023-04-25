@@ -30,24 +30,29 @@ func (s *groupService) Create(data *model.CreateGroup) error {
 	var group model.Group
 	group.Name = data.Name
 
-	perIdExists, err := s.perRepo.CheckPerListExist(data.PermissionIds)
+	var perIds []int64
+	for _, i := range data.Permissions {
+		perIds = append(perIds, i.Id)
+	}
+
+	perIdExists, err := s.perRepo.CheckPerListExist(perIds)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
 	var idNotFound []string
-	for _, j := range data.PermissionIds {
+	for _, j := range data.Permissions {
 
 		exist := false
 
 		for _, k := range perIdExists {
-			if j == k {
+			if j.Id == k {
 				exist = true
 			}
 		}
 
 		if !exist {
-			idNotFound = append(idNotFound, fmt.Sprintf("%d", j))
+			idNotFound = append(idNotFound, fmt.Sprintf("%v", j.Id))
 		}
 	}
 
@@ -55,7 +60,7 @@ func (s *groupService) Create(data *model.CreateGroup) error {
 		return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
 	}
 
-	if err := s.repo.CreateGroup(group, data.PermissionIds); err != nil {
+	if err := s.repo.CreateGroup(group, data.Permissions); err != nil {
 		return err
 	}
 
