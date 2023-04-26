@@ -220,10 +220,19 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 	}
 
 	splitFullname := strings.Split(data.Fullname, " ")
+	if len(splitFullname) == 1 || strings.Trim(data.Fullname, " ") == "" {
+		return badRequest("Fullname must be firstname lastname")
+	}
+
 	var firstname, lastname *string
-	if len(splitFullname) > 1 {
+	if len(splitFullname) == 2 {
 		firstname = &splitFullname[0]
 		lastname = &splitFullname[1]
+	}
+
+	if len(splitFullname) == 3 {
+		firstname = &splitFullname[1]
+		lastname = &splitFullname[2]
 	}
 
 	newUser := model.Admin{}

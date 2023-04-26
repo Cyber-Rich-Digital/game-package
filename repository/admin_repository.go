@@ -2,8 +2,10 @@ package repository
 
 import (
 	"cybergame-api/model"
+	"errors"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -280,6 +282,12 @@ func (r repo) CreateAdmin(admin model.Admin, permissions *[]model.PermissionObj)
 		Create(&admin).
 		Error; err != nil {
 		tx.Rollback()
+
+		var dup *mysql.MySQLError
+		if errors.As(err, &dup); dup.Number == 1062 {
+			return errors.New("Username or Email already exists")
+		}
+
 		return err
 	}
 
