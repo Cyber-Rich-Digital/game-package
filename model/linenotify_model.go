@@ -82,7 +82,10 @@ type LinenotifyGameResponse struct {
 }
 
 type LinenotifyGameParam struct {
-	Id int64 `uri:"id" binding:"required"`
+	Id    int64  `uri:"id" binding:"required"`
+	Code  string `json:"Code"`
+	State string `json:"State"`
+	Token string `json:"Token"`
 }
 
 type LineNoifyUsergame struct {

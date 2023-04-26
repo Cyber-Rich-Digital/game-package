@@ -41,7 +41,7 @@ INSERT INTO
 VALUES
     (
         'แจ้ง สมัครสมาชิก',
-        'VGtxc8xQ2ghbxd71y6zSB3',
+        'mV1hDYHmq38qDq3gWe1v4c',
         'ecNcbiTrJW9qsoC0Mcd0ajlS9XdDUuqPsrV7R21vjYf',
         'code',
         'https://cyberrichdigital.com/',

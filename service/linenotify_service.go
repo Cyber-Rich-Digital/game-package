@@ -4,8 +4,14 @@ import (
 	"cybergame-api/helper"
 	"cybergame-api/model"
 	"cybergame-api/repository"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/juunini/simple-go-line-notify/notify"
 )
 
@@ -93,33 +99,104 @@ func (s *lineNotifyService) UpdateLineNotify(id int64, data model.LinenotifyUpda
 
 func (s *lineNotifyService) GetLineNotifyGameById(data model.LinenotifyGameParam) (*model.LinenotifyGame, error) {
 
-	linegame, err := s.repo.GetLinenotifyGameById(data.Id)
+	var lineNotifyGame model.LinenotifyGame
+	var lineGame model.LinenotifyGameParam
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", os.Getenv("URL_LINE"), nil)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil, err
+	}
+	// Set the query parameters
+	q := req.URL.Query()
+	q.Add("response_type", lineNotifyGame.ResponseType)
+	q.Add("client_id", lineNotifyGame.ClientId)
+	q.Add("redirect_uri", lineNotifyGame.RedirectUri)
+	q.Add("scope", lineNotifyGame.Scope)
+	q.Add("state", "1")
+	req.URL.RawQuery = q.Encode()
+	fmt.Println("url request:", req.URL.RawQuery)
+
+	// Set the headers
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Send the request
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error sending request:", err)
+		return nil, err
+	}
+
+	// Print the response status code and body
+	defer res.Body.Close()
+	fmt.Println("Response status code:", res.StatusCode)
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return nil, err
+	}
+	fmt.Println("Response body:", body)
+
+	response, err := client.Do(req)
+	if err != nil {
+		sentry.CaptureException(err)
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode >= 400 {
+
+		res, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		var result interface{}
+		fmt.Println("Response body:", body)
+
+		if err := json.Unmarshal(res, &result); err != nil {
+			return nil, err
+		}
+
+		return nil, errors.New("Error some")
+
+	}
 
 	if err != nil {
 		return nil, notFound("record NotFound")
 	}
 
+	URL_AUTH_LINE := os.Getenv("URL_LINE") + "/oauth/token?grant_type=authorization_code&code=" + lineGame.Code + "&redirect_uri=" + lineNotifyGame.RedirectUri + "&client_id=" + lineNotifyGame.ClientId + "&client_secret=" + lineNotifyGame.ClientSecret
+
+	url := URL_AUTH_LINE
+	req, err1 := http.NewRequest("POST", url, nil)
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, notFound("record NotFound")
-		}
-		if err.Error() == "record not found" {
-			return nil, notFound("record NotFound")
-		}
-		return nil, internalServerError(err.Error())
+		sentry.CaptureException(err1)
+		return nil, err
 	}
-	return linegame, nil
+	req.Header.Add("Content-Type", "application/json")
+	response, err2 := client.Do(req)
+	if err != nil {
+		sentry.CaptureException(err2)
+		return nil, err
+	}
+	defer response.Body.Close()
+	fmt.Println("Response status code:", res.StatusCode)
+	responsebody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return nil, err
+	}
+	fmt.Println("Response body:", string(responsebody))
+
+	return nil, internalServerError(err.Error())
+
 }
 
 func (s *lineNotifyService) CreateNotifyGame(data model.LineNoifyUsergameBody) error {
 
-	//reqURL := "https://notify-bot.line.me/oauth/authorize?response_type=code&client_id=VGtxc8xQ2ghbxd71y6zSB3&redirect_uri=https://cyberrichdigital.com/&scope=notify&state=testdata"
-	var bot model.LinenotifyGame
-	bot.ResponseType = "code"
-	bot.ClientId = "VGtxc8xQ2ghbxd71y6zSB3"
-	bot.RedirectUri = "https://cyberrichdigital.com/"
-	bot.Scope = "notify"
-	bot.State = "1"
 	if err := s.repo.CreateLinenotifyGame(data); err != nil {
 		return internalServerError(err.Error())
 	}

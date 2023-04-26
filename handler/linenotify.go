@@ -5,9 +5,6 @@ import (
 	"cybergame-api/model"
 	"cybergame-api/service"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
 	"strconv"
 
 	"cybergame-api/repository"
@@ -154,38 +151,30 @@ func (h linenotifyController) updateLineNotify(c *gin.Context) {
 // @Router /linenotify/typegame/detail/{id} [get]
 func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
 
-	var linegame model.LinenotifyGameParam
-	typeNotify_Id := fmt.Sprintf("%d", linegame.Id)
+	//var user model.User
+	code := c.Param("code")
+	access_token := c.Query("access_token")
+	var lineGame model.LinenotifyGameParam
 
-	if err := c.ShouldBindUri(&linegame); err != nil {
+	lineGame.Code = code
+	lineGame.Token = access_token
+
+	if err := c.ShouldBindUri(&lineGame); err != nil {
 		HandleError(c, err)
 		return
 	}
-	var game model.LinenotifyGame
 
-	var user model.User
-	user_id := fmt.Sprintf("%d", user.Id)
-
-	data, err := h.linenotifyService.GetLineNotifyGameById(linegame)
-	data.ResponseType = game.ResponseType
-	data.ClientId = game.ClientId
-	data.RedirectUri = game.RedirectUri
-	data.Scope = game.Scope
-	data.State = user_id
-
+	data, err := h.linenotifyService.GetLineNotifyGameById(lineGame)
 	if err != nil {
-		log.Fatal(err)
+		HandleError(c, err)
+		return
 	}
-	// line auth
-	newURL := os.Getenv("URL_LINE") + "/oauth/authorize?response_type=" + data.ResponseType + "&client_id=" + data.ClientId + "&redirect_uri=" + data.RedirectUri + "&scope=notify&state=" + data.State + c.Request.URL.Query().Encode()
-	c.Redirect(http.StatusMovedPermanently, newURL)
-
-	code := c.DefaultQuery("code", newURL)
+	typeNotify_Id := fmt.Sprintf("%d", lineGame.Id)
 
 	var bot model.LineNoifyUsergameBody
-	bot.UserId = user.Id
+	bot.UserId = 1
 	bot.TypeNotifyId = typeNotify_Id
-	bot.Token = code
+	bot.Token = access_token
 
 	if err := c.ShouldBindJSON(&bot); err != nil {
 		HandleError(c, err)
@@ -201,7 +190,9 @@ func (h linenotifyController) GetLineNotifyGameById(c *gin.Context) {
 		HandleError(c, errline)
 		return
 	}
-	c.JSON(201, model.Success{Message: "Created success"})
+
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
+
 }
 
 // @Summary CreateLineNotifyGame
