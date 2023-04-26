@@ -59,9 +59,9 @@ func main() {
 	handler.UserController(backRoute, db)
 	handler.BankingController(backRoute, db)
 	handler.ScammerController(backRoute, db)
+	handler.LineNotifyController(backRoute, db)
 	handler.RecommendController(backRoute, db)
 	handler.MenuController(backRoute, db)
-
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))

@@ -10,6 +10,7 @@ type Settingweb struct {
 	BackgrondColor string    `json:"backgrondcolor"`
 	UserAuto       string    `json:"userAuto"`
 	OtpRegister    string    `json:"otpRegister"`
+	AutoWithdraw   string    `json:"autowithdraw"`
 	TranWithdraw   string    `json:"tranWithdraw"`
 	Register       string    `json:"register"`
 	DepositFirst   string    `json:"depositFirst"`
@@ -27,6 +28,7 @@ type SettingwebResponse struct {
 	BackgrondColor string `json:"backgrondcolor"`
 	UserAuto       string `json:"userAuto"`
 	OtpRegister    string `json:"otpRegister"`
+	AutoWithdraw   string `json:"autowithdraw"`
 	TranWithdraw   string `json:"tranWithdraw"`
 	Register       string `json:"register"`
 	DepositFirst   string `json:"depositFirst"`
@@ -58,6 +60,7 @@ type SettingwebCreateBody struct {
 	BackgrondColor string `json:"backgrondcolor" validate:"required"`
 	UserAuto       string `json:"userAuto" validate:"required"`
 	OtpRegister    string `json:"otpRegister" validate:"required"`
+	AutoWithdraw   string `json:"autowithdraw" validate:"required"`
 	TranWithdraw   string `json:"tranWithdraw" validate:"required"`
 	Register       string `json:"register" validate:"required"`
 	DepositFirst   string `json:"depositFirst" validate:"required"`
@@ -73,6 +76,7 @@ type SettingwebUpdateBody struct {
 	BackgrondColor string `json:"backgrondcolor" validate:"required"`
 	UserAuto       string `json:"userAuto" validate:"required"`
 	OtpRegister    string `json:"otpRegister" validate:"required"`
+	AutoWithdraw   string `json:"autowithdraw" validate:"required"`
 	TranWithdraw   string `json:"tranWithdraw" validate:"required"`
 	Register       string `json:"register" validate:"required"`
 	DepositFirst   string `json:"depositFirst" validate:"required"`
