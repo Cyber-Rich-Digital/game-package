@@ -119,7 +119,6 @@ func (s *userService) Create(data *model.CreateUser) error {
 	newUser.IpRegistered = data.IpRegistered
 
 	splitFullname := strings.Split(data.Fullname, " ")
-	println(len(splitFullname))
 	if len(splitFullname) == 1 {
 		return badRequest("Fullname must be firstname lastname")
 	}

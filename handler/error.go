@@ -47,6 +47,13 @@ func HandleError(c *gin.Context, err error) {
 	case validator.ValidationErrors:
 		list := make([]errorMsg, len(e))
 		for i, fe := range e {
+
+			if fe.Field() == "Email" {
+				errMessage := "Email is invalid"
+				list[i] = errorMsg{fe.Field(), errMessage}
+				continue
+			}
+
 			list[i] = errorMsg{fe.Field(), getErrorMsg(fe)}
 		}
 		c.AbortWithStatusJSON(http.StatusBadRequest, ValidateResponse{Errors: list})
