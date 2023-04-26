@@ -148,7 +148,7 @@ func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
 func (r repo) GetGroupList(query model.AdminGroupQuery) (*[]model.GroupCountList, *int64, error) {
 
 	var list []model.GroupCountList
-	if err := r.db.Table("Admin_groups").
+	if err := r.db.Model(model.Group{}).Table("Admin_groups").
 		Select("id, name, admin_count").
 		Limit(query.Limit).
 		Offset(query.Limit * query.Page).
@@ -158,7 +158,8 @@ func (r repo) GetGroupList(query model.AdminGroupQuery) (*[]model.GroupCountList
 	}
 
 	var total int64
-	if err := r.db.Table("Admin_groups").
+	if err := r.db.Model(model.Group{}).Table("Admin_groups").
+		Select("id").
 		Count(&total).
 		Error; err != nil {
 		return nil, nil, err
