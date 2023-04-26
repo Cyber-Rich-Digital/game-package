@@ -15,7 +15,7 @@ func NewGroupRepository(db *gorm.DB) GroupRepository {
 type GroupRepository interface {
 	CheckGroupByName(name string) (bool, error)
 	CheckGroupExist(id int64) (bool, error)
-	CreateGroup(group model.Group, data []int64) error
+	CreateGroup(group model.Group, data []model.PermissionObj) error
 	DeleteGroup(id int64) error
 }
 
@@ -65,7 +65,7 @@ func (r repo) CheckGroupExist(id int64) (bool, error) {
 	return true, nil
 }
 
-func (r repo) CreateGroup(group model.Group, Permissions []int64) error {
+func (r repo) CreateGroup(group model.Group, Permissions []model.PermissionObj) error {
 
 	tx := r.db.Begin()
 
@@ -91,10 +91,13 @@ func (r repo) CreateGroup(group model.Group, Permissions []int64) error {
 
 	var adminGroupPerms []model.AdminGroupPermission
 
-	for _, id := range Permissions {
+	for _, per := range Permissions {
 		adminGroupPerms = append(adminGroupPerms, model.AdminGroupPermission{
 			GroupId:      group.Id,
-			PermissionId: id,
+			PermissionId: per.Id,
+			IsRead:       per.IsRead,
+			IsWrite:      per.IsWrite,
+			DeletedAt:    nil,
 		})
 	}
 

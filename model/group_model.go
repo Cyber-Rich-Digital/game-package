@@ -5,16 +5,17 @@ import (
 )
 
 type Group struct {
-	Id        int64      `json:"id"`
-	Name      string     `json:"name"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	Id         int64      `json:"id"`
+	Name       string     `json:"name"`
+	AdminCount int64      `json:"adminCount"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+	DeletedAt  *time.Time `json:"deletedAt"`
 }
 
 type CreateGroup struct {
-	Name          string  `json:"name" validate:"required"`
-	PermissionIds []int64 `json:"permissionIds" validate:"required"`
+	Name        string          `json:"name" validate:"required"`
+	Permissions []PermissionObj `json:"permissions" validate:"required"`
 }
 
 type GroupCountList struct {
