@@ -2,14 +2,16 @@ package model
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Group struct {
-	Id        int64      `json:"id"`
-	Name      string     `json:"name"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	Id        int64           `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt time.Time       `json:"createdAt"`
+	UpdatedAt time.Time       `json:"updatedAt"`
+	DeletedAt *gorm.DeletedAt `json:"deletedAt"`
 }
 
 type CreateGroup struct {

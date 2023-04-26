@@ -97,6 +97,7 @@ func (r repo) CreateGroup(group model.Group, Permissions []model.PermissionObj) 
 			PermissionId: per.Id,
 			IsRead:       per.IsRead,
 			IsWrite:      per.IsWrite,
+			DeletedAt:    nil,
 		})
 	}
 
