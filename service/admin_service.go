@@ -437,7 +437,7 @@ func (s *adminService) UpdateGroup(groupId int64, data *model.AdminUpdateGroup) 
 		})
 	}
 
-	if err := s.repo.UpdateGroup(groupId, list, permissionIds); err != nil {
+	if err := s.repo.UpdateGroup(groupId, data.Name, list); err != nil {
 		return err
 	}
 

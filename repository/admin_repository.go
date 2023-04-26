@@ -23,7 +23,7 @@ type AdminRepository interface {
 	CheckPhone(phone string) (bool, error)
 	CreateAdmin(admin model.Admin, permissionIds *[]model.PermissionObj) error
 	CreateGroupAdmin(data []model.AdminPermissionList) error
-	UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error
+	UpdateGroup(groupId int64, name string, data []model.AdminPermissionList) error
 	UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error
 	UpdatePassword(adminId int64, data model.AdminUpdatePassword) error
 }
@@ -329,12 +329,20 @@ func (r repo) CreateGroupAdmin(data []model.AdminPermissionList) error {
 	return nil
 }
 
-func (r repo) UpdateGroup(groupId int64, data []model.AdminPermissionList, perIds []int64) error {
+func (r repo) UpdateGroup(groupId int64, name string, data []model.AdminPermissionList) error {
 
 	tx := r.db.Begin()
 
+	if err := tx.Table("Admin_groups").
+		Where("id = ?", groupId).
+		Update("name", name).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	if err := tx.Table("Admin_group_permissions").
-		Where("group_id = ? AND permission_id IN (?)", groupId, perIds).
+		Where("group_id = ?", groupId).
 		Delete(&model.AdminGroupPermission{}).
 		Error; err != nil {
 		tx.Rollback()

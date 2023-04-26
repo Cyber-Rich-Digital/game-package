@@ -81,6 +81,7 @@ type AdminGroupPermissionResponse struct {
 
 type AdminUpdateGroup struct {
 	// GroupId     int64           `json:"groupId" validate:"required"`
+	Name        string          `json:"name" validate:"required"`
 	Permissions []PermissionObj `json:"permissions" validate:"required"`
 }
 
