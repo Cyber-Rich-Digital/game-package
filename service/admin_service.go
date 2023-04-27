@@ -14,9 +14,9 @@ type AdminService interface {
 	GetGroup(id int) (*model.AdminGroupPermissionResponse, error)
 	GetGroupList(query model.AdminGroupQuery) (*model.SuccessWithPagination, error)
 	Login(data model.LoginAdmin) (*string, error)
-	Create(user *model.CreateAdmin) error
+	Create(user *model.CreateAdmin) (error, *[]string)
 	CreateGroup(data *model.AdminCreateGroup) error
-	UpdateAdmin(adminId int64, data model.AdminBody) error
+	UpdateAdmin(adminId int64, data model.AdminBody) (error, *[]string)
 	UpdateGroup(groupId int64, data *model.AdminUpdateGroup) error
 	ResetPassword(adminId int64, body model.AdminUpdatePassword) error
 	DeleteGroup(id int64) error
@@ -156,33 +156,33 @@ func (s *adminService) Login(data model.LoginAdmin) (*string, error) {
 	return &token, nil
 }
 
-func (s *adminService) Create(data *model.CreateAdmin) error {
+func (s *adminService) Create(data *model.CreateAdmin) (error, *[]string) {
 
 	username, err := s.repo.CheckAdmin(data.Username)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	if username {
-		return badRequest("Username already exist")
+		return badRequest("Username already exist"), nil
 	}
 
 	email, err := s.repo.CheckPhone(data.Phone)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	if email {
-		return badRequest("Phone already exist")
+		return badRequest("Phone already exist"), nil
 	}
 
 	checkGroup, err := s.groupRepo.CheckGroupExist(data.AdminGroupId)
 	if err != nil {
-		return internalServerError(err.Error())
+		return internalServerError(err.Error()), nil
 	}
 
 	if !checkGroup {
-		return badRequest(AdminGroupNotFound)
+		return badRequest(AdminGroupNotFound), nil
 	}
 
 	var perIds []int64
@@ -192,7 +192,7 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 
 	checkPermission, err := s.perRepo.CheckPerListAndGroupId(data.AdminGroupId, perIds)
 	if err != nil {
-		return internalServerError(err.Error())
+		return internalServerError(err.Error()), nil
 	}
 
 	var idNotFound []string
@@ -201,7 +201,7 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 		exist := false
 
 		for _, k := range checkPermission {
-			if j.Id == k {
+			if j.Id == k.Id {
 				exist = true
 			}
 		}
@@ -212,17 +212,38 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 	}
 
 	if len(idNotFound) > 0 {
-		return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
+		return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ","))), nil
+	}
+
+	var notToggleList []string
+	for _, j := range *data.Permissions {
+
+		for _, k := range checkPermission {
+			if j.Id == k.Id {
+
+				if !k.IsRead && j.IsRead {
+					notToggleList = append(notToggleList, fmt.Sprintf("%s View ไม่ได้รับอนุญาตให้เปิดใช้งาน.", k.Name))
+				}
+
+				if !k.IsWrite && j.IsWrite {
+					notToggleList = append(notToggleList, fmt.Sprintf("%s Manage ไม่ได้รับอนุญาตให้เปิดใช้งาน.", k.Name))
+				}
+			}
+		}
+	}
+
+	if len(notToggleList) > 0 {
+		return nil, &notToggleList
 	}
 
 	hashedPassword, err := helper.GenAdminPassword(data.Password)
 	if err != nil {
-		return internalServerError(err.Error())
+		return internalServerError(err.Error()), nil
 	}
 
 	splitFullname := strings.Split(data.Fullname, " ")
 	if len(splitFullname) == 1 || strings.Trim(data.Fullname, " ") == "" {
-		return badRequest("Fullname must be firstname lastname")
+		return badRequest("Fullname must be firstname lastname"), nil
 	}
 
 	var firstname, lastname *string
@@ -248,7 +269,7 @@ func (s *adminService) Create(data *model.CreateAdmin) error {
 	newUser.Phone = data.Phone
 	newUser.AdminGroupId = data.AdminGroupId
 
-	return s.repo.CreateAdmin(newUser, data.Permissions)
+	return s.repo.CreateAdmin(newUser, data.Permissions), nil
 }
 
 func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
@@ -310,31 +331,31 @@ func (s *adminService) CreateGroup(data *model.AdminCreateGroup) error {
 	return nil
 }
 
-func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
+func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) (error, *[]string) {
 
 	var data model.UpdateAdmin
 
 	if body.GroupId != nil {
 		checkGroup, err := s.groupRepo.CheckGroupExist(*body.GroupId)
 		if err != nil {
-			return internalServerError(err.Error())
+			return internalServerError(err.Error()), nil
 		}
 
 		if !checkGroup {
-			return notFound(AdminGroupNotFound)
+			return notFound(AdminGroupNotFound), nil
 		}
 
 		data.AdminGroupId = body.GroupId
 	}
 
-	var adminPer *[]model.AdminPermission
+	var adminPer []model.AdminPermission
 	var oldGroupId *int
 
 	if body.GroupId != nil && body.Permissions != nil {
 
 		getGroupId, err := s.repo.GetAdminGroup(adminId)
 		if err != nil {
-			return internalServerError(err.Error())
+			return internalServerError(err.Error()), nil
 		}
 
 		oldGroupId = &getGroupId.AdminGroupId
@@ -345,7 +366,7 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 
 		checkPermission, err := s.perRepo.CheckPerListAndGroupId(*body.GroupId, perIds)
 		if err != nil {
-			return internalServerError(err.Error())
+			return internalServerError(err.Error()), nil
 		}
 
 		var idNotFound []string
@@ -354,7 +375,7 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 			exist := false
 
 			for _, k := range checkPermission {
-				if j.Id == k {
+				if j.Id == k.Id {
 					exist = true
 				}
 			}
@@ -365,18 +386,37 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 		}
 
 		if len(idNotFound) > 0 {
-			return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ",")))
+			return badRequest(fmt.Sprintf("Permission id %s not found", strings.Join(idNotFound, ","))), nil
+		}
+
+		var notToggleList []string
+		for _, j := range *body.Permissions {
+
+			for _, k := range checkPermission {
+				if j.Id == k.Id {
+
+					if !k.IsRead && j.IsRead {
+						notToggleList = append(notToggleList, fmt.Sprintf("%s View ไม่ได้รับอนุญาตให้เปิดใช้งาน.", k.Name))
+					}
+
+					if !k.IsWrite && j.IsWrite {
+						notToggleList = append(notToggleList, fmt.Sprintf("%s Manage ไม่ได้รับอนุญาตให้เปิดใช้งาน.", k.Name))
+					}
+				}
+			}
+		}
+
+		if len(notToggleList) > 0 {
+			return nil, &notToggleList
 		}
 
 		for _, v := range *body.Permissions {
-			adminPer = &[]model.AdminPermission{
-				{
-					AdminId:      adminId,
-					PermissionId: v.Id,
-					IsRead:       v.IsRead,
-					IsWrite:      v.IsWrite,
-				},
-			}
+			adminPer = append(adminPer, model.AdminPermission{
+				AdminId:      adminId,
+				PermissionId: v.Id,
+				IsRead:       v.IsRead,
+				IsWrite:      v.IsWrite,
+			})
 		}
 	}
 
@@ -385,7 +425,7 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 
 	splitFullname := strings.Split(body.Fullname, " ")
 	if len(splitFullname) == 1 || strings.Trim(body.Fullname, " ") == "" {
-		return badRequest("Fullname must be firstname lastname")
+		return badRequest("Fullname must be firstname lastname"), nil
 	}
 
 	if len(splitFullname) == 2 {
@@ -400,7 +440,7 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 
 	data.Fullname = body.Fullname
 
-	return s.repo.UpdateAdmin(adminId, oldGroupId, data, adminPer)
+	return s.repo.UpdateAdmin(adminId, oldGroupId, data, &adminPer), nil
 }
 
 func (s *adminService) UpdateGroup(groupId int64, data *model.AdminUpdateGroup) error {

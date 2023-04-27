@@ -186,9 +186,14 @@ func (h adminController) create(c *gin.Context) {
 		return
 	}
 
-	err := h.adminService.Create(data)
+	err, perErrs := h.adminService.Create(data)
 	if err != nil {
 		HandleError(c, err)
+		return
+	}
+
+	if perErrs != nil {
+		HandleError(c, perErrs)
 		return
 	}
 
@@ -298,9 +303,14 @@ func (h adminController) updateAdmin(c *gin.Context) {
 		return
 	}
 
-	err = h.adminService.UpdateAdmin(int64(toInt), data)
+	err, perErrs := h.adminService.UpdateAdmin(int64(toInt), data)
 	if err != nil {
 		HandleError(c, err)
+		return
+	}
+
+	if perErrs != nil {
+		HandleError(c, perErrs)
 		return
 	}
 

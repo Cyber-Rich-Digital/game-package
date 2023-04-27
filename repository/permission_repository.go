@@ -13,7 +13,7 @@ func NewPermissionRepository(db *gorm.DB) PermissionRepository {
 type PermissionRepository interface {
 	GetPermissions(adminId int64) ([]*model.Permission, *[]model.AdminPermission, error)
 	CheckPerListExist(ids []int64) ([]int64, error)
-	CheckPerListAndGroupId(groupId int64, perIds []int64) ([]int64, error)
+	CheckPerListAndGroupId(groupId int64, perIds []int64) ([]model.PermissionList, error)
 	CreatePermission(data *model.CreatePermission) error
 	DeletePermission(perm model.DeletePermission) error
 }
@@ -50,13 +50,14 @@ func (r repo) CheckPerListExist(ids []int64) ([]int64, error) {
 	return list, nil
 }
 
-func (r repo) CheckPerListAndGroupId(groupId int64, perIds []int64) ([]int64, error) {
+func (r repo) CheckPerListAndGroupId(groupId int64, perIds []int64) ([]model.PermissionList, error) {
 
-	var list []int64
+	var list []model.PermissionList
 
-	if err := r.db.Table("Admin_group_permissions").
-		Select("permission_id").
-		Where("group_id = ? AND permission_id IN (?)", groupId, perIds).
+	if err := r.db.Table("Admin_group_permissions agp").
+		Joins("LEFT JOIN Permissions p ON p.id = agp.permission_id").
+		Select("agp.permission_id AS id, p.name, agp.is_read, agp.is_write").
+		Where("agp.group_id = ? AND agp.permission_id IN (?)", groupId, perIds).
 		Find(&list).
 		Error; err != nil {
 		return nil, err
