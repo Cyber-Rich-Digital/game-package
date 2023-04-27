@@ -21,6 +21,7 @@ type AdminService interface {
 	ResetPassword(adminId int64, body model.AdminUpdatePassword) error
 	DeleteGroup(id int64) error
 	DeletePermission(perm model.DeletePermission) error
+	DeleteAdmin(id int64) error
 }
 
 const AdminloginFailed = "Phone Or Password is incorrect"
@@ -359,7 +360,7 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 			}
 
 			if !exist {
-				idNotFound = append(idNotFound, fmt.Sprintf("%v", j))
+				idNotFound = append(idNotFound, fmt.Sprintf("%v", j.Id))
 			}
 		}
 
@@ -383,13 +384,21 @@ func (s *adminService) UpdateAdmin(adminId int64, body model.AdminBody) error {
 	data.Status = body.Status
 
 	splitFullname := strings.Split(body.Fullname, " ")
-	if len(splitFullname) < 2 {
-		return badRequest("Fullname must be contain firstname and lastname")
+	if len(splitFullname) == 1 || strings.Trim(body.Fullname, " ") == "" {
+		return badRequest("Fullname must be firstname lastname")
+	}
+
+	if len(splitFullname) == 2 {
+		data.Firstname = splitFullname[0]
+		data.Lastname = splitFullname[1]
+	}
+
+	if len(splitFullname) == 3 {
+		data.Firstname = splitFullname[1]
+		data.Lastname = splitFullname[2]
 	}
 
 	data.Fullname = body.Fullname
-	data.Firstname = splitFullname[0]
-	data.Lastname = splitFullname[1]
 
 	return s.repo.UpdateAdmin(adminId, oldGroupId, data, adminPer)
 }
@@ -490,6 +499,15 @@ func (s *adminService) DeleteGroup(id int64) error {
 func (s *adminService) DeletePermission(perm model.DeletePermission) error {
 
 	if err := s.perRepo.DeletePermission(perm); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *adminService) DeleteAdmin(id int64) error {
+
+	if err := s.repo.DeleteAdmin(id); err != nil {
 		return err
 	}
 
