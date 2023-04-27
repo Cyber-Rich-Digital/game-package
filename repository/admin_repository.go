@@ -28,6 +28,7 @@ type AdminRepository interface {
 	UpdateGroup(groupId int64, name string, data []model.AdminPermissionList) error
 	UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin, adminPers *[]model.AdminPermission) error
 	UpdatePassword(adminId int64, data model.AdminUpdatePassword) error
+	DeleteAdmin(adminId int64) error
 }
 
 func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int64, error) {
@@ -36,7 +37,7 @@ func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int
 	var list []model.AdminList
 	var total int64
 
-	exec := r.db.Table("Admins").
+	exec := r.db.Model(model.Admin{}).Table("Admins").
 		Select("id, username, fullname, phone, email, role, status")
 
 	if query.Search != "" {
@@ -55,7 +56,7 @@ func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int
 		return nil, nil, err
 	}
 
-	execTotal := r.db.Table("Admins").
+	execTotal := r.db.Model(model.Admin{}).Table("Admins").
 		Select("id")
 
 	if query.Search != "" {
@@ -81,12 +82,11 @@ func (r repo) GetAdmin(id int64) (*model.Admin, *[]model.PermissionList, *model.
 	var permission *[]model.PermissionList
 	var group *model.GroupDetail
 
-	if err := r.db.Table("Admins").
+	if err := r.db.Model(model.Admin{}).Table("Admins").
 		Select("id, username, fullname, phone, email, role, status, admin_group_id").
 		Where("id = ?", id).
 		First(&admin).
 		Error; err != nil {
-		println(1)
 		return nil, nil, nil, err
 	}
 
@@ -96,7 +96,6 @@ func (r repo) GetAdmin(id int64) (*model.Admin, *[]model.PermissionList, *model.
 		Where("admin_id = ?", id).
 		Find(&permission).
 		Error; err != nil {
-		println(2)
 		return nil, nil, nil, err
 	}
 
@@ -375,7 +374,7 @@ func (r repo) UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin
 
 	tx := r.db.Begin()
 
-	if err := tx.Table("Admins").
+	if err := tx.Model(model.Admin{}).Table("Admins").
 		Where("id = ?", adminId).
 		Updates(&data).
 		Error; err != nil {
@@ -429,9 +428,21 @@ func (r repo) UpdateAdmin(adminId int64, OldGroupId *int, data model.UpdateAdmin
 
 func (r repo) UpdatePassword(adminId int64, data model.AdminUpdatePassword) error {
 
-	if err := r.db.Table("Admins").
+	if err := r.db.Model(model.Admin{}).Table("Admins").
 		Where("id = ?", adminId).
 		Update("password", data.Password).
+		Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) DeleteAdmin(adminId int64) error {
+
+	if err := r.db.Table("Admins").
+		Where("id = ?", adminId).
+		Delete(&model.Admin{}).
 		Error; err != nil {
 		return err
 	}

@@ -46,6 +46,7 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 	r.PUT("/group/:id", middleware.Authorize, handler.updateGroup)
 	r.DELETE("/group/:id", middleware.Authorize, handler.deleteGroup)
 	r.DELETE("/permission", middleware.Authorize, handler.deletePermission)
+	r.DELETE("/:id", middleware.Authorize, handler.deleteAdmin)
 }
 
 // @Summary Group List
@@ -399,6 +400,33 @@ func (h adminController) deletePermission(c *gin.Context) {
 	}
 
 	if err := h.adminService.DeletePermission(body); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(201, model.Success{Message: "Deleted success"})
+}
+
+// @Summary Delete Admin
+// @Description Delete Admin
+// @Tags Admins
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Admin ID"
+// @Success 201 {object} model.Success
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /admins/{id} [delete]
+func (h adminController) deleteAdmin(c *gin.Context) {
+
+	id := c.Param("id")
+	toInt, err := strconv.Atoi(id)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	if err := h.adminService.DeleteAdmin(int64(toInt)); err != nil {
 		HandleError(c, err)
 		return
 	}
