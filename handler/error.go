@@ -12,12 +12,16 @@ import (
 )
 
 type ErrorResponse struct {
-	Message string `json:"message"`
+	Message interface{} `json:"message"`
 }
 
 type errorMsg struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
+}
+
+type MessagesResponse struct {
+	Messages interface{} `json:"messages"`
 }
 
 type ValidateResponse struct {
@@ -40,7 +44,7 @@ func getErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func HandleError(c *gin.Context, err error) {
+func HandleError(c *gin.Context, err interface{}) {
 	switch e := err.(type) {
 	case service.ResponseError:
 		c.AbortWithStatusJSON(e.Code, ErrorResponse{Message: e.Message})
@@ -58,8 +62,9 @@ func HandleError(c *gin.Context, err error) {
 		}
 		c.AbortWithStatusJSON(http.StatusBadRequest, ValidateResponse{Errors: list})
 	case error:
-		status := http.StatusBadRequest
-		c.AbortWithStatusJSON(status, ErrorResponse{Message: e.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Message: e.Error()})
+	case interface{}:
+		c.AbortWithStatusJSON(http.StatusBadRequest, MessagesResponse{Messages: err})
 	}
 }
 
