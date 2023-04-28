@@ -48,6 +48,10 @@ func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int
 		exec = exec.Where("status = ?", query.Status)
 	}
 
+	if query.Role != "" {
+		exec = exec.Where("admin_group_id = ?", query.Role)
+	}
+
 	if err := exec.
 		Limit(query.Limit).
 		Offset(query.Limit * query.Page).
@@ -65,6 +69,10 @@ func (r repo) GetAdminList(query model.AdminListQuery) (*[]model.AdminList, *int
 
 	if query.Status != "" {
 		execTotal = execTotal.Where("status = ?", query.Status)
+	}
+
+	if query.Role != "" {
+		execTotal = execTotal.Where("admin_group_id = ?", query.Role)
 	}
 
 	if err = execTotal.
@@ -148,19 +156,33 @@ func (r repo) GetGroup(groupId int) (*model.AdminGroupPermissionResponse, error)
 
 func (r repo) GetGroupList(query model.AdminGroupQuery) (*[]model.GroupCountList, *int64, error) {
 
-	var list []model.GroupCountList
-	if err := r.db.Model(model.Group{}).Table("Admin_groups").
+	var exec = r.db.Model(model.Group{}).
+		Table("Admin_groups").
 		Select("id, name, admin_count").
 		Limit(query.Limit).
-		Offset(query.Limit * query.Page).
+		Offset(query.Limit * query.Page)
+
+	if query.Search != "" {
+		exec = exec.Where("name LIKE ?", "%"+query.Search+"%")
+	}
+
+	var list []model.GroupCountList
+	if err := exec.
 		Find(&list).
 		Error; err != nil {
 		return nil, nil, err
 	}
 
+	var execTotal = r.db.Model(model.Group{}).
+		Table("Admin_groups").
+		Select("id")
+
+	if query.Search != "" {
+		execTotal = execTotal.Where("name LIKE ?", "%"+query.Search+"%")
+	}
+
 	var total int64
-	if err := r.db.Model(model.Group{}).Table("Admin_groups").
-		Select("id").
+	if err := execTotal.
 		Count(&total).
 		Error; err != nil {
 		return nil, nil, err
