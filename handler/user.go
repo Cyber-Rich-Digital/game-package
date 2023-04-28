@@ -37,6 +37,7 @@ func UserController(r *gin.RouterGroup, db *gorm.DB) {
 	r.GET("/loginlogs/:id", middleware.Authorize, handler.getLoginLogs)
 	r.GET("/detail/:id", middleware.Authorize, handler.GetUser)
 	r.GET("/list", middleware.Authorize, handler.getUserList)
+	r.GET("/updatelogs", middleware.Authorize, handler.getUpdateLogs)
 	r.POST("/create", middleware.Authorize, handler.create)
 	r.PUT("/update/:id", middleware.Authorize, handler.updateUser)
 	r.PUT("/password/:id", middleware.Authorize, handler.resetPassword)
@@ -118,6 +119,33 @@ func (h userController) getUserList(c *gin.Context) {
 	}
 
 	data, err := h.userService.GetUserList(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(200, data)
+}
+
+// @Summary Get User Update Logs
+// @Description Get User Update Logs
+// @Tags Users
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param _ query model.UserUpdateQuery false "Queries"
+// @Success 200 {object} model.SuccessWithList
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /users/updatelogs [get]
+func (h userController) getUpdateLogs(c *gin.Context) {
+
+	query := model.UserUpdateQuery{}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.userService.GetUpdateLogs(query)
 	if err != nil {
 		HandleError(c, err)
 		return

@@ -13,6 +13,7 @@ type UserService interface {
 	GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error)
 	GetUser(id int64) (*model.UserDetail, error)
 	GetUserList(query model.UserListQuery) (*model.SuccessWithPagination, error)
+	GetUpdateLogs(query model.UserUpdateQuery) (*model.SuccessWithPagination, error)
 	Create(user *model.CreateUser) error
 	UpdateUser(userId int64, body model.UpdateUser, adminName string) error
 	ResetPassword(userId int64, body model.UserUpdatePassword) error
@@ -70,6 +71,26 @@ func (s *userService) GetUserList(query model.UserListQuery) (*model.SuccessWith
 	}
 
 	list, total, err := s.repo.GetUserList(query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &model.SuccessWithPagination{
+		Message: "Success",
+		List:    list,
+		Total:   *total,
+	}
+
+	return result, nil
+}
+
+func (s *userService) GetUpdateLogs(query model.UserUpdateQuery) (*model.SuccessWithPagination, error) {
+
+	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
+		return nil, err
+	}
+
+	list, total, err := s.repo.GetUpdateLogs(query)
 	if err != nil {
 		return nil, err
 	}

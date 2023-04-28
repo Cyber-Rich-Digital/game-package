@@ -16,10 +16,11 @@ type UserRepository interface {
 	GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error)
 	GetUser(id int64) (*model.UserDetail, error)
 	GetUserList(query model.UserListQuery) (*[]model.UserList, *int64, error)
+	GetUserByPhone(phone string) (*model.UserByPhone, error)
+	GetUpdateLogs(query model.UserUpdateQuery) (*[]model.UserUpdateLogResponse, *int64, error)
 	CheckUser(username string) (bool, error)
 	CheckUserPhone(phone string) (bool, error)
 	CheckUserById(id int64) (bool, error)
-	GetUserByPhone(phone string) (*model.UserByPhone, error)
 	CreateUser(admin model.User) error
 	UpdateUser(userId int64, data model.UpdateUser, changes []model.UserUpdateLogs) error
 	UpdateUserPassword(userId int64, data model.UserUpdatePassword) error
@@ -102,6 +103,26 @@ func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64,
 	return &list, &total, nil
 }
 
+func (r repo) GetUserByPhone(phone string) (*model.UserByPhone, error) {
+
+	var user *model.UserByPhone
+
+	if err := r.db.Table("Users").
+		Select("id, phone").
+		Where("phone = ?", phone).
+		First(&user).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (r repo) GetUser(id int64) (*model.UserDetail, error) {
 
 	var admin *model.UserDetail
@@ -115,6 +136,49 @@ func (r repo) GetUser(id int64) (*model.UserDetail, error) {
 	}
 
 	return admin, nil
+}
+
+func (r repo) GetUpdateLogs(query model.UserUpdateQuery) (*[]model.UserUpdateLogResponse, *int64, error) {
+
+	var logs []model.UserUpdateLogResponse
+	var total int64
+
+	exec := r.db.Table("User_update_logs")
+
+	if query.Search != "" {
+		exec = exec.Where("description LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.From != nil && query.To != nil {
+		exec = exec.Where("created_at BETWEEN ? AND ?", query.From, query.To)
+	}
+
+	if err := exec.
+		Limit(query.Limit).
+		Offset(query.Limit * query.Page).
+		Find(&logs).
+		Order("created_at DESC").
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	execTotal := r.db.Table("User_update_logs")
+
+	if query.Search != "" {
+		execTotal = execTotal.Where("description LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.From != nil && query.To != nil {
+		execTotal = execTotal.Where("created_at BETWEEN ? AND ?", query.From, query.To)
+	}
+
+	if err := execTotal.
+		Count(&total).
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	return &logs, &total, nil
 }
 
 func (r repo) CheckUser(username string) (bool, error) {
@@ -179,26 +243,6 @@ func (r repo) CheckUserById(id int64) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func (r repo) GetUserByPhone(phone string) (*model.UserByPhone, error) {
-
-	var user *model.UserByPhone
-
-	if err := r.db.Table("Users").
-		Select("id, phone").
-		Where("phone = ?", phone).
-		First(&user).
-		Error; err != nil {
-
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return user, nil
 }
 
 func (r repo) CreateUser(admin model.User) error {

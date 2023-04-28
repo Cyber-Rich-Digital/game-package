@@ -152,3 +152,19 @@ type UserUpdateLogs struct {
 	CreatedByUsername string `json:"createdByUsername"`
 	Ip                string `json:"ip"`
 }
+
+type UserUpdateLogResponse struct {
+	UserId            int64      `json:"userId"`
+	Description       string     `json:"description"`
+	CreatedByUsername string     `json:"createdByUsername"`
+	Ip                string     `json:"ip"`
+	CreatedAt         *time.Time `json:"createdAt"`
+}
+
+type UserUpdateQuery struct {
+	Page   int        `form:"page" validate:"min=1"`
+	Limit  int        `form:"limit" validate:"min=1,max=100"`
+	Search string     `form:"search"`
+	From   *time.Time `form:"from" time_format:"2006-01-02T15:04:05+07:00" default:"2023-04-01T00:00:00+07:00"`
+	To     *time.Time `form:"to" time_format:"2006-01-02T15:04:05+07:00" default:"2023-04-30T00:00:00+07:00"`
+}
