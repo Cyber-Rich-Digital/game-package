@@ -55,8 +55,7 @@ func AdminController(r *gin.RouterGroup, db *gorm.DB) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param page query int false "Page"
-// @Param limit query int false "Limit"
+// @Param _ query model.AdminGroupQuery false "Queries"
 // @Success 200 {object} model.SuccessWithList
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/group [get]
@@ -139,10 +138,7 @@ func (h adminController) GetAdmin(c *gin.Context) {
 // @Security BearerAuth
 // @Accept  json
 // @Produce  json
-// @Param page query int false "Page"
-// @Param limit query int false "Limit"
-// @Param search query string false "Search"
-// @Param status query string false "Status"
+// @Param _ query model.AdminListQuery false "Queries"
 // @Success 200 {object} model.SuccessWithList
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /admins/list [get]

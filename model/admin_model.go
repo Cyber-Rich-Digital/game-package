@@ -86,15 +86,17 @@ type AdminUpdateGroup struct {
 }
 
 type AdminGroupQuery struct {
-	Page  int `form:"page" validate:"required,min=1"`
-	Limit int `form:"limit" validate:"required,min=1,max=100"`
+	Page   int    `form:"page" validate:"min=1"`
+	Limit  int    `form:"limit" validate:"min=1,max=100"`
+	Search string `form:"search"`
 }
 
 type AdminListQuery struct {
-	Page   int    `form:"page" validate:"required,min=1"`
-	Limit  int    `form:"limit" validate:"required,min=1,max=100"`
+	Page   int    `form:"page" validate:"min=1"`
+	Limit  int    `form:"limit" validate:"min=1,max=100"`
 	Search string `form:"search"`
 	Status string `form:"status"`
+	Role   string `form:"role"`
 }
 
 type AdminGroupPagination struct {
