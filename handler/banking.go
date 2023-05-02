@@ -121,7 +121,7 @@ func (h bankingController) getStatementTypes(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary GetStatementList รายการเดินบัญชี
+// @Summary GetStatementList รายการเดินบัญชี รายการโอนรอดำเนินการ
 // @Description ดึงข้อมูลลิสการโอนเงิน ใช้แสดงในหน้า จัดการธนาคาร - ธุรกรรม
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
@@ -153,26 +153,17 @@ func (h bankingController) getBankStatements(c *gin.Context) {
 }
 
 // @Summary GetBankStatementSummary
-// @Description ดึงข้อมูลจำนวนรายการสรุป เช่น รายการโอนรอดำเนินการ
+// @Description ดึงข้อมูลจำนวนรายการสรุป เช่น รายการโอนรอดำเนินการ รายการฝากถอนรอดำเนินการ
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.BankStatementListRequest true "BankStatementListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /banking/statements/summary [get]
 func (h bankingController) getBankStatementSummary(c *gin.Context) {
 
 	var query model.BankStatementListRequest
-	if err := c.ShouldBind(&query); err != nil {
-		HandleError(c, err)
-		return
-	}
-	if err := validator.New().Struct(query); err != nil {
-		HandleError(c, err)
-		return
-	}
 
 	data, err := h.bankingService.GetBankStatementSummary(query)
 	if err != nil {

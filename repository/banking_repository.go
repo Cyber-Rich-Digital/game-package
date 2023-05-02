@@ -74,6 +74,7 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	// Count total records for pagination purposes (without limit and offset) //
 	count := r.db.Table("Bank_statements as statements")
 	count = count.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = statements.account_id")
+	count = count.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
 	count = count.Select("statements.id")
 	if req.AccountId != "" {
 		count = count.Where("statements.account_id = ?", req.AccountId)
@@ -104,7 +105,8 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	if total > 0 {
 		// SELECT //
 		selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.from_bank_id, statements.from_account_number, statements.amount, statements.status, statements.created_at, statements.updated_at"
-		selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id, banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
+		selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id"
+		selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
 		query := r.db.Table("Bank_statements as statements")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = statements.account_id")
@@ -160,7 +162,9 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 func (r repo) GetBankStatementSummary(req model.BankStatementListRequest) (*model.BankStatementSummary, error) {
 
 	var result model.BankStatementSummary
-	var totalPendingCount int64
+	var totalPendingStatementCount int64
+	var totalPendingDepositCount int64
+	var totalPendingWithdrawCount int64
 	var err error
 
 	// Count total records for pagination purposes (without limit and offset) //
@@ -186,10 +190,56 @@ func (r repo) GetBankStatementSummary(req model.BankStatementListRequest) (*mode
 	}
 	if err = count.
 		Where("statements.deleted_at IS NULL").
-		Count(&totalPendingCount).
+		Count(&totalPendingStatementCount).
 		Error; err != nil {
 		return nil, err
 	}
+
+	// Count total records for pagination purposes (without limit and offset) //
+	countDeposit := r.db.Table("Bank_transactions as transactions")
+	countDeposit = countDeposit.Select("transactions.id")
+	countDeposit = countDeposit.Where("transactions.status = ?", "pending")
+	countDeposit = countDeposit.Where("transactions.transfer_type = ?", "deposit")
+	if req.AccountId != "" {
+		countDeposit = countDeposit.Where("transactions.to_account_id = ?", req.AccountId)
+	}
+	if req.FromTransferDate != "" {
+		countDeposit = countDeposit.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+	}
+	if req.ToTransferDate != "" {
+		countDeposit = countDeposit.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+	}
+	if err = countDeposit.
+		Where("transactions.deleted_at IS NULL").
+		Count(&totalPendingDepositCount).
+		Error; err != nil {
+		return nil, err
+	}
+
+	// Count total records for pagination purposes (without limit and offset) //
+	countWithdraw := r.db.Table("Bank_transactions as transactions")
+	countWithdraw = countWithdraw.Select("transactions.id")
+	countWithdraw = countWithdraw.Where("transactions.status = ?", "pending")
+	countWithdraw = countWithdraw.Where("transactions.transfer_type = ?", "withdraw")
+	if req.AccountId != "" {
+		countWithdraw = countWithdraw.Where("transactions.from_account_id = ?", req.AccountId)
+	}
+	if req.FromTransferDate != "" {
+		countWithdraw = countWithdraw.Where("transactions.transfer_at >= ?", req.FromTransferDate)
+	}
+	if req.ToTransferDate != "" {
+		countWithdraw = countWithdraw.Where("transactions.transfer_at <= ?", req.ToTransferDate)
+	}
+	if err = countWithdraw.
+		Where("transactions.deleted_at IS NULL").
+		Count(&totalPendingWithdrawCount).
+		Error; err != nil {
+		return nil, err
+	}
+
+	result.TotalPendingStatementCount = totalPendingStatementCount
+	result.TotalPendingDepositCount = totalPendingDepositCount
+	result.TotalPendingWithdrawCount = totalPendingWithdrawCount
 
 	return &result, nil
 }
