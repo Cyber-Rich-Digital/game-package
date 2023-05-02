@@ -65,7 +65,9 @@ type BankStatementGetRequest struct {
 }
 
 type BankStatementSummary struct {
-	TotalPendingCount int `json:"totalPendingCount"`
+	TotalPendingStatementCount int64 `json:"totalPendingStatementCount"`
+	TotalPendingDepositCount   int64 `json:"totalPendingDepositCount"`
+	TotalPendingWithdrawCount  int64 `json:"totalPendingWithdrawCount"`
 }
 
 type BankStatementListRequest struct {
@@ -106,6 +108,9 @@ type BankStatementUpdateBody struct {
 type BankStatementResponse struct {
 	Id            int64          `json:"id" gorm:"primaryKey"`
 	AccountId     int64          `json:"accountId"`
+	AccountName   string         `json:"accountName"`
+	AccountNumber string         `json:"accountNumber"`
+	BankName      string         `json:"bankName"`
 	Amount        float32        `json:"amount" sql:"type:decimal(14,2);"`
 	Detail        string         `json:"detail"`
 	StatementType string         `json:"statementType"`
