@@ -62,7 +62,11 @@ func HandleError(c *gin.Context, err interface{}) {
 		}
 		c.AbortWithStatusJSON(http.StatusBadRequest, ValidateResponse{Errors: list})
 	case error:
-		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Message: e.Error()})
+		if e.Error() == "EOF" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Message: "Invalid Body"})
+		} else {
+			c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Message: e.Error()})
+		}
 	case interface{}:
 		c.AbortWithStatusJSON(http.StatusBadRequest, MessagesResponse{Messages: err})
 	}

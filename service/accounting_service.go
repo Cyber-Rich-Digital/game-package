@@ -1252,13 +1252,15 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 					createDepositBody.ToAccountId = &systemAccount.Id
 					transId, err := s.CreateBankTransaction(createDepositBody)
 					if err != nil {
-						return internalServerError(err.Error())
+						// return internalServerError(err.Error())
+						return nil
 					}
 					var body model.BankConfirmDepositRequest
 					body.TransferAt = &bodyCreateState.TransferAt
 					body.BonusAmount = 0
 					if err := s.ConfirmDepositTransaction(*transId, body); err != nil {
-						return internalServerError(err.Error())
+						// return internalServerError(err.Error())
+						return nil
 					}
 				} else if bodyCreateState.StatementType == "transfer_out" {
 					var createWithdrawBody model.BankTransactionCreateBody
@@ -1269,13 +1271,15 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 					createWithdrawBody.FromAccountId = &systemAccount.Id
 					transId, err := s.CreateBankTransaction(createWithdrawBody)
 					if err != nil {
-						return internalServerError(err.Error())
+						// return internalServerError(err.Error())
+						return nil
 					}
 					var body model.BankConfirmWithdrawRequest
 					body.CreditAmount = bodyCreateState.Amount
 					body.BankChargeAmount = 0
 					if err := s.ConfirmWithdrawTransaction(*transId, body); err != nil {
-						return internalServerError(err.Error())
+						// return internalServerError(err.Error())
+						return nil
 					}
 				}
 			}
@@ -1297,7 +1301,7 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 			fmt.Println(err)
 			return nil, badRequest("Invalid Member code")
 		}
-		bank, err := s.repo.GetBankByCode(member.Bankname)
+		bank, err := s.repo.GetBankByCode(member.BankCode)
 		if err != nil {
 			fmt.Println(err)
 			return nil, badRequest("Invalid User Bank")
@@ -1335,7 +1339,7 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 			fmt.Println(err)
 			return nil, badRequest("Invalid Member code")
 		}
-		bank, err := s.repo.GetBankByCode(member.Bankname)
+		bank, err := s.repo.GetBankByCode(member.BankCode)
 		if err != nil {
 			fmt.Println(err)
 			return nil, badRequest("Invalid User Bank")
