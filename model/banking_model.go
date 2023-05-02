@@ -54,6 +54,8 @@ type BankStatement struct {
 	FromBankId        int64          `json:"fromBankId"`
 	FromBankCode      string         `json:"fromBankCode"`
 	FromAccountNumber string         `json:"fromAccountNumber"`
+	FromBankName      string         `json:"fromBankName"`
+	FromBankIconUrl   string         `json:"fromBankIconUrl"`
 	TransferAt        time.Time      `json:"transferAt"`
 	Status            string         `json:"status"`
 	CreatedAt         time.Time      `json:"createAt"`
@@ -110,19 +112,22 @@ type BankStatementUpdateBody struct {
 }
 
 type BankStatementResponse struct {
-	Id            int64          `json:"id" gorm:"primaryKey"`
-	AccountId     int64          `json:"accountId"`
-	AccountName   string         `json:"accountName"`
-	AccountNumber string         `json:"accountNumber"`
-	BankName      string         `json:"bankName"`
-	Amount        float32        `json:"amount" sql:"type:decimal(14,2);"`
-	Detail        string         `json:"detail"`
-	StatementType string         `json:"statementType"`
-	TransferAt    time.Time      `json:"transferAt"`
-	Status        string         `json:"status"`
-	CreatedAt     time.Time      `json:"createAt"`
-	UpdatedAt     *time.Time     `json:"updateAt"`
-	DeletedAt     gorm.DeletedAt `json:"deleteAt"`
+	Id              int64          `json:"id" gorm:"primaryKey"`
+	AccountId       int64          `json:"accountId"`
+	AccountName     string         `json:"accountName"`
+	AccountNumber   string         `json:"accountNumber"`
+	BankName        string         `json:"bankName"`
+	Amount          float32        `json:"amount" sql:"type:decimal(14,2);"`
+	Detail          string         `json:"detail"`
+	FromBankId      int64          `json:"fromBankId"`
+	FromBankName    string         `json:"fromBankName"`
+	FromBankIconUrl string         `json:"fromBankIconUrl"`
+	StatementType   string         `json:"statementType"`
+	TransferAt      time.Time      `json:"transferAt"`
+	Status          string         `json:"status"`
+	CreatedAt       time.Time      `json:"createAt"`
+	UpdatedAt       *time.Time     `json:"updateAt"`
+	DeletedAt       gorm.DeletedAt `json:"deleteAt"`
 }
 
 type BankTransaction struct {

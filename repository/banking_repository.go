@@ -79,6 +79,7 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 	count := r.db.Table("Bank_statements as statements")
 	count = count.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = statements.account_id")
 	count = count.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
+	count = count.Joins("LEFT JOIN Banks AS from_banks ON from_banks.id = statements.from_bank_id")
 	count = count.Select("statements.id")
 	if req.AccountId != "" {
 		count = count.Where("statements.account_id = ?", req.AccountId)
@@ -111,10 +112,12 @@ func (r repo) GetBankStatements(req model.BankStatementListRequest) (*model.Succ
 		selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.from_bank_id, statements.from_account_number, statements.amount, statements.status, statements.created_at, statements.updated_at"
 		selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id"
 		selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
+		selectedFields += ",from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url"
 		query := r.db.Table("Bank_statements as statements")
 		query = query.Select(selectedFields)
 		query = query.Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = statements.account_id")
 		query = query.Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id")
+		query = query.Joins("LEFT JOIN Banks AS from_banks ON from_banks.id = statements.from_bank_id")
 		if req.AccountId != "" {
 			query = query.Where("statements.account_id = ?", req.AccountId)
 		}
@@ -886,7 +889,7 @@ func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPaginat
 	count = count.Select("users.id")
 	if req.Search != "" {
 		search_like := fmt.Sprintf("%%%s%%", req.Search)
-		count = count.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+		count = count.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.fullname LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
 	}
 
 	if err = count.
@@ -902,7 +905,7 @@ func (r repo) GetMembers(req model.MemberListRequest) (*model.SuccessWithPaginat
 		query = query.Select(selectedFields)
 		if req.Search != "" {
 			search_like := fmt.Sprintf("%%%s%%", req.Search)
-			query = query.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.full_name LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
+			query = query.Where(r.db.Where("users.username LIKE ?", search_like).Or("users.phone LIKE ?", search_like).Or("users.fullname LIKE ?", search_like).Or("users.bankname LIKE ?", search_like).Or("users.bank_account LIKE ?", search_like))
 		}
 
 		// Sort by ANY //

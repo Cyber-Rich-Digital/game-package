@@ -20,3 +20,9 @@ ALTER TABLE `Bank_account_types`
 ALTER TABLE `Bank_confirm_transactions`
 	DROP COLUMN `credit_amount`,
 	DROP COLUMN `bank_charge_amount`;
+
+ALTER TABLE `Bank_confirm_statements`
+	DROP INDEX `uni_statement_id`,
+    DROP INDEX `idx_account_id`;
+
+DROP TABLE IF EXISTS `Bank_confirm_statements`;
