@@ -30,7 +30,8 @@ DB_NAME = cybergame
 
 Run migrate
 ```
-go run migration/migrate.go
+go run migration/migrate.go up
+go run migration/migrate.go down 1
 ```
 
 ## Example APIs
