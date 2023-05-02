@@ -64,7 +64,7 @@ type AccountingRepository interface {
 	GetBankStatementById(id int64) (*model.BankStatement, error)
 	CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error)
 	GetBankTransactionById(id int64) (*model.BankTransaction, error)
-	CreateConfirmTransaction(data model.BankTransactionCreateConfirmBody) error
+	CreateTransactionAction(data model.CreateBankTransactionActionBody) error
 	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
 	IncreaseMemberCredit(id int64, amount float32) error
 }

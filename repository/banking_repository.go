@@ -31,7 +31,8 @@ type BankingRepository interface {
 
 	GetPendingDepositTransactions(req model.PendingDepositTransactionListRequest) (*model.SuccessWithPagination, error)
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
-	CreateConfirmTransaction(data model.BankTransactionCreateConfirmBody) error
+	CreateTransactionAction(data model.CreateBankTransactionActionBody) error
+	CreateStatementAction(data model.CreateBankStatementActionBody) error
 	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
 	CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
@@ -51,11 +52,14 @@ type BankingRepository interface {
 func (r repo) GetBankStatementById(id int64) (*model.BankStatement, error) {
 	var record model.BankStatement
 	selectedFields := "statements.id, statements.account_id, statements.detail, statements.statement_type, statements.transfer_at, statements.from_bank_id, statements.from_account_number, statements.amount, statements.status, statements.created_at, statements.updated_at"
-	selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id, banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
+	selectedFields += ",accounts.account_name, accounts.account_number, accounts.account_type_id, accounts.bank_id"
+	selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag as bank_type_flag"
+	selectedFields += ",from_banks.name as from_bank_name, from_banks.code as from_bank_code, from_banks.icon_url as from_bank_icon_url"
 	if err := r.db.Table("Bank_statements as statements").
 		Select(selectedFields).
 		Joins("LEFT JOIN Bank_accounts AS accounts ON accounts.id = statements.account_id").
 		Joins("LEFT JOIN Banks AS banks ON banks.id = accounts.bank_id").
+		Joins("LEFT JOIN Banks AS from_banks ON from_banks.id = statements.from_bank_id").
 		Where("statements.id = ?", id).
 		Where("statements.deleted_at IS NULL").
 		First(&record).
@@ -621,8 +625,15 @@ func (r repo) CancelPendingTransaction(id int64, data model.BankTransactionCance
 	return nil
 }
 
-func (r repo) CreateConfirmTransaction(data model.BankTransactionCreateConfirmBody) error {
+func (r repo) CreateTransactionAction(data model.CreateBankTransactionActionBody) error {
 	if err := r.db.Table("Bank_confirm_transactions").Create(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) CreateStatementAction(data model.CreateBankStatementActionBody) error {
+	if err := r.db.Table("Bank_confirm_statements").Create(&data).Error; err != nil {
 		return err
 	}
 	return nil
@@ -931,8 +942,8 @@ func (r repo) GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*
 	// Count total records for pagination purposes (without limit and offset) //
 	count := r.db.Table("Users as users")
 	count = count.Select("users.id")
-	if req.UserBankId != nil {
-		count = count.Where("users.bank_id = ?", *req.UserBankId)
+	if req.UserBankCode != nil {
+		count = count.Where("users.bank_code = ?", *req.UserBankCode)
 	}
 	if req.UserAccountNumber != nil && *req.UserAccountNumber != "" {
 		search_like := fmt.Sprintf("%%%s%%", *req.UserAccountNumber)
@@ -950,8 +961,8 @@ func (r repo) GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*
 		selectedFields := "users.id, users.member_code, users.username, users.phone, users.firstname, users.lastname, users.fullname, users.credit, users.bankname, users.bank_account, users.promotion, users.status, users.channel, users.true_wallet, users.note, users.turnover_limit, users.created_at"
 		query := r.db.Table("Users as users")
 		query = query.Select(selectedFields)
-		if req.UserBankId != nil {
-			query = query.Where("users.bank_id = ?", req.UserBankId)
+		if req.UserBankCode != nil {
+			query = query.Where("users.bank_code = ?", req.UserBankCode)
 		}
 		if req.UserAccountNumber != nil && *req.UserAccountNumber != "" {
 			search_like := fmt.Sprintf("%%%s%%", *req.UserAccountNumber)

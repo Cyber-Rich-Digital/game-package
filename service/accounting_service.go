@@ -1231,7 +1231,7 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 			return nil
 		}
 		reqPosibleList.UnknownStatementId = statement.Id
-		reqPosibleList.UserBankId = &statement.FromBankId
+		reqPosibleList.UserBankCode = &statement.FromBankCode
 		reqPosibleList.UserAccountNumber = &statement.FromAccountNumber
 
 		records, err := s.repo.GetPossibleStatementOwners(reqPosibleList)
@@ -1395,7 +1395,7 @@ func (s *accountingService) ConfirmDepositTransaction(id int64, req model.BankCo
 	updateData.ConfirmedByUsername = req.ConfirmedByUsername
 	updateData.BonusAmount = req.BonusAmount
 
-	var createData model.BankTransactionCreateConfirmBody
+	var createData model.CreateBankTransactionActionBody
 	createData.TransactionId = record.Id
 	createData.UserId = record.UserId
 	createData.TransferType = record.TransferType
@@ -1414,7 +1414,7 @@ func (s *accountingService) ConfirmDepositTransaction(id int64, req model.BankCo
 	createData.ConfirmedAt = req.ConfirmedAt
 	createData.ConfirmedByUserId = req.ConfirmedByUserId
 	createData.ConfirmedByUsername = req.ConfirmedByUsername
-	if err := s.repo.CreateConfirmTransaction(createData); err != nil {
+	if err := s.repo.CreateTransactionAction(createData); err != nil {
 		return internalServerError(err.Error())
 	}
 	if err := s.repo.ConfirmPendingTransaction(id, updateData); err != nil {
@@ -1450,7 +1450,7 @@ func (s *accountingService) ConfirmWithdrawTransaction(id int64, req model.BankC
 	updateData.BankChargeAmount = req.BankChargeAmount
 	updateData.CreditAmount = req.CreditAmount
 
-	var createData model.BankTransactionCreateConfirmBody
+	var createData model.CreateBankTransactionActionBody
 	createData.TransactionId = record.Id
 	createData.UserId = record.UserId
 	createData.TransferType = record.TransferType
@@ -1463,7 +1463,7 @@ func (s *accountingService) ConfirmWithdrawTransaction(id int64, req model.BankC
 	createData.ConfirmedAt = req.ConfirmedAt
 	createData.ConfirmedByUserId = req.ConfirmedByUserId
 	createData.ConfirmedByUsername = req.ConfirmedByUsername
-	if err := s.repo.CreateConfirmTransaction(createData); err != nil {
+	if err := s.repo.CreateTransactionAction(createData); err != nil {
 		return internalServerError(err.Error())
 	}
 	if err := s.repo.ConfirmPendingTransaction(id, updateData); err != nil {

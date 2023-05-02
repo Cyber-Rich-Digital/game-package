@@ -37,7 +37,7 @@ type MemberListRequest struct {
 type MemberPossibleListRequest struct {
 	UnknownStatementId int64   `form:"unknownStatementId" extensions:"x-order:1"`
 	UserAccountNumber  *string `form:"userAccountNumber" extensions:"x-order:2"`
-	UserBankId         *int64  `form:"userBankId" extensions:"x-order:3"`
+	UserBankCode       *string `form:"userBankCode" extensions:"x-order:3"`
 	Page               int     `form:"page" extensions:"x-order:7" default:"1" min:"1"`
 	Limit              int     `form:"limit" extensions:"x-order:8" default:"10" min:"1" max:"100"`
 	SortCol            string  `form:"sortCol" extensions:"x-order:9"`
@@ -52,6 +52,7 @@ type BankStatement struct {
 	BankId            int64          `json:"bankId"`
 	StatementType     string         `json:"statementType"`
 	FromBankId        int64          `json:"fromBankId"`
+	FromBankCode      string         `json:"fromBankCode"`
 	FromAccountNumber string         `json:"fromAccountNumber"`
 	TransferAt        time.Time      `json:"transferAt"`
 	Status            string         `json:"status"`
@@ -98,7 +99,10 @@ type BankStatementCreateBody struct {
 }
 
 type BankStatementMatchRequest struct {
-	UserId int64 `json:"userId" validate:"required"`
+	UserId              int64     `json:"userId" validate:"required"`
+	ConfirmedAt         time.Time `json:"-"`
+	ConfirmedByUserId   int64     `json:"-"`
+	ConfirmedByUsername string    `json:"-"`
 }
 
 type BankStatementUpdateBody struct {
@@ -365,7 +369,7 @@ type BankTransactionConfirmBody struct {
 	ConfirmedByUsername string    `json:"-"`
 }
 
-type BankTransactionCreateConfirmBody struct {
+type CreateBankTransactionActionBody struct {
 	TransactionId       int64     `json:"transactionId"`
 	UserId              int64     `json:"userId"`
 	TransferType        string    `json:"transferType"`
@@ -377,6 +381,17 @@ type BankTransactionCreateConfirmBody struct {
 	BonusAmount         float32   `json:"bonusAmount"`
 	CreditAmount        float32   `json:"creditAmount"`
 	BankChargeAmount    float32   `json:"bankChargeAmount"`
+	ConfirmedAt         time.Time `json:"confirmedAt"`
+	ConfirmedByUserId   int64     `json:"confirmedByUserId"`
+	ConfirmedByUsername string    `json:"confirmedByUsername"`
+}
+
+type CreateBankStatementActionBody struct {
+	StatementId         int64     `json:"statementId"`
+	UserId              int64     `json:"userId"`
+	ActionType          string    `json:"actionType"`
+	AccountId           int64     `json:"accountId"`
+	JsonBefore          string    `json:"jsonBefore"`
 	ConfirmedAt         time.Time `json:"confirmedAt"`
 	ConfirmedByUserId   int64     `json:"confirmedByUserId"`
 	ConfirmedByUsername string    `json:"confirmedByUsername"`
