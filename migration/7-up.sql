@@ -1,5 +1,5 @@
 ALTER TABLE `Permissions` 
-ADD UNIQUE INDEX `uni_permission_key` (`permission_key`) VISIBLE,
+ADD UNIQUE INDEX `uni_permission_key` (`permission_key`),
 ADD COLUMN `main` TINYINT NULL DEFAULT 0 AFTER `permission_key`;
 
 INSERT INTO `Permissions` (`name`, `permission_key`, `main`) VALUES
@@ -62,9 +62,9 @@ ALTER TABLE `Admin_permissions`
 ADD COLUMN `is_read` TINYINT NULL DEFAULT 0 AFTER `deleted_at`,
 ADD COLUMN `is_write` VARCHAR(255) NULL DEFAULT 0 AFTER `is_read`;
 
-ALTER TABLE `cybergame`.`Admin_group_permissions` 
+ALTER TABLE `Admin_group_permissions` 
 ADD COLUMN `is_read` TINYINT NULL DEFAULT 0 AFTER `deleted_at`,
 ADD COLUMN `is_write` TINYINT NULL DEFAULT 0 AFTER `is_read`;
 
-ALTER TABLE `cybergame`.`Users` 
+ALTER TABLE `Users` 
 ADD COLUMN `bank_code` VARCHAR(10) NULL DEFAULT NULL AFTER `bankname`;
