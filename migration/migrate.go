@@ -136,7 +136,8 @@ func Up() {
 
 			for _, query := range list {
 
-				if query == "" {
+				// check if query was empty
+				if strings.TrimSpace(query) == "" {
 					continue
 				}
 
@@ -225,7 +226,8 @@ func Down(target string) {
 
 			for _, query := range list {
 
-				if query == "" {
+				// check if query was empty
+				if strings.TrimSpace(query) == "" {
 					continue
 				}
 

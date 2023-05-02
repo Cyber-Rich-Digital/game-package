@@ -1,5 +1,5 @@
 ALTER TABLE `Permissions` 
-ADD UNIQUE INDEX `uni_permission_key` (`permission_key`) VISIBLE,
+ADD UNIQUE INDEX `uni_permission_key` (`permission_key`),
 ADD COLUMN `main` TINYINT NULL DEFAULT 0 AFTER `permission_key`;
 
 INSERT INTO `Permissions` (`name`, `permission_key`, `main`) VALUES
