@@ -251,7 +251,7 @@ func (r repo) GetUserByMemberCode(memberCode string) (*model.User, error) {
 
 	var result model.User
 	if err := r.db.Table("Users").
-		Select("id, member_code, fullname, bankname, bank_account, credit").
+		Select("id, member_code, fullname, bankname, bank_code, bank_account, credit").
 		Where("member_code = ?", memberCode).
 		First(&result).
 		Error; err != nil {
