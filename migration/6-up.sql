@@ -86,3 +86,23 @@ ALTER TABLE `Bank_confirm_transactions`
 
 ALTER TABLE `Bank_confirm_transactions`
 	ADD COLUMN `bank_charge_amount` DECIMAL(14,2) NOT NULL DEFAULT '0.00' AFTER `bonus_amount`;
+
+CREATE Table 
+    Bank_confirm_statements (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        statement_id BIGINT NOT NULL,
+        action_type VARCHAR(255) NOT NULL,
+        user_id BIGINT NULL,
+        account_id BIGINT NOT NULL,
+        json_before TEXT NOT NULL,
+        confirmed_at DATETIME NULL,
+        confirmed_by_user_id BIGINT NULL,
+        confirmed_by_username VARCHAR(255) NULL,
+        created_at DATETIME DEFAULT NOW(),
+        updated_at DATETIME NULL ON UPDATE NOW(),
+        deleted_at DATETIME NULL
+    );
+
+ALTER TABLE `Bank_confirm_statements`
+	ADD UNIQUE INDEX `uni_statement_id` (`statement_id`),
+    ADD INDEX `idx_account_id` (`account_id`);

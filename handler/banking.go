@@ -250,6 +250,17 @@ func (h bankingController) matchStatementOwner(c *gin.Context) {
 		return
 	}
 
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
 	var req model.BankStatementMatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		HandleError(c, err)
@@ -260,6 +271,9 @@ func (h bankingController) matchStatementOwner(c *gin.Context) {
 		return
 	}
 
+	req.ConfirmedAt = time.Now()
+	req.ConfirmedByUserId = *adminId
+	req.ConfirmedByUsername = *username
 	actionErr := h.bankingService.MatchStatementOwner(identifier, req)
 	if actionErr != nil {
 		HandleError(c, actionErr)
@@ -287,7 +301,22 @@ func (h bankingController) ignoreStatementOwner(c *gin.Context) {
 		return
 	}
 
-	actionErr := h.bankingService.IgnoreStatementOwner(identifier)
+	adminId, err := h.accountingService.CheckCurrentAdminId(c.MustGet("adminId"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	username, err := h.accountingService.CheckCurrentUsername(c.MustGet("username"))
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var req model.BankStatementMatchRequest
+	req.ConfirmedAt = time.Now()
+	req.ConfirmedByUserId = *adminId
+	req.ConfirmedByUsername = *username
+	actionErr := h.bankingService.IgnoreStatementOwner(identifier, req)
 	if actionErr != nil {
 		HandleError(c, actionErr)
 		return
@@ -613,20 +642,20 @@ func (h bankingController) confirmDepositTransaction(c *gin.Context) {
 		return
 	}
 
-	var data model.BankConfirmDepositRequest
-	if err := c.ShouldBind(&data); err != nil {
+	var req model.BankConfirmDepositRequest
+	if err := c.ShouldBind(&req); err != nil {
 		HandleError(c, err)
 		return
 	}
-	if err := validator.New().Struct(data); err != nil {
+	if err := validator.New().Struct(req); err != nil {
 		HandleError(c, err)
 		return
 	}
-	data.ConfirmedAt = time.Now()
-	data.ConfirmedByUserId = *adminId
-	data.ConfirmedByUsername = *username
+	req.ConfirmedAt = time.Now()
+	req.ConfirmedByUserId = *adminId
+	req.ConfirmedByUsername = *username
 
-	actionErr := h.bankingService.ConfirmDepositTransaction(identifier, data)
+	actionErr := h.bankingService.ConfirmDepositTransaction(identifier, req)
 	if actionErr != nil {
 		HandleError(c, actionErr)
 		return
@@ -665,20 +694,20 @@ func (h bankingController) confirmWithdrawTransaction(c *gin.Context) {
 		return
 	}
 
-	var data model.BankConfirmWithdrawRequest
-	if err := c.ShouldBind(&data); err != nil {
+	var req model.BankConfirmWithdrawRequest
+	if err := c.ShouldBind(&req); err != nil {
 		HandleError(c, err)
 		return
 	}
-	if err := validator.New().Struct(data); err != nil {
+	if err := validator.New().Struct(req); err != nil {
 		HandleError(c, err)
 		return
 	}
-	data.ConfirmedAt = time.Now()
-	data.ConfirmedByUserId = *adminId
-	data.ConfirmedByUsername = *username
+	req.ConfirmedAt = time.Now()
+	req.ConfirmedByUserId = *adminId
+	req.ConfirmedByUsername = *username
 
-	actionErr := h.bankingService.ConfirmWithdrawTransaction(identifier, data)
+	actionErr := h.bankingService.ConfirmWithdrawTransaction(identifier, req)
 	if actionErr != nil {
 		HandleError(c, actionErr)
 		return
