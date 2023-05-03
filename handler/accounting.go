@@ -760,7 +760,7 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 
 // @Summary GetCustomerAccountsInfo เช็คชื่อบัญชีธนาคารลูกค้า
 // @Description ดึงข้อมูลบัญชีธนาคารของลูกค้า เพื่อเช็คชื่อบัญชีธนาคาร
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -791,7 +791,7 @@ func (h accountingController) getCustomerAccountsInfo(c *gin.Context) {
 
 // @Summary GetExternalSettings
 // @Description อัพเดทข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -811,7 +811,7 @@ func (h accountingController) getExternalSettings(c *gin.Context) {
 
 // @Summary GetExternalAccounts
 // @Description ดึงข้อมูลลิสบัญชีธนาคาร บอท
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -842,7 +842,7 @@ func (h accountingController) getExternalAccounts(c *gin.Context) {
 
 // @Summary GetExternalAccountStatus
 // @Description ดึงข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -866,7 +866,7 @@ func (h accountingController) getExternalAccountStatus(c *gin.Context) {
 
 // @Summary GetExternalAccountBalance
 // @Description ดึงข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -890,7 +890,7 @@ func (h accountingController) getExternalAccountBalance(c *gin.Context) {
 
 // @Summary CreateExternalAccount
 // @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -920,7 +920,7 @@ func (h accountingController) createExternalAccount(c *gin.Context) {
 
 // @Summary UpdateExternalAccount
 // @Description อัพเดทข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -951,7 +951,7 @@ func (h accountingController) updateExternalAccount(c *gin.Context) {
 
 // @Summary EnableExternalAccount
 // @Description เปิด ปิด สถานะบัญชีธนาคารบอท ด้วยเลขบัญชี
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -982,7 +982,7 @@ func (h accountingController) EnableExternalAccount(c *gin.Context) {
 
 // @Summary DeleteExternalAccount
 // @Description ลบข้อมูล บัญชีธนาคารบอท ด้วยเลขบัญชี
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -1006,7 +1006,7 @@ func (h accountingController) deleteExternalAccount(c *gin.Context) {
 
 // @Summary TransferExternalAccount
 // @Description โอนเงิน บัญชีธนาคารบอท
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -1037,7 +1037,7 @@ func (h accountingController) transferExternalAccount(c *gin.Context) {
 
 // @Summary GetExternalAccountLogs
 // @Description ดึงข้อมูล Logs บัญชีธนาคารบอท
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -1067,7 +1067,7 @@ func (h accountingController) getExternalAccountLogs(c *gin.Context) {
 
 // @Summary GetExternalAccountStatements
 // @Description ดึงข้อมูล Statement บัญชีธนาคารบอท
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -1097,7 +1097,7 @@ func (h accountingController) getExternalAccountStatements(c *gin.Context) {
 
 // @Summary WebhookAction
 // @Description เว็บฮุคแบบ GET
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Accept json
 // @Produce json
 // @Param body body model.ExternalAccountEnableRequest true "body"
@@ -1140,7 +1140,7 @@ func (h accountingController) webhookAction(c *gin.Context) {
 
 // @Summary WebhookNoti
 // @Description เว็บฮุคแบบ POST
-// @Tags Accounting - TEST
+// @Tags Accounting - FASTBANK
 // @Accept json
 // @Produce json
 // @Param body body model.ExternalAccountEnableRequest true "body"

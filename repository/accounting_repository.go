@@ -876,7 +876,7 @@ func (r repo) GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*mode
 		count = count.Where("configs.config_key = ?", req.SearchKey)
 	}
 	if req.SearchValue != nil {
-		count = count.Where("configs.config_value = ?", req.SearchValue)
+		count = count.Where("configs.config_val = ?", req.SearchValue)
 	}
 
 	if err = count.
@@ -887,14 +887,14 @@ func (r repo) GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*mode
 	}
 	if total > 0 {
 		// SELECT //
-		selectedFields := "configs.id, configs.config_key, configs.config_value, configs.created_at, configs.updated_at"
+		selectedFields := "configs.id, configs.config_key, configs.config_val"
 		query := r.db.Table("Botaccount_config as configs")
 		query = query.Select(selectedFields)
 		if req.SearchKey != nil {
 			query = query.Where("configs.config_key = ?", req.SearchKey)
 		}
 		if req.SearchValue != nil {
-			query = query.Where("configs.config_value = ?", req.SearchValue)
+			query = query.Where("configs.config_val = ?", req.SearchValue)
 		}
 
 		// Sort by ANY //

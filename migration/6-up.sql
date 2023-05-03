@@ -60,7 +60,8 @@ CREATE TABLE
     `Botaccount_config` (
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         config_key VARCHAR(255) NOT NULL,
-        config_val VARCHAR(255) NOT NULL
+        config_val VARCHAR(255) NOT NULL,
+        deleted_at DATETIME NULL
     );
 
 ALTER TABLE `Botaccount_config`
