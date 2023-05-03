@@ -70,11 +70,8 @@ func main() {
 		panic(err)
 	}
 
-<<<<<<< HEAD
-=======
 }
 
->>>>>>> b18e5812881762d6bc5d808134399ac46f6b25c6
 type ping struct {
 	Message string `json:"message" example:"pong" `
 }
