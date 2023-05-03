@@ -60,13 +60,17 @@ type AccountingRepository interface {
 	DeleteBotaccountConfigById(id int64) error
 
 	// Banking REPO
+	GetMemberById(id int64) (*model.Member, error)
+	IncreaseMemberCredit(id int64, amount float32) error
 	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
 	GetBankStatementById(id int64) (*model.BankStatement, error)
 	CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error)
 	GetBankTransactionById(id int64) (*model.BankTransaction, error)
 	CreateTransactionAction(data model.CreateBankTransactionActionBody) error
-	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
-	IncreaseMemberCredit(id int64, amount float32) error
+	ConfirmPendingDepositTransaction(id int64, data model.BankDepositTransactionConfirmBody) error
+	ConfirmPendingWithdrawTransaction(id int64, data model.BankWithdrawTransactionConfirmBody) error
+	CreateStatementAction(data model.CreateBankStatementActionBody) error
+	MatchStatementOwner(id int64, data model.BankStatementUpdateBody) error
 }
 
 func (r repo) GetAdminById(id int64) (*model.Admin, error) {

@@ -33,7 +33,8 @@ type BankingRepository interface {
 	GetPendingWithdrawTransactions(req model.PendingWithdrawTransactionListRequest) (*model.SuccessWithPagination, error)
 	CreateTransactionAction(data model.CreateBankTransactionActionBody) error
 	CreateStatementAction(data model.CreateBankStatementActionBody) error
-	ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error
+	ConfirmPendingDepositTransaction(id int64, data model.BankDepositTransactionConfirmBody) error
+	ConfirmPendingWithdrawTransaction(id int64, data model.BankWithdrawTransactionConfirmBody) error
 	CancelPendingTransaction(id int64, data model.BankTransactionCancelBody) error
 	GetFinishedTransactions(req model.FinishedTransactionListRequest) (*model.SuccessWithPagination, error)
 	RemoveFinishedTransaction(id int64, data model.BankTransactionRemoveBody) error
@@ -642,7 +643,31 @@ func (r repo) CreateStatementAction(data model.CreateBankStatementActionBody) er
 	return nil
 }
 
-func (r repo) ConfirmPendingTransaction(id int64, data model.BankTransactionConfirmBody) error {
+func (r repo) ConfirmPendingDepositTransaction(id int64, body model.BankDepositTransactionConfirmBody) error {
+	data := map[string]interface{}{
+		"transfer_at":           body.TransferAt,
+		"bonus_amount":          body.BonusAmount,
+		"status":                body.Status,
+		"confirmed_at":          body.ConfirmedAt,
+		"confirmed_by_user_id":  body.ConfirmedByUserId,
+		"confirmed_by_username": body.ConfirmedByUsername,
+	}
+	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Where("status = ?", "pending").Updates(data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r repo) ConfirmPendingWithdrawTransaction(id int64, body model.BankWithdrawTransactionConfirmBody) error {
+	data := map[string]interface{}{
+		"transfer_at":           body.TransferAt,
+		"credit_amount":         body.CreditAmount,
+		"bank_charge_amount":    body.BankChargeAmount,
+		"status":                body.Status,
+		"confirmed_at":          body.ConfirmedAt,
+		"confirmed_by_user_id":  body.ConfirmedByUserId,
+		"confirmed_by_username": body.ConfirmedByUsername,
+	}
 	if err := r.db.Table("Bank_transactions").Where("id = ?", id).Where("status = ?", "pending").Updates(&data).Error; err != nil {
 		return err
 	}

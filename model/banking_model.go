@@ -363,15 +363,23 @@ type BankConfirmWithdrawRequest struct {
 	ConfirmedByUsername string    `json:"-"`
 }
 
-type BankTransactionConfirmBody struct {
+type BankDepositTransactionConfirmBody struct {
 	TransferAt          time.Time `json:"transferAt"`
 	BonusAmount         float32   `json:"bonusAmount"`
+	Status              string    `json:"status"`
+	ConfirmedAt         time.Time `json:"confirmedAt"`
+	ConfirmedByUserId   int64     `json:"confirmedByUserId"`
+	ConfirmedByUsername string    `json:"confirmedByUsername"`
+}
+
+type BankWithdrawTransactionConfirmBody struct {
+	TransferAt          time.Time `json:"transferAt"`
 	CreditAmount        float32   `json:"creditAmount"`
 	BankChargeAmount    float32   `json:"bankChargeAmount"`
-	Status              string    `json:"-"`
-	ConfirmedAt         time.Time `json:"-"`
-	ConfirmedByUserId   int64     `json:"-"`
-	ConfirmedByUsername string    `json:"-"`
+	Status              string    `json:"status"`
+	ConfirmedAt         time.Time `json:"confirmedAt"`
+	ConfirmedByUserId   int64     `json:"confirmedByUserId"`
+	ConfirmedByUsername string    `json:"confirmedByUsername"`
 }
 
 type CreateBankTransactionActionBody struct {
