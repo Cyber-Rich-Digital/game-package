@@ -7,12 +7,14 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func CreateJWT(hardwareId string, deviceId int, userId int) (string, error) {
+func CreateJWTAdmin(data model.Admin) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"hardwareId": hardwareId,
-		"deviceId":   deviceId,
-		"userId":     userId,
+		"adminId":  data.Id,
+		"role":     data.Role,
+		"phone":    data.Phone,
+		"username": data.Username,
+		"email":    data.Email,
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
@@ -23,12 +25,12 @@ func CreateJWT(hardwareId string, deviceId int, userId int) (string, error) {
 	return tokenString, nil
 }
 
-func CreateJWTUser(user *model.User) (string, error) {
+func CreateJWTUser(data model.User) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":       user.Id,
-		"username": user.Username,
-		"role":     user.Role,
+		"adminId":  data.Id,
+		"phone":    data.Phone,
+		"username": data.Username,
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))

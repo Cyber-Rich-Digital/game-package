@@ -3,8 +3,8 @@ package repository
 import (
 	"cybergame-api/model"
 	"errors"
-	"fmt"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -13,235 +13,289 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 type UserRepository interface {
-	GetUsers(query model.UserQuery) (*[]model.UserResponse, int64, error)
-	GetAdmins(data model.UserQuery) (*model.Pagination, error)
-	GetUserByID(id int) (*model.User, error)
-	GetUserByEmail(email string) (*model.User, error)
-	CheckUserByEmailOrUser(val string) (bool, error)
-	CheckRole() (bool, error)
-	CreateUser(user model.User) error
-	CreateAdmin(user model.User) error
-	ChangePassword(id int, password string) error
-	DeleteUser(id int) error
+	GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error)
+	GetUser(id int64) (*model.UserDetail, error)
+	GetUserList(query model.UserListQuery) (*[]model.UserList, *int64, error)
+	GetUserByPhone(phone string) (*model.UserByPhone, error)
+	GetUpdateLogs(query model.UserUpdateQuery) (*[]model.UserUpdateLogResponse, *int64, error)
+	CheckUser(username string) (bool, error)
+	CheckUserPhone(phone string) (bool, error)
+	CheckUserById(id int64) (bool, error)
+	CreateUser(admin model.User) error
+	UpdateUser(userId int64, data model.UpdateUser, changes []model.UserUpdateLogs) error
+	UpdateUserPassword(userId int64, data model.UserUpdatePassword) error
+	DeleteUser(id int64) error
 }
 
-func (r repo) GetUsers(data model.UserQuery) (*[]model.UserResponse, int64, error) {
+func (r repo) GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error) {
 
-	var users *[]model.UserResponse
-	var total int64
-	var err error
+	var logs []model.UserLoginLog
 
-	selectFields := "u.id, u.username, u.email, u.created_at, COUNT(w.id) AS web_total"
-	join := "LEFT JOIN Websites AS w ON u.id = w.user_id"
-	group := "w.user_id, u.id, u.username, u.email, u.created_at"
-	whereVal := fmt.Sprintf("%%%s%%", data.Search)
-
-	// Get list of users //
-
-	query := r.db.Table("Users u")
-
-	query = query.
-		Select(selectFields).
-		Joins(join).
-		Group(group)
-
-	if data.Search != "" {
-		query = query.Where("u.email LIKE ?", whereVal).Or("u.username LIKE ?", whereVal)
-	}
-
-	if data.Sort == 1 {
-		query = query.Order("created_at ASC")
-	} else {
-		query = query.Order("created_at DESC")
-	}
-
-	if err = query.
-		Where("u.role = ?", "USER").
-		Where("u.deleted_at IS NULL").
-		Limit(data.Limit).
-		Offset(data.Page * data.Limit).
-		Find(&users).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// Get total count //
-
-	count := r.db.Table("Users").
-		Select("id, email, username")
-
-	if data.Search != "" {
-		count = count.Where("email LIKE ?", whereVal).Or("username LIKE ?", whereVal)
-	}
-
-	if err = count.
-		Where("role = ?", "USER").
-		Where("deleted_at IS NULL").
-		Count(&total).
+	if err := r.db.Table("User_login_logs").
+		Where("user_id = ?", id).
+		Find(&logs).
+		Order("created_at DESC").
 		Error; err != nil {
-		return nil, 0, err
-	}
-
-	// Return response //
-
-	return users, total, nil
-}
-
-func (r repo) GetAdmins(data model.UserQuery) (*model.Pagination, error) {
-
-	var users *[]model.UserAdminResponse
-	var total int64
-	var err error
-
-	selectFields := "id, username, email, created_at"
-	whereVal := fmt.Sprintf("%%%s%%", data.Search)
-
-	// Get list of users //
-
-	query := r.db.Table("Users")
-
-	query = query.
-		Select(selectFields)
-
-	if data.Search != "" {
-		query = query.Where("email LIKE ?", whereVal).Or("username LIKE ?", whereVal)
-	}
-
-	if data.Sort == 1 {
-		query = query.Order("created_at ASC")
-	} else {
-		query = query.Order("created_at DESC")
-	}
-
-	if err = query.
-		Where("role IN (?)", []string{"ADMIN", "SUPER_ADMIN"}).
-		Where("deleted_at IS NULL").
-		Limit(data.Limit).
-		Offset(data.Page * data.Limit).
-		Find(&users).Error; err != nil {
 		return nil, err
 	}
 
-	// Get total count //
+	return &logs, nil
+}
 
-	count := r.db.Table("Users").
+func (r repo) GetUserList(query model.UserListQuery) (*[]model.UserList, *int64, error) {
+
+	var err error
+	var list []model.UserList
+	var total int64
+
+	exec := r.db.Model(model.User{}).Table("Users").
+		Select("id, member_code, promotion, fullname, bankname, bank_account, channel, credit, ip, ip_registered, created_at, updated_at, logedin_at")
+
+	if query.Search != "" {
+		exec = exec.Where("username LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.From != nil && query.To != nil {
+		exec = exec.Where("created_at BETWEEN ? AND ?", query.From, query.To)
+	}
+
+	if query.NonMember {
+		exec = exec.Where("member_code = ?", "")
+	}
+
+	if !query.NonMember {
+		exec = exec.Where("member_code != ?", "")
+	}
+
+	if err := exec.
+		Limit(query.Limit).
+		Offset(query.Limit * query.Page).
+		Find(&list).
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	execTotal := r.db.Model(model.User{}).Table("Users").
 		Select("id")
 
-	if data.Search != "" {
-		count = count.Where("email LIKE ?", whereVal).Or("username LIKE ?", whereVal)
+	if query.Search != "" {
+		execTotal = execTotal.Where("username LIKE ?", "%"+query.Search+"%")
 	}
 
-	if err = count.
-		Where("role = ?", "ADMIN").
-		Where("deleted_at IS NULL").
+	if query.From != nil && query.To != nil {
+		execTotal = execTotal.Where("created_at BETWEEN ? AND ?", query.From, query.To)
+	}
+
+	if query.NonMember {
+		execTotal = execTotal.Where("member_code = ?", "")
+	}
+
+	if !query.NonMember {
+		execTotal = execTotal.Where("member_code != ?", "")
+	}
+
+	if err = execTotal.
 		Count(&total).
 		Error; err != nil {
+		return nil, nil, err
+	}
+
+	return &list, &total, nil
+}
+
+func (r repo) GetUserByPhone(phone string) (*model.UserByPhone, error) {
+
+	var user *model.UserByPhone
+
+	if err := r.db.Table("Users").
+		Select("id, phone").
+		Where("phone = ?", phone).
+		First(&user).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
-	// Return response //
-
-	return &model.Pagination{
-		List:  users,
-		Total: total,
-	}, nil
-
+	return user, nil
 }
 
-func (r repo) GetUserByID(id int) (*model.User, error) {
+func (r repo) GetUser(id int64) (*model.UserDetail, error) {
 
-	var user model.User
-	if err := r.db.Table("Users").
-		Select("id, email, password, username").
+	var admin *model.UserDetail
+
+	if err := r.db.Model(model.User{}).Table("Users").
+		Select("id, partner, member_code, phone, promotion, bankname, bank_account, fullname, channel, true_wallet, contact, note, course").
 		Where("id = ?", id).
-		Where("deleted_at IS NULL").
-		First(&user).
+		First(&admin).
 		Error; err != nil {
 		return nil, err
 	}
 
-	if user.Id == 0 {
-		return nil, nil
-	}
-
-	return &user, nil
+	return admin, nil
 }
 
-func (r repo) GetUserByEmail(email string) (*model.User, error) {
+func (r repo) GetUpdateLogs(query model.UserUpdateQuery) (*[]model.UserUpdateLogResponse, *int64, error) {
+
+	var logs []model.UserUpdateLogResponse
+	var total int64
+
+	exec := r.db.Table("User_update_logs")
+
+	if query.Search != "" {
+		exec = exec.Where("description LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.From != nil && query.To != nil {
+		exec = exec.Where("created_at BETWEEN ? AND ?", query.From, query.To)
+	}
+
+	if err := exec.
+		Limit(query.Limit).
+		Offset(query.Limit * query.Page).
+		Find(&logs).
+		Order("created_at DESC").
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	execTotal := r.db.Table("User_update_logs")
+
+	if query.Search != "" {
+		execTotal = execTotal.Where("description LIKE ?", "%"+query.Search+"%")
+	}
+
+	if query.From != nil && query.To != nil {
+		execTotal = execTotal.Where("created_at BETWEEN ? AND ?", query.From, query.To)
+	}
+
+	if err := execTotal.
+		Count(&total).
+		Error; err != nil {
+		return nil, nil, err
+	}
+
+	return &logs, &total, nil
+}
+
+func (r repo) CheckUser(username string) (bool, error) {
+
 	var user model.User
+
 	if err := r.db.Table("Users").
-		Select("id, email, username, password, role").
-		Where("email = ?", email).
-		Or("username = ?", email).
-		Where("deleted_at IS NULL").
+		Where("username = ?", username).
 		First(&user).
 		Error; err != nil {
-		return nil, err
-	}
 
-	if user.Id == 0 {
-		return nil, errors.New("User not found")
-	}
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
 
-	return &user, nil
-}
-
-func (r repo) CheckUserByEmailOrUser(val string) (bool, error) {
-
-	var result int64
-	if err := r.db.Table("Users").
-		Select("id").
-		Where("username = ?", val).
-		Or("email = ?", val).
-		Where("deleted_at IS NULL").
-		Limit(1).
-		Count(&result).
-		Error; err != nil {
 		return false, err
 	}
 
-	return result > 0, nil
+	if user.Id != 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
-func (r repo) CheckRole() (bool, error) {
+func (r repo) CheckUserPhone(phone string) (bool, error) {
 
-	var result int64
+	var user model.User
+
 	if err := r.db.Table("Users").
-		Select("id").
-		Where("role = ?", "ADMIN").
-		Where("deleted_at IS NULL").
-		Limit(1).
-		Count(&result).
+		Where("phone = ?", phone).
+		First(&user).
 		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
 		return false, err
 	}
 
-	return result > 0, nil
-}
-
-func (r repo) CreateUser(user model.User) error {
-	if err := r.db.Table("Users").
-		Create(&user).
-		Error; err != nil {
-		return err
+	if user.Id != 0 {
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
-func (r repo) CreateAdmin(user model.User) error {
-	if err := r.db.Table("Users").
-		Create(&user).
-		Error; err != nil {
-		return err
-	}
+func (r repo) CheckUserById(id int64) (bool, error) {
+	var user model.User
 
-	return nil
-}
-
-func (r repo) ChangePassword(id int, password string) error {
 	if err := r.db.Table("Users").
 		Where("id = ?", id).
-		Update("password", password).
+		First(&user).
+		Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r repo) CreateUser(admin model.User) error {
+
+	if err := r.db.Table("Users").
+		Create(&admin).
+		Error; err != nil {
+
+		var dup *mysql.MySQLError
+		if errors.As(err, &dup); dup.Number == 1062 {
+			return errors.New("Phone already exists")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) UpdateUser(userId int64, data model.UpdateUser, changes []model.UserUpdateLogs) error {
+
+	tx := r.db.Begin()
+
+	if err := tx.Model(model.User{}).Table("Users").
+		Where("id = ?", userId).
+		Updates(&data).
+		Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if len(changes) > 0 {
+		if err := tx.Table("User_update_logs").
+			Create(&changes).
+			Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func (r repo) UpdateUserPassword(userId int64, data model.UserUpdatePassword) error {
+
+	if err := r.db.Table("Users").
+		Where("id = ?", userId).
+		Update("password", data.Password).
 		Error; err != nil {
 		return err
 	}
@@ -249,7 +303,7 @@ func (r repo) ChangePassword(id int, password string) error {
 	return nil
 }
 
-func (r repo) DeleteUser(id int) error {
+func (r repo) DeleteUser(id int64) error {
 
 	if err := r.db.Table("Users").
 		Where("id = ?", id).

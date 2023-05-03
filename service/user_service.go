@@ -5,264 +5,252 @@ import (
 	"cybergame-api/model"
 	"cybergame-api/repository"
 	"fmt"
-
-	"golang.org/x/crypto/bcrypt"
+	"reflect"
+	"strings"
 )
 
-var loginFailed = "Username Or Password is incorrect"
-
 type UserService interface {
-	GetUsers(query model.UserQuery) (*model.Pagination, error)
-	GetAdmins(query model.UserQuery) (*model.Pagination, error)
-	Login(user *model.Login) (*string, error)
-	CreateUser(user *model.CreateUser) error
-	CreateAdmin(user *model.CreateAdmin, admin bool) error
-	UserChangePassword(userId1, userId2 int, role string, user *model.UserChangePassword) error
-	AdminChangePassword(id int, user *model.AdminChangePassword) error
-	DeleteUser(id int) error
+	GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error)
+	GetUser(id int64) (*model.UserDetail, error)
+	GetUserList(query model.UserListQuery) (*model.SuccessWithPagination, error)
+	GetUpdateLogs(query model.UserUpdateQuery) (*model.SuccessWithPagination, error)
+	Create(user *model.CreateUser) error
+	UpdateUser(userId int64, body model.UpdateUser, adminName string) error
+	ResetPassword(userId int64, body model.UserUpdatePassword) error
+	DeleteUser(id int64) error
 }
 
+const UserloginFailed = "Phone Or Password is incorrect"
+const UserNotFound = "User not found"
+const UserExist = "User already exist"
+const UserPhoneExist = "Phone already exist"
+
 type userService struct {
-	repo        repository.UserRepository
-	websiteRepo repository.WebsiteRepository
+	repo      repository.UserRepository
+	perRepo   repository.PermissionRepository
+	groupRepo repository.GroupRepository
 }
 
 func NewUserService(
 	repo repository.UserRepository,
-	websiteRepo repository.WebsiteRepository,
+	perRepo repository.PermissionRepository,
+	groupRepo repository.GroupRepository,
 ) UserService {
-	return &userService{repo, websiteRepo}
+	return &userService{repo, perRepo, groupRepo}
 }
 
-func (s *userService) GetUsers(query model.UserQuery) (*model.Pagination, error) {
+func (s *userService) GetUserLoginLogs(id int64) (*[]model.UserLoginLog, error) {
 
-	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
-		return nil, badRequest(err.Error())
-	}
-
-	users, total, err := s.repo.GetUsers(query)
+	logs, err := s.repo.GetUserLoginLogs(id)
 	if err != nil {
-		return nil, internalServerError(err.Error())
+		return nil, err
 	}
 
-	userIds := make([]int, 0)
-	for _, user := range *users {
-		userIds = append(userIds, int(user.Id))
-	}
-
-	websites, err := s.websiteRepo.GetWebsitesByUserIds(userIds)
-	if err != nil {
-		return nil, internalServerError(err.Error())
-	}
-
-	for i, user := range *users {
-		for _, website := range *websites {
-			if user.Id == website.UserId {
-				(*users)[i].Websites = append((*users)[i].Websites, website)
-			}
-		}
-	}
-
-	returnUsers := &model.Pagination{
-		Total: total,
-		List:  users,
-	}
-
-	return returnUsers, nil
+	return logs, nil
 }
 
-func (s *userService) GetAdmins(query model.UserQuery) (*model.Pagination, error) {
+func (s *userService) GetUser(id int64) (*model.UserDetail, error) {
 
-	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
-		return nil, badRequest(err.Error())
-	}
-
-	users, err := s.repo.GetAdmins(query)
-	if err != nil {
-		return nil, internalServerError(err.Error())
-	}
-
-	return users, nil
-}
-
-func (s *userService) Login(user *model.Login) (*string, error) {
-
-	exist, err := s.repo.GetUserByEmail(user.Email)
+	admin, err := s.repo.GetUser(id)
 	if err != nil {
 
 		if err.Error() == "record not found" {
-			return nil, notFound(loginFailed)
+			return nil, notFound(UserNotFound)
 		}
 
-		if err.Error() == "User not found" {
-			return nil, notFound(loginFailed)
-		}
-
-		return nil, internalServerError(err.Error())
+		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(exist.Password), []byte(user.Password)); err != nil {
-		return nil, notFound(loginFailed)
-	}
-
-	token, err := helper.CreateJWTUser(exist)
-	if err != nil {
-		return nil, internalServerError(err.Error())
-	}
-
-	return &token, nil
+	return admin, nil
 }
 
-func (s *userService) GetUserByID(id int) (*model.User, error) {
+func (s *userService) GetUserList(query model.UserListQuery) (*model.SuccessWithPagination, error) {
 
-	user, err := s.repo.GetUserByID(id)
-	if err != nil {
-		return nil, internalServerError(err.Error())
+	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
+		return nil, err
 	}
 
-	return user, nil
+	list, total, err := s.repo.GetUserList(query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &model.SuccessWithPagination{
+		Message: "Success",
+		List:    list,
+		Total:   *total,
+	}
+
+	return result, nil
 }
 
-func (s *userService) CreateUser(data *model.CreateUser) error {
+func (s *userService) GetUpdateLogs(query model.UserUpdateQuery) (*model.SuccessWithPagination, error) {
 
-	email, emailErr := s.repo.CheckUserByEmailOrUser(data.Email)
-	if emailErr != nil {
-		return emailErr
+	if err := helper.Pagination(&query.Page, &query.Limit); err != nil {
+		return nil, err
 	}
 
-	if email {
-		return badRequest("Email already exist")
+	list, total, err := s.repo.GetUpdateLogs(query)
+	if err != nil {
+		return nil, err
 	}
 
-	user, userErr := s.repo.CheckUserByEmailOrUser(data.Username)
-	if userErr != nil {
-		return userErr
+	result := &model.SuccessWithPagination{
+		Message: "Success",
+		List:    list,
+		Total:   *total,
 	}
 
-	if user {
-		return badRequest("Username already exist")
+	return result, nil
+}
+
+func (s *userService) Create(data *model.CreateUser) error {
+
+	phone, err := s.repo.CheckUserPhone(data.Phone)
+	if err != nil {
+		return err
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
+	if phone {
+		return badRequest("Phone already exist")
+	}
+
+	hashedPassword, err := helper.GenUserPassword(data.Password)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	newUser := model.User{}
-	newUser.Email = data.Email
-	newUser.Username = data.Username
+	var newUser model.User
+	newUser.Partner = &data.Partner
+	newUser.MemberCode = &data.MemberCode
+	newUser.Username = data.Phone
+	newUser.Phone = data.Phone
+	newUser.Promotion = &data.Promotion
 	newUser.Password = string(hashedPassword)
-	newUser.Role = "USER"
+	newUser.Status = "ACTIVE"
+	newUser.Fullname = data.Fullname
+	newUser.Bankname = data.Bankname
+	newUser.BankCode = data.BankCode
+	newUser.BankAccount = data.BankAccount
+	newUser.Channel = data.Channel
+	newUser.TrueWallet = data.TrueWallet
+	newUser.Contact = data.Contact
+	newUser.Note = data.Note
+	newUser.Course = data.Course
+	newUser.IpRegistered = data.IpRegistered
+
+	splitFullname := strings.Split(data.Fullname, " ")
+	if len(splitFullname) == 1 {
+		return badRequest("Fullname must be firstname lastname")
+	}
+
+	var firstname, lastname *string
+	if len(splitFullname) == 2 {
+		firstname = &splitFullname[0]
+		lastname = &splitFullname[1]
+		newUser.Firstname = *firstname
+		newUser.Lastname = *lastname
+	}
+
+	if len(splitFullname) == 3 {
+		firstname = &splitFullname[1]
+		lastname = &splitFullname[2]
+		newUser.Firstname = *firstname
+		newUser.Lastname = *lastname
+	}
 
 	return s.repo.CreateUser(newUser)
 }
 
-func (s *userService) CreateAdmin(data *model.CreateAdmin, admin bool) error {
+func (s *userService) UpdateUser(userId int64, body model.UpdateUser, adminName string) error {
 
-	if !admin {
+	user, err := s.repo.GetUser(userId)
+	if err != nil {
 
-		role, err := s.repo.CheckRole()
-
-		if err != nil {
-			return err
+		if err.Error() == "record not found" {
+			return notFound(UserNotFound)
 		}
 
-		if role {
-			return badRequest("Admin already exist")
-		}
-
+		return internalServerError(err.Error())
 	}
 
-	user, err := s.repo.CheckUserByEmailOrUser(data.Username)
+	if user == nil {
+		return notFound(UserNotFound)
+	}
+
+	var changeList []model.UserUpdateLogs
+
+	b := reflect.ValueOf(body)
+	u := reflect.ValueOf(user)
+
+	if b.Kind() == reflect.Ptr {
+		b = b.Elem()
+	}
+
+	if u.Kind() == reflect.Ptr {
+		u = u.Elem()
+	}
+
+	// loop user fields
+	for j := 0; j < b.NumField(); j++ {
+		for k := 0; k < u.NumField(); k++ {
+
+			bField := b.Type().Field(j).Name
+			bValue := b.Field(j).Interface()
+			uField := u.Type().Field(k).Name
+			uValue := u.Field(k).Interface()
+
+			if bField == uField {
+				if uValue != bValue {
+					changeList = append(changeList, model.UserUpdateLogs{
+						UserId:            userId,
+						Description:       fmt.Sprintf("%s changed from %s to %s", bField, uValue, bValue),
+						CreatedByUsername: adminName,
+						Ip:                body.Ip,
+					})
+				}
+			}
+		}
+	}
+
+	return s.repo.UpdateUser(userId, body, changeList)
+}
+
+func (s *userService) ResetPassword(userId int64, body model.UserUpdatePassword) error {
+
+	checkUser, err := s.repo.CheckUserById(userId)
 	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if !checkUser {
+		return notFound(UserNotFound)
+	}
+
+	newPasword, err := helper.GenUserPassword(body.Password)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+
+	body.Password = newPasword
+
+	if err := s.repo.UpdateUserPassword(userId, body); err != nil {
 		return err
 	}
 
-	if user {
-		return badRequest("Username already exist")
-	}
-
-	email, err := s.repo.CheckUserByEmailOrUser(data.Email)
-	if err != nil {
-		return err
-	}
-
-	if email {
-		return badRequest("Email already exist")
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return internalServerError(err.Error())
-	}
-
-	newUser := model.User{}
-	newUser.Email = data.Email
-	newUser.Username = data.Username
-	newUser.Password = string(hashedPassword)
-	newUser.Role = "ADMIN"
-
-	return s.repo.CreateAdmin(newUser)
-}
-
-func (s *userService) UserChangePassword(userId1, userId2 int, role string, user *model.UserChangePassword) error {
-	fmt.Println(userId1, userId2, role)
-	if role == "USER" {
-
-		if userId1 != userId2 {
-			return notFound("Permission denied")
-		}
-
-		exist, err := s.repo.GetUserByID(userId1)
-		if err != nil {
-			return internalServerError(err.Error())
-		}
-
-		if exist == nil {
-			return notFound("User not found")
-		}
-
-		if err := bcrypt.CompareHashAndPassword([]byte(exist.Password), []byte(user.OldPassword)); err != nil {
-			return notFound("Password not match")
-		}
-
-	}
-
-	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return internalServerError(err.Error())
-	}
-
-	user.Password = string(password)
-
-	if err := s.repo.ChangePassword(userId1, user.Password); err != nil {
-		return internalServerError(err.Error())
-	}
-
 	return nil
 }
 
-func (s *userService) AdminChangePassword(id int, user *model.AdminChangePassword) error {
+func (s *userService) DeleteUser(id int64) error {
 
-	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	checkUser, err := s.repo.CheckUserById(id)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	user.Password = string(password)
-
-	if err := s.repo.ChangePassword(id, user.Password); err != nil {
-		return internalServerError(err.Error())
+	if !checkUser {
+		return notFound(UserNotFound)
 	}
 
-	return nil
-}
-
-func (s *userService) DeleteUser(id int) error {
-
-	if err := s.repo.DeleteUser(id); err != nil {
-		return internalServerError(err.Error())
-	}
-
-	return nil
+	return s.repo.DeleteUser(id)
 }

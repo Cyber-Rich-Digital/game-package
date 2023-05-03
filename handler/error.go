@@ -12,12 +12,16 @@ import (
 )
 
 type ErrorResponse struct {
-	Message string `json:"message"`
+	Message interface{} `json:"message"`
 }
 
 type errorMsg struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
+}
+
+type MessagesResponse struct {
+	Messages interface{} `json:"messages"`
 }
 
 type ValidateResponse struct {
@@ -40,56 +44,40 @@ func getErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func HandleError(c *gin.Context, err error) {
+func HandleError(c *gin.Context, err interface{}) {
 	switch e := err.(type) {
 	case service.ResponseError:
 		c.AbortWithStatusJSON(e.Code, ErrorResponse{Message: e.Message})
 	case validator.ValidationErrors:
 		list := make([]errorMsg, len(e))
 		for i, fe := range e {
+
+			if fe.Field() == "Email" {
+				errMessage := "Email is invalid"
+				list[i] = errorMsg{fe.Field(), errMessage}
+				continue
+			}
+
 			list[i] = errorMsg{fe.Field(), getErrorMsg(fe)}
 		}
 		c.AbortWithStatusJSON(http.StatusBadRequest, ValidateResponse{Errors: list})
 	case error:
-		status := http.StatusBadRequest
-		c.AbortWithStatusJSON(status, ErrorResponse{Message: e.Error()})
-	}
-}
-
-func ValidateField[T *model.CreateUser | *model.Login](data T) error {
-
-	if err := validator.New().Struct(data); err != nil {
-		checkType := strings.Split(err.(validator.ValidationErrors).Error(), "'")[3]
-		if checkType == "Email" || checkType == "Password" {
-			return errors.New("Email or Password is invalid")
+		if e.Error() == "EOF" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Message: "Invalid Body"})
 		} else {
-			return errors.New("Invalid data")
+			c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Message: e.Error()})
 		}
+	case interface{}:
+		c.AbortWithStatusJSON(http.StatusBadRequest, MessagesResponse{Messages: err})
 	}
-
-	return nil
 }
 
-func ValidateFieldUser[T *model.CreateUser | *model.Login](data T) error {
+func ValidateField[T model.CreateAdmin | model.LoginAdmin](data T) error {
 
 	if err := validator.New().Struct(data); err != nil {
 		checkType := strings.Split(err.(validator.ValidationErrors).Error(), "'")[3]
-		if checkType == "Email" || checkType == "Password" {
-			return errors.New("Email or Password is invalid")
-		} else {
-			return errors.New("Invalid data")
-		}
-	}
-
-	return nil
-}
-
-func ValidateFieldAdmin[T *model.Login | *model.CreateAdmin](data T) error {
-
-	if err := validator.New().Struct(data); err != nil {
-		checkType := strings.Split(err.(validator.ValidationErrors).Error(), "'")[3]
-		if checkType == "Username" || checkType == "Password" {
-			return errors.New("Username or Password is invalid")
+		if checkType == "Phone" || checkType == "Password" {
+			return errors.New("Phone or Password is invalid")
 		} else {
 			return errors.New("Invalid data")
 		}

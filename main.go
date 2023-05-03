@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// @title CyberGame API
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
@@ -33,6 +34,7 @@ func main() {
 	db := initDatabase()
 
 	r := gin.Default()
+
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	// Register the middleware
@@ -49,11 +51,17 @@ func main() {
 
 	backRoute := r.Group(path)
 	handler.AuthController(backRoute, db)
+	handler.AdminController(backRoute, db)
+	handler.PermissionController(backRoute, db)
+	handler.GroupController(backRoute, db)
+	handler.AccountingController(backRoute, db)
+	handler.SettingwebController(backRoute, db)
 	handler.UserController(backRoute, db)
-	handler.WebsiteController(backRoute, db)
-	handler.TagController(backRoute, db)
-	handler.MenuController(backRoute)
-
+	handler.BankingController(backRoute, db)
+	handler.ScammerController(backRoute, db)
+	handler.LineNotifyController(backRoute, db)
+	handler.RecommendController(backRoute, db)
+	handler.MenuController(backRoute, db)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
@@ -61,8 +69,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+<<<<<<< HEAD
+=======
 }
 
+>>>>>>> b18e5812881762d6bc5d808134399ac46f6b25c6
 type ping struct {
 	Message string `json:"message" example:"pong" `
 }
@@ -94,14 +106,14 @@ func initTimeZone() {
 
 func initDatabase() *gorm.DB {
 
-	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true&loc=Local",
+	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_NAME"),
 	)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
 	if err != nil {
 		panic(err)
 	}
