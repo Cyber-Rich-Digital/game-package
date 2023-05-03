@@ -1239,32 +1239,41 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 			return nil
 		}
 		if records.Total == 1 {
-			for _, record := range records.List.([]model.Member) {
+			for _, possibleOwner := range records.List.([]model.Member) {
 				// Auto create transaction
 				if bodyCreateState.StatementType == "transfer_in" {
 					var createDepositBody model.BankTransactionCreateBody
-					createDepositBody.MemberCode = record.MemberCode
+					createDepositBody.MemberCode = possibleOwner.MemberCode
 					createDepositBody.TransferType = "deposit"
 					createDepositBody.CreditAmount = bodyCreateState.Amount
 					createDepositBody.TransferAt = bodyCreateState.TransferAt
 					createDepositBody.IsAutoCredit = true
-					// promotionId  bonusAmount
+					// todo: promotionId bonusAmount
 					createDepositBody.ToAccountId = &systemAccount.Id
 					transId, err := s.CreateBankTransaction(createDepositBody)
 					if err != nil {
 						// return internalServerError(err.Error())
 						return nil
 					}
-					var body model.BankConfirmDepositRequest
-					body.TransferAt = &bodyCreateState.TransferAt
-					body.BonusAmount = 0
-					if err := s.ConfirmDepositTransaction(*transId, body); err != nil {
+					var confirmTransReq model.BankConfirmDepositRequest
+					confirmTransReq.ConfirmedAt = time.Now()
+					confirmTransReq.ConfirmedByUserId = 0
+					confirmTransReq.ConfirmedByUsername = ""
+					confirmTransReq.TransferAt = &bodyCreateState.TransferAt
+					confirmTransReq.BonusAmount = 0
+					if err := s.ConfirmDepositTransaction(*transId, confirmTransReq); err != nil {
+						// return internalServerError(err.Error())
+						return nil
+					}
+					var statementMatchRequest model.BankStatementMatchRequest
+					statementMatchRequest.UserId = possibleOwner.Id
+					if err := s.MatchStatementOwner(statement.Id, statementMatchRequest); err != nil {
 						// return internalServerError(err.Error())
 						return nil
 					}
 				} else if bodyCreateState.StatementType == "transfer_out" {
 					var createWithdrawBody model.BankTransactionCreateBody
-					createWithdrawBody.MemberCode = record.MemberCode
+					createWithdrawBody.MemberCode = possibleOwner.MemberCode
 					createWithdrawBody.TransferType = "withdraw"
 					createWithdrawBody.CreditAmount = bodyCreateState.Amount
 					createWithdrawBody.TransferAt = bodyCreateState.TransferAt
@@ -1274,17 +1283,24 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 						// return internalServerError(err.Error())
 						return nil
 					}
-					var body model.BankConfirmWithdrawRequest
-					body.CreditAmount = bodyCreateState.Amount
-					body.BankChargeAmount = 0
-					if err := s.ConfirmWithdrawTransaction(*transId, body); err != nil {
+					var confirmTransReq model.BankConfirmWithdrawRequest
+					confirmTransReq.ConfirmedAt = time.Now()
+					confirmTransReq.ConfirmedByUserId = 0
+					confirmTransReq.ConfirmedByUsername = "webhook"
+					confirmTransReq.CreditAmount = bodyCreateState.Amount
+					confirmTransReq.BankChargeAmount = 0
+					if err := s.ConfirmWithdrawTransaction(*transId, confirmTransReq); err != nil {
+						// return internalServerError(err.Error())
+						return nil
+					}
+					var statementMatchRequest model.BankStatementMatchRequest
+					statementMatchRequest.UserId = possibleOwner.Id
+					if err := s.MatchStatementOwner(statement.Id, statementMatchRequest); err != nil {
 						// return internalServerError(err.Error())
 						return nil
 					}
 				}
 			}
-			var body model.BankStatementUpdateBody
-			body.Status = "confirmed"
 		}
 	}
 
@@ -1378,6 +1394,44 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 	return insertId, nil
 }
 
+func (s *accountingService) MatchStatementOwner(id int64, req model.BankStatementMatchRequest) error {
+
+	statement, err := s.repo.GetBankStatementById(id)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if statement.Status != "pending" {
+		return badRequest("Statement is not pending")
+	}
+	member, err := s.repo.GetMemberById(req.UserId)
+	if err != nil {
+		return badRequest("Invalid Member")
+	}
+	jsonBefore, _ := json.Marshal(statement)
+
+	// TransAction
+	var createBody model.CreateBankStatementActionBody
+	createBody.StatementId = statement.Id
+	createBody.UserId = member.Id
+	createBody.ActionType = "confirmed"
+	createBody.AccountId = statement.AccountId
+	createBody.JsonBefore = string(jsonBefore)
+	createBody.ConfirmedAt = req.ConfirmedAt
+	createBody.ConfirmedByUserId = req.ConfirmedByUserId
+	createBody.ConfirmedByUsername = req.ConfirmedByUsername
+	if err := s.repo.CreateStatementAction(createBody); err == nil {
+		var body model.BankStatementUpdateBody
+		body.Status = "confirmed"
+		// todo:
+		if err := s.repo.MatchStatementOwner(id, body); err != nil {
+			return internalServerError(err.Error())
+		}
+	} else {
+		return internalServerError(err.Error())
+	}
+	return nil
+}
+
 func (s *accountingService) ConfirmDepositTransaction(id int64, req model.BankConfirmDepositRequest) error {
 
 	record, err := s.repo.GetBankTransactionById(id)
@@ -1392,43 +1446,43 @@ func (s *accountingService) ConfirmDepositTransaction(id int64, req model.BankCo
 	}
 	jsonBefore, _ := json.Marshal(record)
 
-	var updateData model.BankTransactionConfirmBody
+	var updateData model.BankDepositTransactionConfirmBody
 	updateData.Status = "finished"
 	updateData.ConfirmedAt = req.ConfirmedAt
 	updateData.ConfirmedByUserId = req.ConfirmedByUserId
 	updateData.ConfirmedByUsername = req.ConfirmedByUsername
 	updateData.BonusAmount = req.BonusAmount
 
-	var createData model.CreateBankTransactionActionBody
-	createData.TransactionId = record.Id
-	createData.UserId = record.UserId
-	createData.TransferType = record.TransferType
-	createData.FromAccountId = record.FromAccountId
-	createData.ToAccountId = record.ToAccountId
-	createData.JsonBefore = string(jsonBefore)
+	var createBody model.CreateBankTransactionActionBody
+	createBody.TransactionId = record.Id
+	createBody.UserId = record.UserId
+	createBody.TransferType = record.TransferType
+	createBody.FromAccountId = record.FromAccountId
+	createBody.ToAccountId = record.ToAccountId
+	createBody.JsonBefore = string(jsonBefore)
 	if req.TransferAt == nil {
-		createData.TransferAt = record.TransferAt
+		createBody.TransferAt = record.TransferAt
 	} else {
 		TransferAt := req.TransferAt
-		createData.TransferAt = *TransferAt
+		createBody.TransferAt = *TransferAt
 		updateData.TransferAt = *TransferAt
 	}
-	createData.SlipUrl = req.SlipUrl
-	createData.BonusAmount = req.BonusAmount
-	createData.ConfirmedAt = req.ConfirmedAt
-	createData.ConfirmedByUserId = req.ConfirmedByUserId
-	createData.ConfirmedByUsername = req.ConfirmedByUsername
-	if err := s.repo.CreateTransactionAction(createData); err != nil {
+	createBody.SlipUrl = req.SlipUrl
+	createBody.BonusAmount = req.BonusAmount
+	createBody.ConfirmedAt = req.ConfirmedAt
+	createBody.ConfirmedByUserId = req.ConfirmedByUserId
+	createBody.ConfirmedByUsername = req.ConfirmedByUsername
+	if err := s.repo.CreateTransactionAction(createBody); err == nil {
+		fmt.Println("ConfirmPendingTransaction updateData:", helper.StructJson(updateData))
+		if err := s.repo.ConfirmPendingDepositTransaction(id, updateData); err != nil {
+			return internalServerError(err.Error())
+		}
+		if err := s.IncreaseMemberCredit(record.UserId, record.CreditAmount); err != nil {
+			return internalServerError(err.Error())
+		}
+	} else {
 		return internalServerError(err.Error())
 	}
-	if err := s.repo.ConfirmPendingTransaction(id, updateData); err != nil {
-		return internalServerError(err.Error())
-	}
-	if err := s.IncreaseMemberCredit(record.UserId, record.CreditAmount); err != nil {
-		return internalServerError(err.Error())
-	}
-	// todo: Bonus
-	// commit
 	return nil
 }
 
@@ -1446,7 +1500,7 @@ func (s *accountingService) ConfirmWithdrawTransaction(id int64, req model.BankC
 	}
 	jsonBefore, _ := json.Marshal(record)
 
-	var updateData model.BankTransactionConfirmBody
+	var updateData model.BankWithdrawTransactionConfirmBody
 	updateData.Status = "finished"
 	updateData.ConfirmedAt = req.ConfirmedAt
 	updateData.ConfirmedByUserId = req.ConfirmedByUserId
@@ -1470,7 +1524,7 @@ func (s *accountingService) ConfirmWithdrawTransaction(id int64, req model.BankC
 	if err := s.repo.CreateTransactionAction(createData); err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := s.repo.ConfirmPendingTransaction(id, updateData); err != nil {
+	if err := s.repo.ConfirmPendingWithdrawTransaction(id, updateData); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil

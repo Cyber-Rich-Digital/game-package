@@ -1124,7 +1124,7 @@ func (h accountingController) webhookAction(c *gin.Context) {
 			err := h.accountingService.CreateBankStatementFromWebhook(v)
 			if err != nil {
 				HandleError(c, err)
-				return
+				// return
 			}
 		}
 	}

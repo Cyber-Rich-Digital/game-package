@@ -133,7 +133,7 @@ func (s *bankingService) MatchStatementOwner(id int64, req model.BankStatementMa
 	// TransAction
 	var createBody model.CreateBankStatementActionBody
 	createBody.StatementId = statement.Id
-	createBody.UserId = req.UserId
+	createBody.UserId = member.Id
 	createBody.ActionType = "confirmed"
 	createBody.AccountId = statement.AccountId
 	createBody.JsonBefore = string(jsonBefore)
@@ -144,15 +144,12 @@ func (s *bankingService) MatchStatementOwner(id int64, req model.BankStatementMa
 		var body model.BankStatementUpdateBody
 		body.Status = "confirmed"
 		// todo:
-		member.Id = 0
-
 		if err := s.repoBanking.MatchStatementOwner(id, body); err != nil {
 			return internalServerError(err.Error())
 		}
 	} else {
 		return internalServerError(err.Error())
 	}
-
 	return nil
 }
 
@@ -435,7 +432,7 @@ func (s *bankingService) ConfirmDepositTransaction(id int64, req model.BankConfi
 	}
 	jsonBefore, _ := json.Marshal(record)
 
-	var updateData model.BankTransactionConfirmBody
+	var updateData model.BankDepositTransactionConfirmBody
 	updateData.Status = "finished"
 	updateData.ConfirmedAt = req.ConfirmedAt
 	updateData.ConfirmedByUserId = req.ConfirmedByUserId
@@ -464,7 +461,7 @@ func (s *bankingService) ConfirmDepositTransaction(id int64, req model.BankConfi
 	if err := s.repoBanking.CreateTransactionAction(createBody); err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := s.repoBanking.ConfirmPendingTransaction(id, updateData); err != nil {
+	if err := s.repoBanking.ConfirmPendingDepositTransaction(id, updateData); err != nil {
 		return internalServerError(err.Error())
 	}
 	if err := s.IncreaseMemberCredit(record.UserId, record.CreditAmount); err != nil {
@@ -517,7 +514,7 @@ func (s *bankingService) ConfirmWithdrawTransaction(id int64, req model.BankConf
 	}
 	jsonBefore, _ := json.Marshal(record)
 
-	var updateData model.BankTransactionConfirmBody
+	var updateData model.BankWithdrawTransactionConfirmBody
 	updateData.Status = "finished"
 	updateData.ConfirmedAt = req.ConfirmedAt
 	updateData.ConfirmedByUserId = req.ConfirmedByUserId
@@ -541,7 +538,7 @@ func (s *bankingService) ConfirmWithdrawTransaction(id int64, req model.BankConf
 	if err := s.repoBanking.CreateTransactionAction(createBody); err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := s.repoBanking.ConfirmPendingTransaction(id, updateData); err != nil {
+	if err := s.repoBanking.ConfirmPendingWithdrawTransaction(id, updateData); err != nil {
 		return internalServerError(err.Error())
 	}
 	return nil
