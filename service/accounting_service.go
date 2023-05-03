@@ -230,26 +230,27 @@ func (s *accountingService) CreateBankAccount(data model.BankAccountCreateBody) 
 		return internalServerError(err.Error())
 	}
 
-	allowCreateExternalAccount := false
-	config, _ := s.GetExternalAccountConfig("allow_create_external_account")
-	if config != nil {
-		if config.ConfigVal == "list" {
-			accountConfig, errConfig := s.HasExternalAccountConfig("allow_external_account_number", acNo)
-			if errConfig != nil {
-				return nil
-			}
-			if accountConfig.ConfigVal == acNo {
-				allowCreateExternalAccount = true
-			}
-		} else if config.ConfigVal == "all" {
-			allowCreateExternalAccount = true
-		}
-	}
+	// allowCreateExternalAccount := false
+	// config, _ := s.GetExternalAccountConfig("allow_create_external_account")
+	// if config != nil {
+	// 	if config.ConfigVal == "list" {
+	// 		accountConfig, errConfig := s.HasExternalAccountConfig("allow_external_account_number", acNo)
+	// 		if errConfig != nil {
+	// 			return nil
+	// 		}
+	// 		if accountConfig.ConfigVal == acNo {
+	// 			allowCreateExternalAccount = true
+	// 		}
+	// 	} else if config.ConfigVal == "all" {
+	// 		allowCreateExternalAccount = true
+	// 	}
+	// }
 
-	if allowCreateExternalAccount && data.DeviceUid != "" && data.PinCode != "" && !s.HasExternalAccount(acNo) {
-		if _, err := s.HasExternalAccountConfig("allow_external_account_number", acNo); err != nil {
-			return nil
-		}
+	if s.IsAllowCreateExternalAccount(acNo) && data.DeviceUid != "" && data.PinCode != "" && !s.HasExternalAccount(acNo) {
+		// if _, err := s.HasExternalAccountConfig("allow_external_account_number", acNo); err != nil {
+		// 	return nil
+		// }
+
 		// FASTBANK
 		var createExternalBody model.ExternalAccountCreateBody
 		createExternalBody.AccountNo = acNo
@@ -378,13 +379,19 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 		updateBody.AccountStatus = req.AccountStatus
 	}
 
-	if onExternalChange {
+	fmt.Println(onExternalChange, s.IsAllowCreateExternalAccount(account.AccountNumber), updateExBody.DeviceId, updateExBody.Pin)
+	if onExternalChange && s.IsAllowCreateExternalAccount(account.AccountNumber) && updateExBody.DeviceId != nil && updateExBody.Pin != nil {
+		// if _, err := s.HasExternalAccountConfig("allow_external_account_number", acNo); err != nil {
+		// 	return nil
+		// }
+
 		if updateExBody.DeviceId == nil {
 			updateExBody.DeviceId = &account.DeviceUid
 		}
 		// if updateExBody.Pin == nil {
 		// 	updateExBody.Pin = &account.PinCode
 		// }
+
 		// Create if not exist
 		if !s.HasExternalAccount(account.AccountNumber) {
 			var createExternalBody model.ExternalAccountCreateBody
@@ -781,6 +788,26 @@ func (s *accountingService) GetExternalAccountConfig(key string) (*model.BotAcco
 	return nil, notFound("Config not found")
 }
 
+func (s *accountingService) IsAllowCreateExternalAccount(accountNumber string) bool {
+
+	allowCreateExternalAccount := false
+	config, _ := s.GetExternalAccountConfig("allow_create_external_account")
+	if config != nil {
+		if config.ConfigVal == "list" {
+			accountConfig, errConfig := s.HasExternalAccountConfig("allow_external_account_number", accountNumber)
+			if errConfig != nil {
+				return false
+			}
+			if accountConfig.ConfigVal == accountNumber {
+				allowCreateExternalAccount = true
+			}
+		} else if config.ConfigVal == "all" {
+			allowCreateExternalAccount = true
+		}
+	}
+	return allowCreateExternalAccount
+}
+
 func (s *accountingService) HasExternalAccountConfig(key string, value string) (*model.BotAccountConfig, error) {
 
 	var query model.BotAccountConfigListRequest
@@ -878,7 +905,7 @@ func (s *accountingService) GetExternalAccounts() (*model.SuccessWithPagination,
 func (s *accountingService) GetExternalAccountBalance(query model.ExternalAccountStatusRequest) (*model.ExternalAccountBalance, error) {
 
 	client := &http.Client{}
-	// curl -X GET "https://api.fastbankapi.com/api/v2/statement/balance?accountNo=4281243019" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
+	// curl -X GET "https://api.fastbankapi.com/api/v2/statement/balance?accountNo=hhhhhh" -H "accept: */*" -H "apiKey: aaaaaa.bbbbbb"
 	req, _ := http.NewRequest("GET", os.Getenv("ACCOUNTING_API_ENDPOINT")+"/api/v2/statement/balance?accountNo="+query.AccountNumber, nil)
 	req.Header.Set("apiKey", os.Getenv("ACCOUNTING_API_KEY"))
 	response, err := client.Do(req)
@@ -1102,8 +1129,8 @@ func (s *accountingService) GetExternalAccountStatements(query model.BankAccount
 	fmt.Println("BankAccountListRequest", query)
 
 	client := &http.Client{}
-	// https://api.fastbankapi.com/api/v2/statement?accountNo=5014327339&page=0&size=10&txnCode=all
-	// curl -X GET "https://api.fastbankapi.com/api/v2/statement?accountNo=4281243019&page=0&size=10&txnCode=all" -H "accept: */*" -H "apiKey: 559a37455f1b3f1ece5e7e452b75bed8.805cc14b876f857784acf00d78eedcb8"
+	// https://api.fastbankapi.com/api/v2/statement?accountNo=aaaaa&page=0&size=10&txnCode=all
+	// curl -X GET "https://api.fastbankapi.com/api/v2/statement?accountNo=hhhhhh&page=0&size=10&txnCode=all" -H "accept: */*" -H "apiKey: aaaaaaaa.bbbbbbbbbbb"
 	queryString := fmt.Sprintf("&page=%d&size=%d&txnCode=all", query.Page, query.Limit)
 	fullPath := os.Getenv("ACCOUNTING_API_ENDPOINT") + "/api/v2/statement?accountNo=" + query.AccountNumber + queryString
 	req, _ := http.NewRequest("GET", fullPath, nil)
@@ -1194,6 +1221,19 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 		return badRequest("Invalid Bank Account")
 	}
 
+	var bodyCreateState2 model.BankStatementCreateBody
+	bank, err := s.GetBankFromWebhook(data)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	bodyCreateState2.FromBankId = bank.Id
+	accountNumber, err := s.GetAccountNoFromWebhook(bank.Code, data)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	bodyCreateState2.FromAccountNumber = accountNumber
+	fmt.Println("bodyCreateState2", bodyCreateState2)
+
 	_, errOldStatement := s.repo.GetWebhookStatementByExternalId(data.Id)
 	if errOldStatement != nil && errOldStatement.Error() == recordNotFound {
 		var bodyCreateState model.BankStatementCreateBody
@@ -1206,13 +1246,13 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 			bodyCreateState.StatementType = "transfer_out"
 			bodyCreateState.Amount = data.Amount * -1
 		} else {
+			s.CreateWebhookLog("unsupport TxnCode found, WebhookStatement:", helper.StructJson(struct{ data model.WebhookStatement }{data}))
 			return badRequest("Invalid TxnCode")
 		}
 
-		bankId, _ := s.GetBankIdFromWebhook(data)
-		bodyCreateState.FromBankId = bankId
-
-		accountNumber, _ := s.GetAccountNoFromWebhook(data)
+		bank, _ := s.GetBankFromWebhook(data)
+		bodyCreateState.FromBankId = bank.Id
+		accountNumber, _ := s.GetAccountNoFromWebhook(bank.Code, data)
 		bodyCreateState.FromAccountNumber = accountNumber
 
 		bodyCreateState.Detail = data.TxnDescription + " " + data.Info
@@ -1248,7 +1288,7 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 					createDepositBody.CreditAmount = bodyCreateState.Amount
 					createDepositBody.TransferAt = bodyCreateState.TransferAt
 					createDepositBody.IsAutoCredit = true
-					// todo: promotionId bonusAmount
+					// later: promotionId bonusAmount
 					createDepositBody.ToAccountId = &systemAccount.Id
 					transId, err := s.CreateBankTransaction(createDepositBody)
 					if err != nil {
@@ -1258,7 +1298,7 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 					var confirmTransReq model.BankConfirmDepositRequest
 					confirmTransReq.ConfirmedAt = time.Now()
 					confirmTransReq.ConfirmedByUserId = 0
-					confirmTransReq.ConfirmedByUsername = ""
+					confirmTransReq.ConfirmedByUsername = "webhook"
 					confirmTransReq.TransferAt = &bodyCreateState.TransferAt
 					confirmTransReq.BonusAmount = 0
 					if err := s.ConfirmDepositTransaction(*transId, confirmTransReq); err != nil {
@@ -1345,8 +1385,7 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 		body.ToBankId = &toAccount.BankId
 		body.ToAccountName = &toAccount.AccountName
 		body.ToAccountNumber = &toAccount.AccountNumber
-
-		// todo: createBonus + refDeposit
+		// later: createBonus + refDeposit
 		body.PromotionId = data.PromotionId
 
 	} else if data.TransferType == "withdraw" {
@@ -1422,7 +1461,6 @@ func (s *accountingService) MatchStatementOwner(id int64, req model.BankStatemen
 	if err := s.repo.CreateStatementAction(createBody); err == nil {
 		var body model.BankStatementUpdateBody
 		body.Status = "confirmed"
-		// todo:
 		if err := s.repo.MatchStatementOwner(id, body); err != nil {
 			return internalServerError(err.Error())
 		}
@@ -1544,18 +1582,61 @@ func (s *accountingService) IncreaseMemberCredit(userId int64, creditAmount floa
 	return nil
 }
 
-func (s *accountingService) GetBankIdFromWebhook(data model.WebhookStatement) (int64, error) {
+func (s *accountingService) GetBankFromCode(info string) (*model.BankResponse, error) {
 
-	// todo :
+	// sample : "กรุงศรีอยุธยา (BAY) /X213002",
+	// fmt.Print("หาธนาคาร getBankIdFromStatementInformation.kt info:", info)
+	infoStr := strings.ToLower(info)
+	// fmt.Print("หาธนาคาร getBankIdFromStatementInformation.kt infoStr:", infoStr)
 
-	return 4, nil
+	var req model.BankListRequest
+	banks, err := s.repo.GetBanks(req)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	for _, bank := range banks.List.([]model.BankResponse) {
+		if strings.Contains(infoStr, bank.Code) {
+			return &bank, nil
+		} else if strings.Contains(infoStr, bank.Name) {
+			return &bank, nil
+		}
+	}
+	// fmt.Print("หาธนาคาร ไม่เจอเลย", infoStr)
+
+	return nil, badRequest("Bank not found")
 }
 
-func (s *accountingService) GetAccountNoFromWebhook(data model.WebhookStatement) (string, error) {
+func (s *accountingService) GetBankFromWebhook(data model.WebhookStatement) (*model.BankResponse, error) {
 
-	// todo :
+	bank, err := s.GetBankFromCode(data.Info)
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return bank, nil
+}
 
-	return "3002", nil
+func (s *accountingService) GetAccountNoFromWebhook(bankCode string, data model.WebhookStatement) (string, error) {
+
+	// fmt.Print("GetAccountNoFromWebhook data:", helper.StructJson(data))
+	infoStr := strings.ToLower(data.Info)
+	if bankCode == "scb" {
+		// BankConstant.SCB -> statement.info.lowercase(Locale.getDefault()).split(" x")[1].take(4)
+		infoStrings := strings.Split(infoStr, " x")
+		if len(infoStrings) > 1 && len(infoStrings[1]) >= 4 {
+			return infoStrings[1][:4], nil
+		}
+	} else {
+		// else -> statement.info.lowercase(Locale.getDefault()).split("/x")[1].take(6)
+		infoStrings := strings.Split(infoStr, "/x")
+		if len(infoStrings) > 1 && len(infoStrings[1]) >= 6 {
+			return infoStrings[1][:6], nil
+		}
+	}
+	// later :
+	// scb จะมีชื่อ ให้เช็คชื่อต่อ
+	// KBANK xxx-x-x0000
+	// เบื้องต้น support 2 ธนาคารก่อน
+	return "", badRequest("AccountNo not found")
 }
 
 func (s *accountingService) CreateWebhookLog(logType string, jsonRequest string) error {

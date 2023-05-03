@@ -143,7 +143,6 @@ func (s *bankingService) MatchStatementOwner(id int64, req model.BankStatementMa
 	if err := s.repoBanking.CreateStatementAction(createBody); err == nil {
 		var body model.BankStatementUpdateBody
 		body.Status = "confirmed"
-		// todo:
 		if err := s.repoBanking.MatchStatementOwner(id, body); err != nil {
 			return internalServerError(err.Error())
 		}
@@ -261,8 +260,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.ToBankId = &toAccount.BankId
 		body.ToAccountName = &toAccount.AccountName
 		body.ToAccountNumber = &toAccount.AccountNumber
-
-		// todo: createBonus + refDeposit
+		// later: createBonus + refDeposit
 		body.PromotionId = data.PromotionId
 
 	} else if data.TransferType == "withdraw" {
@@ -454,7 +452,7 @@ func (s *bankingService) ConfirmDepositTransaction(id int64, req model.BankConfi
 		updateData.TransferAt = *TransferAt
 	}
 	createBody.SlipUrl = req.SlipUrl
-	createBody.BonusAmount = req.BonusAmount
+	createBody.BonusAmount = req.BonusAmount // later: Bonus
 	createBody.ConfirmedAt = req.ConfirmedAt
 	createBody.ConfirmedByUserId = req.ConfirmedByUserId
 	createBody.ConfirmedByUsername = req.ConfirmedByUsername
@@ -467,8 +465,6 @@ func (s *bankingService) ConfirmDepositTransaction(id int64, req model.BankConfi
 	if err := s.IncreaseMemberCredit(record.UserId, record.CreditAmount); err != nil {
 		return internalServerError(err.Error())
 	}
-	// todo: Bonus
-	// commit
 	return nil
 }
 
@@ -668,12 +664,9 @@ func (s *bankingService) MatchDepositTransaction(id int64, req model.BankConfirm
 	if record.TransferType != "deposit" {
 		return badRequest("Transaction is not deposit")
 	}
-	// todo: Bonus
-	// commit
 	if err := s.ConfirmDepositTransaction(record.UserId, req); err != nil {
 		return internalServerError(err.Error())
 	}
-
 	return nil
 }
 
@@ -695,6 +688,5 @@ func (s *bankingService) MatchWithdrawTransaction(id int64, req model.BankConfir
 	if err := s.ConfirmWithdrawTransaction(record.UserId, req); err != nil {
 		return internalServerError(err.Error())
 	}
-
 	return nil
 }
