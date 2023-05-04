@@ -26,6 +26,7 @@ type AccountingService interface {
 
 	GetBankAccountById(req model.BankGetByIdRequest) (*model.BankAccount, error)
 	GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetBankAccountPriorities() (*model.SuccessWithPagination, error)
 	CreateBankAccount(body model.BankAccountCreateBody) error
 	UpdateBankAccount(id int64, req model.BankAccountUpdateRequest) error
 	DeleteBankAccount(id int64) error
@@ -186,6 +187,15 @@ func (s *accountingService) GetBankAccounts(req model.BankAccountListRequest) (*
 	return list, nil
 }
 
+func (s *accountingService) GetBankAccountPriorities() (*model.SuccessWithPagination, error) {
+
+	list, err := s.repo.GetBankAccountPriorities()
+	if err != nil {
+		return nil, internalServerError(err.Error())
+	}
+	return list, nil
+}
+
 func (s *accountingService) CreateBankAccount(body model.BankAccountCreateBody) error {
 
 	bank, err := s.repo.GetBankById(body.BankId)
@@ -309,6 +319,7 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 	var updateBody model.BankAccountUpdateBody
 	var updateExBody model.ExternalAccountUpdateBody
 	onExternalChange := false
+	isAllowNoMainWithdraw := true
 	onMainWithdrawChange := false
 
 	// Validate
@@ -368,13 +379,18 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 		updateBody.AutoCreditFlag = req.AutoCreditFlag
 	}
 	if req.IsMainWithdraw != nil && account.IsMainWithdraw != *req.IsMainWithdraw {
-		if *req.IsMainWithdraw {
-			// reset all
+		if isAllowNoMainWithdraw {
 			updateBody.IsMainWithdraw = req.IsMainWithdraw
 			onMainWithdrawChange = true
 		} else {
-			// cant set to false if no other main account
-			onMainWithdrawChange = false
+			if *req.IsMainWithdraw {
+				// reset all
+				updateBody.IsMainWithdraw = req.IsMainWithdraw
+				onMainWithdrawChange = true
+			} else {
+				// cant set to false if no other main account
+				onMainWithdrawChange = false
+			}
 		}
 	}
 	if req.AutoWithdrawFlag != nil && account.AutoWithdrawFlag != *req.AutoWithdrawFlag {
@@ -1346,7 +1362,7 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 					createDepositBody.MemberCode = possibleOwner.MemberCode
 					createDepositBody.TransferType = "deposit"
 					createDepositBody.CreditAmount = bodyCreateState.Amount
-					createDepositBody.TransferAt = bodyCreateState.TransferAt
+					createDepositBody.TransferAt = &bodyCreateState.TransferAt
 					createDepositBody.IsAutoCredit = true
 					// later: promotionId bonusAmount
 					createDepositBody.ToAccountId = &systemAccount.Id
@@ -1376,7 +1392,7 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 					createWithdrawBody.MemberCode = possibleOwner.MemberCode
 					createWithdrawBody.TransferType = "withdraw"
 					createWithdrawBody.CreditAmount = bodyCreateState.Amount
-					createWithdrawBody.TransferAt = bodyCreateState.TransferAt
+					createWithdrawBody.TransferAt = &bodyCreateState.TransferAt
 					createWithdrawBody.FromAccountId = &systemAccount.Id
 					transId, err := s.CreateBankTransaction(createWithdrawBody)
 					if err != nil {
@@ -1410,6 +1426,10 @@ func (s *accountingService) CreateBankStatementFromWebhook(data model.WebhookSta
 func (s *accountingService) CreateBankTransaction(data model.BankTransactionCreateBody) (*int64, error) {
 
 	var body model.BankTransactionCreateBody
+	body.TransferAt = data.TransferAt
+	body.CreatedByUserId = data.CreatedByUserId
+	body.CreatedByUsername = data.CreatedByUsername
+	body.Status = "pending"
 
 	if data.TransferType == "deposit" {
 		member, err := s.repo.GetUserByMemberCode(data.MemberCode)
@@ -1464,27 +1484,26 @@ func (s *accountingService) CreateBankTransaction(data model.BankTransactionCrea
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		fromAccount, err := s.repo.GetWithdrawAccountById(*data.FromAccountId)
-		if err != nil {
-			fmt.Println(err)
-			return nil, badRequest("Invalid Bank Account")
+		// Withdraw SystemAccount is not requried
+		if data.FromAccountId != nil {
+			fromAccount, err := s.repo.GetWithdrawAccountById(*data.FromAccountId)
+			if err != nil {
+				fmt.Println(err)
+				return nil, badRequest("Invalid Bank Account")
+			}
+			body.FromAccountId = &fromAccount.Id
+			body.FromBankId = &fromAccount.BankId
+			body.FromAccountName = &fromAccount.AccountName
+			body.FromAccountNumber = &fromAccount.AccountNumber
 		}
-		body.FromAccountId = &fromAccount.Id
-		body.FromBankId = &fromAccount.BankId
-		body.FromAccountName = &fromAccount.AccountName
-		body.FromAccountNumber = &fromAccount.AccountNumber
 
 		body.ToBankId = &bank.Id
 		body.ToAccountName = &member.Fullname
 		body.ToAccountNumber = &member.BankAccount
+		body.Status = "pending_credit"
 	} else {
 		return nil, badRequest("Invalid Transfer Type")
 	}
-
-	body.TransferAt = data.TransferAt
-	body.CreatedByUserId = data.CreatedByUserId
-	body.CreatedByUsername = data.CreatedByUsername
-	body.Status = "pending"
 
 	insertId, err := s.repo.CreateBankTransaction(body)
 	if err != nil {

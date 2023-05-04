@@ -90,7 +90,7 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 
 }
 
-// @Summary get Bank List
+// @Summary getBanks get Bank List
 // @Description ดึงข้อมูลตัวเลือก รายชื่อธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -124,7 +124,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary get Account Type List
+// @Summary getAccountTypes
 // @Description ดึงข้อมูลตัวเลือก ประเภทบัญชีธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -153,7 +153,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary get Auto Credit Flags
+// @Summary getAutoCreditFlags
 // @Description ดึงข้อมูลตัวเลือก การตั้งค่าปรับเครดิตอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -169,7 +169,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Auto withdraw Flags
+// @Summary getAutoWithdrawFlags
 // @Description ดึงข้อมูลตัวเลือก การตั้งค่าถอนโอนเงินอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -183,10 +183,10 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 		{Key: "auto_backoffice", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ คลิกผ่านระบบหลังบ้าน"},
 		{Key: "auto_bot", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ โอนเงินออโต้ (Bot)"},
 	}
-	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 3})
 }
 
-// @Summary get Qr Wallet Statuses
+// @Summary getQrWalletStatuses
 // @Description ดึงข้อมูลตัวเลือก การเปิดใช้งาน QR Wallet
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -202,7 +202,7 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Account Statuses
+// @Summary getAccountStatuses
 // @Description ดึงข้อมูลตัวเลือก สถานะบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -218,7 +218,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Account Priorities
+// @Summary getAccountPriorities
 // @Description ดึงข้อมูลตัวเลือก ลำดับความสำคัญบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -227,20 +227,28 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 // @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/accountpriorities/list [get]
 func (h accountingController) getAccountPriorities(c *gin.Context) {
-	var data = []model.SimpleOption{
-		{Key: "new", Name: "ระดับ NEW ทั่วไป"},
-		{Key: "gold", Name: "ระดับ Gold ฝากมากกว่า 10 ครั้ง"},
-		{Key: "platinum", Name: "ระดับ Platinum ฝากมากกว่า 20 ครั้ง"},
-		{Key: "vip", Name: "ระดับ VIP ฝากมากกว่า 20 ครั้ง"},
-		{Key: "classic", Name: "ระดับ CLASSIC ฝากสะสมมากกว่า 1,000 บาท"},
-		{Key: "superior", Name: "ระดับ SUPERIOR ฝากสะสมมากกว่า 10,000 บาท"},
-		{Key: "deluxe", Name: "ระดับ DELUXE ฝากสะสมมากกว่า 100,000 บาท"},
-		{Key: "wisdom", Name: "ระดับ WISDOM ฝากสะสมมากกว่า 500,000 บาท"},
+
+	// var data = []model.SimpleOption{
+	// 	{Key: "new", Name: "ระดับ NEW ทั่วไป"},
+	// 	{Key: "gold", Name: "ระดับ Gold ฝากมากกว่า 10 ครั้ง"},
+	// 	{Key: "platinum", Name: "ระดับ Platinum ฝากมากกว่า 20 ครั้ง"},
+	// 	{Key: "vip", Name: "ระดับ VIP ฝากมากกว่า 20 ครั้ง"},
+	// 	{Key: "classic", Name: "ระดับ CLASSIC ฝากสะสมมากกว่า 1,000 บาท"},
+	// 	{Key: "superior", Name: "ระดับ SUPERIOR ฝากสะสมมากกว่า 10,000 บาท"},
+	// 	{Key: "deluxe", Name: "ระดับ DELUXE ฝากสะสมมากกว่า 100,000 บาท"},
+	// 	{Key: "wisdom", Name: "ระดับ WISDOM ฝากสะสมมากกว่า 500,000 บาท"},
+	// }
+	// c.JSON(200, model.SuccessWithPagination{List: data, Total: 8})
+
+	data, err := h.accountingService.GetBankAccountPriorities()
+	if err != nil {
+		HandleError(c, err)
+		return
 	}
-	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary get Account's Bot Statuses
+// @Summary getAccountBotStatuses
 // @Description ดึงข้อมูลตัวเลือก สถานะบอท
 // @Tags Accounting - Options
 // @Security BearerAuth

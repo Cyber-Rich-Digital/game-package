@@ -619,3 +619,13 @@ type BotAccountConfigCreateBody struct {
 	ConfigKey string `json:"configKey"`
 	ConfigVal string `json:"configVal"`
 }
+
+type BankAccountPriority struct {
+	Id              int64      `json:"id"`
+	Name            string     `json:"name"`
+	ConditionType   string     `json:"conditionType"`
+	MinDepositCount int        `json:"minDepositCount"`
+	MinDepositTotal float32    `json:"minDepositTotal"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       *time.Time `json:"updatedAt"`
+}

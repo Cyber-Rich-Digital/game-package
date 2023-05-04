@@ -33,6 +33,7 @@ type AccountingRepository interface {
 	GetDepositAccountById(id int64) (*model.BankAccount, error)
 	GetWithdrawAccountById(id int64) (*model.BankAccount, error)
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
+	GetBankAccountPriorities() (*model.SuccessWithPagination, error)
 	GetBotBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
 	ResetMainWithdrawBankAccount() error
@@ -85,10 +86,6 @@ func (r repo) GetAdminById(id int64) (*model.Admin, error) {
 		Error; err != nil {
 		return nil, err
 	}
-	// "record not found"
-	// if admin.Id == 0 {
-	// 	return nil, errors.New("Admin not found")
-	// }
 	return &admin, nil
 }
 
@@ -471,6 +468,44 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 			Where("accounts.deleted_at IS NULL").
 			Limit(req.Limit).
 			Offset(req.Page * req.Limit).
+			Scan(&list).
+			Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// End count total records for pagination purposes (without limit and offset) //
+	var result model.SuccessWithPagination
+	result.List = list
+	result.Total = total
+	return &result, nil
+}
+
+func (r repo) GetBankAccountPriorities() (*model.SuccessWithPagination, error) {
+
+	var list []model.BankAccountPriority
+	var total int64
+	var err error
+
+	// Count total records for pagination purposes (without limit and offset) //
+	count := r.db.Table("Bank_account_priorities AS priorities")
+	count = count.Select("priorities.id")
+	if err = count.
+		Where("priorities.deleted_at IS NULL").
+		Count(&total).
+		Error; err != nil {
+		return nil, err
+	}
+
+	if total > 0 {
+		// SELECT //
+		query := r.db.Table("Bank_account_priorities AS priorities")
+		selectedFields := "priorities.id, priorities.name, priorities.condition_type, priorities.min_deposit_count, priorities.min_deposit_total, priorities.created_at, priorities.updated_at"
+		query = query.Select(selectedFields)
+
+		query = query.Order("id ASC")
+		if err = query.
+			Where("priorities.deleted_at IS NULL").
 			Scan(&list).
 			Error; err != nil {
 			return nil, err

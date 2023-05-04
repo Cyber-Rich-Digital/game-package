@@ -133,3 +133,6 @@ ALTER TABLE `Bank_accounts`
 
 ALTER TABLE `Bank_accounts`
 	ADD COLUMN `is_main_withdraw` TINYINT NOT NULL DEFAULT 0 AFTER `auto_credit_flag`;
+
+ALTER TABLE `Bank_transactions`
+	CHANGE COLUMN `transfer_at` `transfer_at` DATETIME NULL AFTER `bank_charge_amount`;

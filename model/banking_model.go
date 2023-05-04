@@ -195,31 +195,31 @@ type BankTransactionListRequest struct {
 }
 
 type BankTransactionCreateBody struct {
-	Id                int64     `json:"id"`
-	MemberCode        string    `json:"memberCode" validate:"required"`
-	UserId            int64     `json:"-"`
-	TransferType      string    `json:"transferType" validate:"required" example:"deposit"`
-	PromotionId       *int64    `json:"promotionId"`
-	FromAccountId     *int64    `json:"fromAccountId"`
-	FromBankId        *int64    `json:"-"`
-	FromAccountName   *string   `json:"-"`
-	FromAccountNumber *string   `json:"-"`
-	ToAccountId       *int64    `json:"toAccountId"`
-	ToBankId          *int64    `json:"-"`
-	ToAccountName     *string   `json:"-"`
-	ToAccountNumber   *string   `json:"-"`
-	CreditAmount      float32   `json:"creditAmount" validate:"required"`
-	PaidAmount        float32   `json:"-"`
-	DepositChannel    string    `json:"depositChannel"`
-	OverAmount        float32   `json:"overAmount"`
-	BonusAmount       float32   `json:"bonusAmount"`
-	BeforeAmount      float32   `json:"-"`
-	AfterAmount       float32   `json:"-"`
-	TransferAt        time.Time `json:"transferAt" example:"2023-05-31T22:33:44+07:00"`
-	CreatedByUserId   int64     `json:"-"`
-	CreatedByUsername string    `json:"-"`
-	Status            string    `json:"-"`
-	IsAutoCredit      bool      `json:"isAutoCredit"`
+	Id                int64      `json:"-"`
+	MemberCode        string     `json:"memberCode" validate:"required"`
+	UserId            int64      `json:"-"`
+	TransferType      string     `json:"transferType" validate:"required" example:"deposit"`
+	PromotionId       *int64     `json:"promotionId"`
+	FromAccountId     *int64     `json:"fromAccountId"`
+	FromBankId        *int64     `json:"-"`
+	FromAccountName   *string    `json:"-"`
+	FromAccountNumber *string    `json:"-"`
+	ToAccountId       *int64     `json:"toAccountId"`
+	ToBankId          *int64     `json:"-"`
+	ToAccountName     *string    `json:"-"`
+	ToAccountNumber   *string    `json:"-"`
+	CreditAmount      float32    `json:"creditAmount" validate:"required"`
+	PaidAmount        float32    `json:"-"`
+	DepositChannel    string     `json:"depositChannel"`
+	OverAmount        float32    `json:"overAmount"`
+	BonusAmount       float32    `json:"bonusAmount"`
+	BeforeAmount      float32    `json:"-"`
+	AfterAmount       float32    `json:"-"`
+	TransferAt        *time.Time `json:"transferAt" example:"2023-05-31T22:33:44+07:00"`
+	CreatedByUserId   int64      `json:"-"`
+	CreatedByUsername string     `json:"-"`
+	Status            string     `json:"-"`
+	IsAutoCredit      bool       `json:"isAutoCredit"`
 }
 
 type BonusTransactionCreateBody struct {
@@ -481,4 +481,22 @@ type MemberTransaction struct {
 	CreatedAt           time.Time      `json:"createAt"`
 	UpdatedAt           *time.Time     `json:"updateAt"`
 	DeletedAt           gorm.DeletedAt `json:"deleteAt"`
+}
+
+type BankAutoDepositCondition struct {
+	Id              int64   `json:"-"`
+	UserId          int64   `json:"-"`
+	ToAccountId     int64   `json:"toAccountId"`
+	MinCreditAmount float32 `json:"minCreditAmount"`
+	MaxCreditAmount float32 `json:"maxCreditAmount"`
+}
+
+type BankAutoWithdrawCondition struct {
+	Id                      int64   `json:"-"`
+	UserId                  int64   `json:"-"`
+	FromAccountId           int64   `json:"toAccountId"`
+	MinCreditAmount         float32 `json:"minCreditAmount"`
+	MaxCreditAmount         float32 `json:"maxCreditAmount"`
+	AutoWithdrawCreditFlag  string  `json:"autoWithdrawCreditFlag"`
+	AutoWithdrawConfirmFlag string  `json:"autoWithdrawConfirmFlag"`
 }

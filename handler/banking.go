@@ -197,7 +197,6 @@ func (h bankingController) getBankStatementById(c *gin.Context) {
 		HandleError(c, err)
 		return
 	}
-
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
@@ -324,7 +323,7 @@ func (h bankingController) ignoreStatementOwner(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Ignore success"})
 }
 
-// @Summary DeleteStatement
+// @Summary DeleteBankStatement
 // @Description ลบข้อมูลการโอนด้วย id ใช้ในหน้า จัดการธนาคาร - ธุรกรรม ส่งรหัสผ่านมาเพื่อยืนยันด้วย
 // @Tags Banking - Bank Account Statements
 // @Security BearerAuth
@@ -351,7 +350,7 @@ func (h bankingController) deleteBankStatement(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Deleted success"})
 }
 
-// @Summary GetTransactionList
+// @Summary GetBankTransactions
 // @Description ดึงข้อมูลลิสการฝากถอน
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
@@ -382,7 +381,7 @@ func (h bankingController) getBankTransactions(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary GetTransactionByID
+// @Summary GetBankTransactionById
 // @Description ดึงข้อมูลการฝากถอน ด้วย id
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
@@ -410,7 +409,7 @@ func (h bankingController) getBankTransactionById(c *gin.Context) {
 	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
-// @Summary CreateTransaction
+// @Summary CreateBankTransaction
 // @Description สร้างข้อมูล บันทึกรายการฝาก-ถอน
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
@@ -452,7 +451,7 @@ func (h bankingController) createBankTransaction(c *gin.Context) {
 	c.JSON(201, model.Success{Message: "Created success"})
 }
 
-// @Summary CreateTransaction
+// @Summary CreateBonusTransaction
 // @Description สร้างข้อมูล บันทึกแจกโบนัส
 // @Tags Banking - Bank Transaction
 // @Security BearerAuth
