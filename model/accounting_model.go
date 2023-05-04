@@ -66,34 +66,38 @@ type AccountTypeListResponse struct {
 }
 
 type BankAccount struct {
-	Id                    int64          `json:"id"`
-	BankId                int64          `json:"bankId"`
-	BankCode              string         `json:"bankCode"`
-	BankName              string         `json:"bankName"`
-	BankIconUrl           string         `json:"bankIconUrl"`
-	AccountTypeId         int64          `json:"accountTypeId"`
-	AccountTypeName       string         `json:"accountTypeName"`
-	AccountName           string         `json:"accountName"`
-	AccountNumber         string         `json:"accountNumber"`
-	AccountBalance        float64        `json:"accountBalance" sql:"type:decimal(14,2);"`
-	AccountPriority       string         `json:"accountPriority"`
-	AccountStatus         string         `json:"accountStatus"`
-	DeviceUid             string         `json:"deviceUid"`
-	PinCode               string         `json:"pinCode"`
-	ConnectionStatus      string         `json:"connectionStatus"`
-	ExternalId            string         `json:"-"`
-	LastConnUpdateAt      *time.Time     `json:"lastConnUpdateAt"`
-	AutoCreditFlag        string         `json:"autoCreditFlag"`
-	AutoWithdrawFlag      string         `json:"autoWithdrawFlag"`
-	AutoWithdrawMaxAmount string         `json:"autoWithdrawMaxAmount"`
-	AutoTransferMaxAmount string         `json:"autoTransferMaxAmount"`
-	QrWalletStatus        string         `json:"qrWalletStatus"`
-	CreatedAt             time.Time      `json:"createdAt"`
-	UpdatedAt             *time.Time     `json:"updatedAt"`
-	DeletedAt             gorm.DeletedAt `json:"deletedAt"`
+	Id                      int64          `json:"id"`
+	BankId                  int64          `json:"bankId"`
+	BankCode                string         `json:"bankCode"`
+	BankName                string         `json:"bankName"`
+	BankIconUrl             string         `json:"bankIconUrl"`
+	AccountTypeId           int64          `json:"accountTypeId"`
+	AccountTypeName         string         `json:"accountTypeName"`
+	AccountName             string         `json:"accountName"`
+	AccountNumber           string         `json:"accountNumber"`
+	AccountBalance          float64        `json:"accountBalance" sql:"type:decimal(14,2);"`
+	AccountPriority         string         `json:"accountPriority"`
+	AccountPriorityId       int64          `json:"accountPriorityId"`
+	AccountStatus           string         `json:"accountStatus"`
+	DeviceUid               string         `json:"deviceUid"`
+	PinCode                 string         `json:"pinCode"`
+	ConnectionStatus        string         `json:"connectionStatus"`
+	ExternalId              string         `json:"-"`
+	LastConnUpdateAt        *time.Time     `json:"lastConnUpdateAt"`
+	AutoCreditFlag          string         `json:"autoCreditFlag"`
+	IsMainWithdraw          bool           `json:"isMainWithdraw"`
+	AutoWithdrawFlag        string         `json:"autoWithdrawFlag"`
+	AutoWithdrawCreditFlag  string         `json:"autoWithdrawCreditFlag"`
+	AutoWithdrawConfirmFlag string         `json:"autoWithdrawConfirmFlag"`
+	AutoWithdrawMaxAmount   string         `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount   string         `json:"autoTransferMaxAmount"`
+	QrWalletStatus          string         `json:"qrWalletStatus"`
+	CreatedAt               time.Time      `json:"createdAt"`
+	UpdatedAt               *time.Time     `json:"updatedAt"`
+	DeletedAt               gorm.DeletedAt `json:"deletedAt"`
 }
 
-type BankAccountParam struct {
+type BankGetByIdRequest struct {
 	Id int64 `uri:"id" binding:"required"`
 }
 
@@ -108,57 +112,66 @@ type BankAccountListRequest struct {
 }
 
 type BankAccountCreateBody struct {
-	BankId                int64   `json:"bankId" validate:"required"`
-	AccountTypeId         int64   `json:"accounTypeId" validate:"required"`
-	AccountName           string  `json:"accountName" validate:"required"`
-	AccountNumber         string  `json:"accountNumber" validate:"required"`
-	AccountBalance        float64 `json:"-"`
-	DeviceUid             string  `json:"deviceUid"`
-	PinCode               string  `json:"pinCode"`
-	AutoCreditFlag        string  `json:"autoCreditFlag"`
-	AutoWithdrawFlag      string  `json:"autoWithdrawFlag"`
-	AutoWithdrawMaxAmount string  `json:"autoWithdrawMaxAmount"`
-	AutoTransferMaxAmount string  `json:"autoTransferMaxAmount"`
-	AccountPriority       string  `json:"accountPriority"`
-	QrWalletStatus        string  `json:"qrWalletStatus"`
-	AccountStatus         string  `json:"accountStatus"`
-	ConnectionStatus      string  `json:"-"`
+	BankId                  int64   `json:"bankId" validate:"required"`
+	AccountTypeId           int64   `json:"accounTypeId" validate:"required"`
+	AccountName             string  `json:"accountName" validate:"required"`
+	AccountNumber           string  `json:"accountNumber" validate:"required"`
+	AccountBalance          float64 `json:"-"`
+	DeviceUid               string  `json:"deviceUid"`
+	PinCode                 string  `json:"pinCode"`
+	AutoCreditFlag          string  `json:"autoCreditFlag"`
+	IsMainWithdraw          bool    `json:"isMainWithdraw"`
+	AutoWithdrawFlag        string  `json:"autoWithdrawFlag"`
+	AutoWithdrawCreditFlag  string  `json:"autoWithdrawCreditFlag"`
+	AutoWithdrawConfirmFlag string  `json:"autoWithdrawConfirmFlag"`
+	AutoWithdrawMaxAmount   string  `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount   string  `json:"autoTransferMaxAmount"`
+	AccountPriorityId       int64   `json:"accountPriorityId"`
+	QrWalletStatus          string  `json:"qrWalletStatus"`
+	AccountStatus           string  `json:"accountStatus"`
+	ConnectionStatus        string  `json:"-"`
 }
 
 type BankAccountUpdateRequest struct {
-	BankId                *int64  `json:"-"`
-	AccountTypeId         *int64  `json:"accounTypeId"`
-	AccountName           *string `json:"-"`
-	AccountNumber         *string `json:"-"`
-	DeviceUid             *string `json:"deviceUid"`
-	PinCode               *string `json:"pinCode"`
-	AutoCreditFlag        *string `json:"autoCreditFlag"`
-	AutoWithdrawFlag      *string `json:"autoWithdrawFlag"`
-	AutoWithdrawMaxAmount *string `json:"autoWithdrawMaxAmount"`
-	AutoTransferMaxAmount *string `json:"autoTransferMaxAmount"`
-	AccountPriority       *string `json:"accountPriority"`
-	QrWalletStatus        *string `json:"qrWalletStatus"`
-	AccountStatus         *string `json:"accountStatus"`
+	BankId                  *int64  `json:"-"`
+	AccountTypeId           *int64  `json:"accounTypeId"`
+	AccountName             *string `json:"-"`
+	AccountNumber           *string `json:"-"`
+	DeviceUid               *string `json:"deviceUid"`
+	PinCode                 *string `json:"pinCode"`
+	AutoCreditFlag          *string `json:"autoCreditFlag"`
+	IsMainWithdraw          *bool   `json:"isMainWithdraw"`
+	AutoWithdrawFlag        *string `json:"autoWithdrawFlag"`
+	AutoWithdrawCreditFlag  *string `json:"autoWithdrawCreditFlag"`
+	AutoWithdrawConfirmFlag *string `json:"autoWithdrawConfirmFlag"`
+	AutoWithdrawMaxAmount   *string `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount   *string `json:"autoTransferMaxAmount"`
+	AccountPriorityId       *int64  `json:"accountPriorityId"`
+	QrWalletStatus          *string `json:"qrWalletStatus"`
+	AccountStatus           *string `json:"accountStatus"`
 }
 
 type BankAccountUpdateBody struct {
-	BankId                *int64     `json:"-"`
-	AccountTypeId         *int64     `json:"accounTypeId"`
-	AccountName           *string    `json:"-"`
-	AccountNumber         *string    `json:"-"`
-	DeviceUid             *string    `json:"deviceUid"`
-	PinCode               *string    `json:"pinCode"`
-	ExternalId            *int64     `json:"-"`
-	AutoCreditFlag        *string    `json:"autoCreditFlag"`
-	AutoWithdrawFlag      *string    `json:"autoWithdrawFlag"`
-	AutoWithdrawMaxAmount *string    `json:"autoWithdrawMaxAmount"`
-	AutoTransferMaxAmount *string    `json:"autoTransferMaxAmount"`
-	AccountPriority       *string    `json:"accountPriority"`
-	QrWalletStatus        *string    `json:"qrWalletStatus"`
-	AccountStatus         *string    `json:"accountStatus"`
-	LastConnUpdateAt      *time.Time `json:"-"`
-	ConnectionStatus      *string    `json:"-"`
-	AccountBalance        *float64   `json:"-"`
+	BankId                  *int64     `json:"-"`
+	AccountTypeId           *int64     `json:"accounTypeId"`
+	AccountName             *string    `json:"-"`
+	AccountNumber           *string    `json:"-"`
+	DeviceUid               *string    `json:"deviceUid"`
+	PinCode                 *string    `json:"pinCode"`
+	ExternalId              *int64     `json:"-"`
+	AutoCreditFlag          *string    `json:"autoCreditFlag"`
+	IsMainWithdraw          *bool      `json:"isMainWithdraw"`
+	AutoWithdrawFlag        *string    `json:"autoWithdrawFlag"`
+	AutoWithdrawCreditFlag  *string    `json:"autoWithdrawCreditFlag"`
+	AutoWithdrawConfirmFlag *string    `json:"autoWithdrawConfirmFlag"`
+	AutoWithdrawMaxAmount   *string    `json:"autoWithdrawMaxAmount"`
+	AutoTransferMaxAmount   *string    `json:"autoTransferMaxAmount"`
+	AccountPriorityId       *int64     `json:"accountPriorityId"`
+	QrWalletStatus          *string    `json:"qrWalletStatus"`
+	AccountStatus           *string    `json:"accountStatus"`
+	LastConnUpdateAt        *time.Time `json:"-"`
+	ConnectionStatus        *string    `json:"-"`
+	AccountBalance          *float64   `json:"-"`
 }
 
 type BankAccountDeleteBody struct {
@@ -167,23 +180,24 @@ type BankAccountDeleteBody struct {
 }
 
 type BankAccountResponse struct {
-	Id               int64          `json:"id"`
-	BankId           int64          `json:"bankId"`
-	BankCode         string         `json:"bankCode"`
-	BankName         string         `json:"bankName"`
-	BankIconUrl      string         `json:"bankIconUrl"`
-	AccountTypeId    int64          `json:"accountTypeId"`
-	AccountTypeName  string         `json:"accountTypeName"`
-	AccountName      string         `json:"accountName"`
-	AccountNumber    string         `json:"accountNumber"`
-	AccountBalance   float64        `json:"accountBalance"`
-	AccountPriority  string         `json:"accountPriority"`
-	AccountStatus    string         `json:"accountStatus"`
-	ConnectionStatus string         `json:"connectionStatus"`
-	LastConnUpdateAt *time.Time     `json:"lastConnUpdateAt"`
-	CreatedAt        time.Time      `json:"createdAt"`
-	UpdatedAt        *time.Time     `json:"updatedAt"`
-	DeletedAt        gorm.DeletedAt `json:"deletedAt"`
+	Id                int64          `json:"id"`
+	BankId            int64          `json:"bankId"`
+	BankCode          string         `json:"bankCode"`
+	BankName          string         `json:"bankName"`
+	BankIconUrl       string         `json:"bankIconUrl"`
+	AccountTypeId     int64          `json:"accountTypeId"`
+	AccountTypeName   string         `json:"accountTypeName"`
+	AccountName       string         `json:"accountName"`
+	AccountNumber     string         `json:"accountNumber"`
+	AccountBalance    float64        `json:"accountBalance"`
+	AccountPriority   string         `json:"accountPriority"`
+	AccountPriorityId int64          `json:"accountPriorityId"`
+	AccountStatus     string         `json:"accountStatus"`
+	ConnectionStatus  string         `json:"connectionStatus"`
+	LastConnUpdateAt  *time.Time     `json:"lastConnUpdateAt"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         *time.Time     `json:"updatedAt"`
+	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
 type BankAccountTransaction struct {
@@ -197,10 +211,6 @@ type BankAccountTransaction struct {
 	CreatedAt         time.Time      `json:"createdAt"`
 	UpdatedAt         *time.Time     `json:"updatedAt"`
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
-}
-
-type BankAccountTransactionParam struct {
-	Id int64 `uri:"id" binding:"required"`
 }
 
 type BankAccountTransactionListRequest struct {
@@ -263,10 +273,6 @@ type BankAccountTransfer struct {
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
-type BankAccountTransferParam struct {
-	Id int64 `uri:"id" binding:"required"`
-}
-
 type BankAccountTransferListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
@@ -321,6 +327,18 @@ type BankAccountTransferResponse struct {
 	CreatedAt         time.Time      `json:"createdAt"`
 	UpdatedAt         *time.Time     `json:"updatedAt"`
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
+}
+
+type BankAccountStatementListRequest struct {
+	AccountId        string `form:"accountId"`
+	StatementType    string `form:"statementType" extensions:"x-order:2"`
+	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:3"`
+	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:4"`
+	Search           string `form:"search" extensions:"x-order:5"`
+	Page             int    `form:"page" default:"1" min:"1"`
+	Limit            int    `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol"`
+	SortAsc          string `form:"sortAsc"`
 }
 
 type CustomerAccountInfoRequest struct {
@@ -468,6 +486,15 @@ type ExternalAccountLogCreateBody struct {
 	ExternalCreateDate string `json:"externalCreateDate"`
 }
 
+type ExternalStatementListRequest struct {
+	AccountNumber string `form:"accountNumber" validate:"required"`
+	Page          int    `form:"page" default:"1" min:"1"`
+	Limit         int    `form:"limit" default:"10" min:"1" max:"100"`
+	Search        string `form:"search"`
+	SortCol       string `form:"sortCol"`
+	SortAsc       string `form:"sortAsc"`
+}
+
 type ExternalAccountStatement struct {
 	Id                 int64          `json:"id"`
 	ExternalId         int64          `json:"externalId"`
@@ -591,4 +618,14 @@ type BotAccountConfigListRequest struct {
 type BotAccountConfigCreateBody struct {
 	ConfigKey string `json:"configKey"`
 	ConfigVal string `json:"configVal"`
+}
+
+type BankAccountPriority struct {
+	Id              int64      `json:"id"`
+	Name            string     `json:"name"`
+	ConditionType   string     `json:"conditionType"`
+	MinDepositCount int        `json:"minDepositCount"`
+	MinDepositTotal float32    `json:"minDepositTotal"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       *time.Time `json:"updatedAt"`
 }
