@@ -218,9 +218,12 @@ func (s *accountingService) CreateBankAccount(body model.BankAccountCreateBody) 
 	createBody.AccountTypeId = accountType.Id
 	createBody.AccountName = body.AccountName
 	createBody.AccountNumber = acNo
-	createBody.AccountPriority = body.AccountPriority
+	createBody.AccountPriorityId = body.AccountPriorityId
 	createBody.AutoCreditFlag = body.AutoCreditFlag
+	createBody.IsMainWithdraw = body.IsMainWithdraw
 	createBody.AutoWithdrawFlag = body.AutoWithdrawFlag
+	createBody.AutoWithdrawCreditFlag = body.AutoWithdrawCreditFlag
+	createBody.AutoWithdrawConfirmFlag = body.AutoWithdrawConfirmFlag
 	createBody.AutoTransferMaxAmount = body.AutoTransferMaxAmount
 	createBody.AutoWithdrawMaxAmount = body.AutoWithdrawMaxAmount
 	createBody.DeviceUid = body.DeviceUid
@@ -306,6 +309,7 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 	var updateBody model.BankAccountUpdateBody
 	var updateExBody model.ExternalAccountUpdateBody
 	onExternalChange := false
+	onMainWithdrawChange := false
 
 	// Validate
 	if req.BankId != nil && account.BankId != *req.BankId {
@@ -363,8 +367,24 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 	if req.AutoCreditFlag != nil && account.AutoCreditFlag != *req.AutoCreditFlag {
 		updateBody.AutoCreditFlag = req.AutoCreditFlag
 	}
+	if req.IsMainWithdraw != nil && account.IsMainWithdraw != *req.IsMainWithdraw {
+		if *req.IsMainWithdraw {
+			// reset all
+			updateBody.IsMainWithdraw = req.IsMainWithdraw
+			onMainWithdrawChange = true
+		} else {
+			// cant set to false if no other main account
+			onMainWithdrawChange = false
+		}
+	}
 	if req.AutoWithdrawFlag != nil && account.AutoWithdrawFlag != *req.AutoWithdrawFlag {
 		updateBody.AutoWithdrawFlag = req.AutoWithdrawFlag
+	}
+	if req.AutoWithdrawCreditFlag != nil && account.AutoWithdrawCreditFlag != *req.AutoWithdrawCreditFlag {
+		updateBody.AutoWithdrawCreditFlag = req.AutoWithdrawCreditFlag
+	}
+	if req.AutoWithdrawConfirmFlag != nil && account.AutoWithdrawConfirmFlag != *req.AutoWithdrawConfirmFlag {
+		updateBody.AutoWithdrawConfirmFlag = req.AutoWithdrawConfirmFlag
 	}
 	if req.AutoWithdrawMaxAmount != nil && account.AutoWithdrawMaxAmount != *req.AutoWithdrawMaxAmount {
 		updateBody.AutoWithdrawMaxAmount = req.AutoWithdrawMaxAmount
@@ -372,8 +392,8 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 	if req.AutoTransferMaxAmount != nil && account.AutoTransferMaxAmount != *req.AutoTransferMaxAmount {
 		updateBody.AutoTransferMaxAmount = req.AutoTransferMaxAmount
 	}
-	if req.AccountPriority != nil && account.AccountPriority != *req.AccountPriority {
-		updateBody.AccountPriority = req.AccountPriority
+	if req.AccountPriorityId != nil && account.AccountPriorityId != *req.AccountPriorityId {
+		updateBody.AccountPriorityId = req.AccountPriorityId
 	}
 	if req.QrWalletStatus != nil && account.QrWalletStatus != *req.QrWalletStatus {
 		updateBody.QrWalletStatus = req.QrWalletStatus
@@ -382,7 +402,6 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 		updateBody.AccountStatus = req.AccountStatus
 	}
 
-	fmt.Println(onExternalChange, s.IsAllowCreateExternalAccount(account.AccountNumber), updateExBody.DeviceId, updateExBody.Pin)
 	if onExternalChange && s.IsAllowCreateExternalAccount(account.AccountNumber) && updateExBody.DeviceId != nil && updateExBody.Pin != nil {
 		// if _, err := s.HasExternalAccountConfig("allow_external_account_number", acNo); err != nil {
 		// 	return nil
@@ -433,6 +452,12 @@ func (s *accountingService) UpdateBankAccount(id int64, req model.BankAccountUpd
 				updateBody.PinCode = &externalCreateResp.Pin
 				updateBody.ExternalId = &externalCreateResp.Id
 			}
+		}
+	}
+
+	if onMainWithdrawChange {
+		if err := s.repo.ResetMainWithdrawBankAccount(); err != nil {
+			return internalServerError(err.Error())
 		}
 	}
 
@@ -873,12 +898,12 @@ func (s *accountingService) GetCustomerAccountsInfo(req model.CustomerAccountInf
 		return nil, internalServerError(err.Error())
 	}
 	req.AccountFrom = botAccount.AccountNumber
-	b, err := json.Marshal(req)
-	if err != nil {
-		fmt.Println(err)
-		return nil, internalServerError("Error from JSON")
-	}
-	fmt.Println(string(b))
+	// b, err := json.Marshal(req)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return nil, internalServerError("Error from JSON")
+	// }
+	// fmt.Println(string(b))
 
 	client := &http.Client{}
 	// curl -X POST "https://api.fastbankapi.com/api/v2/statement/verifyTransfer" -H "accept: */*" -H "apiKey: aa.bb" -H "Content-Type: application/json" -d "{ \"accountFrom\": \"cccc\", \"accountTo\": \"dddd\", \"bankCode\": \"bay\"}"

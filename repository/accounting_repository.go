@@ -35,6 +35,7 @@ type AccountingRepository interface {
 	GetBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	GetBotBankAccounts(data model.BankAccountListRequest) (*model.SuccessWithPagination, error)
 	CreateBankAccount(data model.BankAccountCreateBody) error
+	ResetMainWithdrawBankAccount() error
 	UpdateBankAccount(id int64, data model.BankAccountUpdateBody) error
 	DeleteBankAccount(id int64, data model.BankAccountDeleteBody) error
 
@@ -283,7 +284,8 @@ func (r repo) HasBankAccount(accountNumber string) (bool, error) {
 func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+	selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
@@ -303,7 +305,8 @@ func (r repo) GetBankAccountById(id int64) (*model.BankAccount, error) {
 func (r repo) GetDepositAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+	selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
@@ -324,7 +327,8 @@ func (r repo) GetDepositAccountById(id int64) (*model.BankAccount, error) {
 func (r repo) GetWithdrawAccountById(id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+	selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
@@ -345,7 +349,8 @@ func (r repo) GetWithdrawAccountById(id int64) (*model.BankAccount, error) {
 func (r repo) GetBankAccountByAccountNumber(accountNumber string) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+	selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 	selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
@@ -365,7 +370,8 @@ func (r repo) GetBankAccountByAccountNumber(accountNumber string) (*model.BankAc
 func (r repo) GetBankAccountByExternalId(external_id int64) (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+	selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
@@ -381,7 +387,8 @@ func (r repo) GetBankAccountByExternalId(external_id int64) (*model.BankAccount,
 func (r repo) GetActiveExternalAccount() (*model.BankAccount, error) {
 
 	var accounting model.BankAccount
-	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+	selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+	selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 	selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 	if err := r.db.Table("Bank_accounts as accounts").
 		Select(selectedFields).
@@ -418,7 +425,6 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 	} else if req.AccountType == "withdraw" {
 		count = count.Where("account_types.allow_withdraw = 1")
 	}
-
 	if err = count.
 		Where("accounts.deleted_at IS NULL").
 		Count(&total).
@@ -429,7 +435,8 @@ func (r repo) GetBankAccounts(req model.BankAccountListRequest) (*model.SuccessW
 	if total > 0 {
 		// SELECT //
 		query := r.db.Table("Bank_accounts AS accounts")
-		selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+		selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+		selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 		selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 		selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 		selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
@@ -502,7 +509,8 @@ func (r repo) GetBotBankAccounts(req model.BankAccountListRequest) (*model.Succe
 	if total > 0 {
 		// SELECT //
 		query := r.db.Table("Bank_accounts AS accounts")
-		selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status, accounts.auto_credit_flag, accounts.auto_withdraw_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
+		selectedFields := "accounts.id, accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.device_uid, accounts.pin_code, accounts.connection_status"
+		selectedFields += ", accounts.auto_credit_flag, accounts.is_main_withdraw, accounts.auto_withdraw_flag, accounts.auto_withdraw_credit_flag, accounts.auto_withdraw_confirm_flag, accounts.auto_withdraw_max_amount, accounts.auto_transfer_max_amount, accounts.qr_wallet_status"
 		selectedFields += ", accounts.last_conn_update_at, accounts.created_at, accounts.updated_at"
 		selectedFields += ", banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 		selectedFields += ", account_types.name as account_type_name, account_types.limit_flag"
@@ -545,7 +553,25 @@ func (r repo) GetBotBankAccounts(req model.BankAccountListRequest) (*model.Succe
 	return &result, nil
 }
 
+func (r repo) ResetMainWithdrawBankAccount() error {
+
+	cleanUpData := map[string]interface{}{
+		"is_main_withdraw": 0,
+	}
+	if err := r.db.Table("Bank_accounts").Where("is_main_withdraw != 0").Updates(cleanUpData).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r repo) CreateBankAccount(data model.BankAccountCreateBody) error {
+
+	if data.IsMainWithdraw {
+		if err := r.ResetMainWithdrawBankAccount(); err != nil {
+			return err
+		}
+	}
+
 	if err := r.db.Table("Bank_accounts").Create(&data).Error; err != nil {
 		return err
 	}
@@ -569,7 +595,7 @@ func (r repo) DeleteBankAccount(id int64, data model.BankAccountDeleteBody) erro
 func (r repo) GetTransactionById(id int64) (*model.BankAccountTransaction, error) {
 	var record model.BankAccountTransaction
 	selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
-	selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+	selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.created_at, accounts.updated_at"
 	selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 	if err := r.db.Table("Bank_account_transactions as transactions").
 		Select(selectedFields).
@@ -623,7 +649,7 @@ func (r repo) GetTransactions(req model.BankAccountTransactionListRequest) (*mod
 	if total > 0 {
 		// SELECT //
 		selectedFields := "transactions.id, transactions.account_id, transactions.description, transactions.transfer_type, transactions.amount, transactions.transfer_at, transactions.created_by_username, transactions.created_at, transactions.updated_at"
-		selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority, accounts.account_status, accounts.created_at, accounts.updated_at"
+		selectedFields += ",accounts.bank_id, accounts.account_type_id, accounts.account_name, accounts.account_number, accounts.account_balance, accounts.account_priority_id, accounts.account_status, accounts.created_at, accounts.updated_at"
 		selectedFields += ",banks.name as bank_name, banks.code as bank_code, banks.icon_url as bank_icon_url, banks.type_flag"
 		query := r.db.Table("Bank_account_transactions as transactions")
 		query = query.Select(selectedFields)
@@ -748,13 +774,13 @@ func (r repo) GetTransfers(req model.BankAccountTransferListRequest) (*model.Suc
 		count = count.Or("transfers.to_account_name LIKE ?", search_like)
 		count = count.Or("transfers.to_account_number LIKE ?", search_like)
 	}
-
 	if err = count.
 		Where("transfers.deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
 	}
+
 	if total > 0 {
 		// SELECT //
 		selectedFields := "transfers.id, transfers.from_account_id, transfers.from_bank_id, transfers.from_account_name, transfers.from_account_number"
@@ -879,13 +905,13 @@ func (r repo) GetBotaccountConfigs(req model.BotAccountConfigListRequest) (*mode
 	if req.SearchValue != nil {
 		count = count.Where("configs.config_val = ?", req.SearchValue)
 	}
-
 	if err = count.
 		Where("configs.deleted_at IS NULL").
 		Count(&total).
 		Error; err != nil {
 		return nil, err
 	}
+
 	if total > 0 {
 		// SELECT //
 		selectedFields := "configs.id, configs.config_key, configs.config_val"

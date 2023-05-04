@@ -26,3 +26,11 @@ ALTER TABLE `Bank_confirm_statements`
     DROP INDEX `idx_account_id`;
 
 DROP TABLE IF EXISTS `Bank_confirm_statements`;
+
+DROP TABLE IF EXISTS `Bank_account_priorities`;
+
+ALTER TABLE `Bank_accounts`
+	DROP COLUMN `account_priority_id`,
+	DROP COLUMN `is_main_withdraw`,
+	DROP COLUMN `auto_withdraw_credit_flag`,
+	DROP COLUMN `auto_withdraw_confirm_flag`;

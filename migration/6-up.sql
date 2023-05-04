@@ -107,3 +107,29 @@ CREATE Table
 ALTER TABLE `Bank_confirm_statements`
 	ADD UNIQUE INDEX `uni_statement_id` (`statement_id`),
     ADD INDEX `idx_account_id` (`account_id`);
+
+CREATE Table
+    Bank_account_priorities (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(255) NOT NULL,
+        condition_type VARCHAR(255) NOT NULL DEFAULT 'or',
+        min_deposit_count INT NOT NULL DEFAULT 0,
+        min_deposit_total DECIMAL(14,2) NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT NOW(),
+        updated_at DATETIME NULL ON UPDATE NOW(),
+        deleted_at DATETIME NULL
+    );
+
+INSERT INTO `Bank_account_priorities` (`name`, `condition_type`, `min_deposit_count`, `min_deposit_total`) VALUES
+    ('ระดับ NEW ทั่วไป', 'or', 0, 0),
+    ('ระดับ Gold ฝากมากกว่า 10 ครั้ง หรือ ฝากสะสมมากกว่า 10,000 บาท', 'or', 10, 10000),
+    ('ระดับ Platinum ฝากมากกว่า 20 ครั้ง หรือ ฝากสะสมมากกว่า 100,000 บาท', 'or', 20, 100000),
+    ('ระดับ VIP ฝากมากกว่า 30 ครั้ง หรือ ฝากสะสมมากกว่า 500,000 บาท', 'or', 30, 500000);
+
+ALTER TABLE `Bank_accounts`
+	ADD COLUMN `account_priority_id` BIGINT NULL AFTER `account_priority`,
+	ADD COLUMN `auto_withdraw_credit_flag` VARCHAR(255) NOT NULL AFTER `auto_withdraw_flag`,
+	ADD COLUMN `auto_withdraw_confirm_flag` VARCHAR(255) NOT NULL AFTER `auto_withdraw_credit_flag`;
+
+ALTER TABLE `Bank_accounts`
+	ADD COLUMN `is_main_withdraw` TINYINT NOT NULL DEFAULT 0 AFTER `auto_credit_flag`;

@@ -941,7 +941,7 @@ func (h accountingController) getExternalAccountBalance(c *gin.Context) {
 }
 
 // @Summary CreateExternalAccount
-// @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
+// @Description สร้าง บัญชีธนาคารภายนอก ใหม่
 // @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
@@ -1216,9 +1216,9 @@ func (h accountingController) webhookNoti(c *gin.Context) {
 	c.JSON(200, model.Success{Message: "success"})
 }
 
-// @Summary CreateBankAccount
-// @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
-// @Tags Accounting - Bank Accounts
+// @Summary CreateBotaccountConfig
+// @Description เพิ่ม การตั้งค่าบัญชีธนาคาร ใหม่
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json
