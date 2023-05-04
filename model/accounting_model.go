@@ -93,7 +93,7 @@ type BankAccount struct {
 	DeletedAt             gorm.DeletedAt `json:"deletedAt"`
 }
 
-type BankAccountParam struct {
+type BankGetByIdRequest struct {
 	Id int64 `uri:"id" binding:"required"`
 }
 
@@ -199,10 +199,6 @@ type BankAccountTransaction struct {
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
-type BankAccountTransactionParam struct {
-	Id int64 `uri:"id" binding:"required"`
-}
-
 type BankAccountTransactionListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
@@ -263,10 +259,6 @@ type BankAccountTransfer struct {
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
 }
 
-type BankAccountTransferParam struct {
-	Id int64 `uri:"id" binding:"required"`
-}
-
 type BankAccountTransferListRequest struct {
 	AccountId       int    `form:"accountId"`
 	FromCreatedDate string `form:"fromCreatedDate"`
@@ -321,6 +313,18 @@ type BankAccountTransferResponse struct {
 	CreatedAt         time.Time      `json:"createdAt"`
 	UpdatedAt         *time.Time     `json:"updatedAt"`
 	DeletedAt         gorm.DeletedAt `json:"deletedAt"`
+}
+
+type BankAccountStatementListRequest struct {
+	AccountId        string `form:"accountId"`
+	StatementType    string `form:"statementType" extensions:"x-order:2"`
+	FromTransferDate string `form:"fromTransferDate" extensions:"x-order:3"`
+	ToTransferDate   string `form:"toTransferDate" extensions:"x-order:4"`
+	Search           string `form:"search" extensions:"x-order:5"`
+	Page             int    `form:"page" default:"1" min:"1"`
+	Limit            int    `form:"limit" default:"10" min:"1" max:"100"`
+	SortCol          string `form:"sortCol"`
+	SortAsc          string `form:"sortAsc"`
 }
 
 type CustomerAccountInfoRequest struct {
@@ -466,6 +470,15 @@ type ExternalAccountLogCreateBody struct {
 	LogType            string `json:"logType"`
 	Message            string `json:"message"`
 	ExternalCreateDate string `json:"externalCreateDate"`
+}
+
+type ExternalStatementListRequest struct {
+	AccountNumber string `form:"accountNumber" validate:"required"`
+	Page          int    `form:"page" default:"1" min:"1"`
+	Limit         int    `form:"limit" default:"10" min:"1" max:"100"`
+	Search        string `form:"search"`
+	SortCol       string `form:"sortCol"`
+	SortAsc       string `form:"sortAsc"`
 }
 
 type ExternalAccountStatement struct {

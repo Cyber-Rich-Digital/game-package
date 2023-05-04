@@ -83,6 +83,11 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	transferRoute.POST("", middleware.Authorize, handler.createTransfer)
 	transferRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmTransfer)
 	transferRoute.DELETE("/:id", middleware.Authorize, handler.deleteTransfer)
+
+	statementRoute := root.Group("/statements")
+	statementRoute.GET("/list", middleware.Authorize, handler.getAccountStatements)
+	statementRoute.GET("/detail/:id", middleware.Authorize, handler.getAccountStatementById)
+
 }
 
 // @Summary get Bank List
@@ -310,8 +315,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 // @Router /accounting/bankaccounts/detail/{id} [get]
 func (h accountingController) getBankAccountById(c *gin.Context) {
 
-	var accounting model.BankAccountParam
-
+	var accounting model.BankGetByIdRequest
 	if err := c.ShouldBindUri(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -429,15 +433,7 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param accountId query string false "accountId"
-// @Param fromCreatedDate query string false "fromCreatedDate"
-// @Param toCreatedDate query string false "toCreatedDate"
-// @Param transferType query string false "transferType"
-// @Param search query string false "search"
-// @Param page query int false "page"
-// @Param limit query int false "limit"
-// @Param sortCol query string false "sortCol"
-// @Param sortAsc query string false "sortAsc"
+// @Param _ query model.BankAccountTransactionListRequest true "BankAccountTransactionListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transactions/list [get]
@@ -474,7 +470,7 @@ func (h accountingController) getTransactions(c *gin.Context) {
 // @Router /accounting/transactions/detail/{id} [get]
 func (h accountingController) getTransactionById(c *gin.Context) {
 
-	var accounting model.BankAccountTransactionParam
+	var accounting model.BankGetByIdRequest
 
 	if err := c.ShouldBindUri(&accounting); err != nil {
 		HandleError(c, err)
@@ -626,7 +622,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 // @Router /accounting/transfers/detail/{id} [get]
 func (h accountingController) getTransferById(c *gin.Context) {
 
-	var accounting model.BankAccountTransferParam
+	var accounting model.BankGetByIdRequest
 	if err := c.ShouldBindUri(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -756,6 +752,62 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 		return
 	}
 	c.JSON(201, model.Success{Message: "Deleted success"})
+}
+
+// @Summary getAccountStatements รายการเดินบัญชีธนาคาร
+// @Description ดึงข้อมูล Statement รายการเดินบัญชีธนาคาร จาก FASTBANK ตรงๆ
+// @Tags Accounting - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.BankAccountStatementListRequest true "BankAccountStatementListRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/statements/list [get]
+func (h accountingController) getAccountStatements(c *gin.Context) {
+
+	var query model.BankAccountStatementListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetAccountStatements(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetAccountStatementById
+// @Description ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*
+// @Tags Accounting - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/statements/detail/{id} [get]
+func (h accountingController) getAccountStatementById(c *gin.Context) {
+
+	var req model.BankGetByIdRequest
+	if err := c.ShouldBindUri(&req); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetAccountStatementById(req)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
 // @Summary GetCustomerAccountsInfo เช็คชื่อบัญชีธนาคารลูกค้า
@@ -1041,13 +1093,13 @@ func (h accountingController) transferExternalAccount(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Param _ query model.ExternalStatementListRequest true "ExternalStatementListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/logs [get]
 func (h accountingController) getExternalAccountLogs(c *gin.Context) {
 
-	var query model.BankAccountListRequest
+	var query model.ExternalStatementListRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -1071,13 +1123,13 @@ func (h accountingController) getExternalAccountLogs(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Param _ query model.ExternalStatementListRequest true "ExternalStatementListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/statements [get]
 func (h accountingController) getExternalAccountStatements(c *gin.Context) {
 
-	var query model.BankAccountListRequest
+	var query model.ExternalStatementListRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return

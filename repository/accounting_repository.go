@@ -60,6 +60,7 @@ type AccountingRepository interface {
 	DeleteBotaccountConfigById(id int64) error
 
 	// Banking REPO
+	GetBankStatements(req model.BankStatementListRequest) (*model.SuccessWithPagination, error)
 	GetMemberById(id int64) (*model.Member, error)
 	IncreaseMemberCredit(id int64, amount float32) error
 	GetPossibleStatementOwners(req model.MemberPossibleListRequest) (*model.SuccessWithPagination, error)
