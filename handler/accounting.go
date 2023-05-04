@@ -83,9 +83,14 @@ func AccountingController(r *gin.RouterGroup, db *gorm.DB) {
 	transferRoute.POST("", middleware.Authorize, handler.createTransfer)
 	transferRoute.POST("/confirm/:id", middleware.Authorize, handler.confirmTransfer)
 	transferRoute.DELETE("/:id", middleware.Authorize, handler.deleteTransfer)
+
+	statementRoute := root.Group("/statements")
+	statementRoute.GET("/list", middleware.Authorize, handler.getAccountStatements)
+	statementRoute.GET("/detail/:id", middleware.Authorize, handler.getAccountStatementById)
+
 }
 
-// @Summary get Bank List
+// @Summary getBanks get Bank List
 // @Description ดึงข้อมูลตัวเลือก รายชื่อธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -119,7 +124,7 @@ func (h accountingController) getBanks(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary get Account Type List
+// @Summary getAccountTypes
 // @Description ดึงข้อมูลตัวเลือก ประเภทบัญชีธนาคารทั้งหมด
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -148,7 +153,7 @@ func (h accountingController) getAccountTypes(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary get Auto Credit Flags
+// @Summary getAutoCreditFlags
 // @Description ดึงข้อมูลตัวเลือก การตั้งค่าปรับเครดิตอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -164,7 +169,7 @@ func (h accountingController) getAutoCreditFlags(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Auto withdraw Flags
+// @Summary getAutoWithdrawFlags
 // @Description ดึงข้อมูลตัวเลือก การตั้งค่าถอนโอนเงินอัตโนมัติ
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -178,10 +183,10 @@ func (h accountingController) getAutoWithdrawFlags(c *gin.Context) {
 		{Key: "auto_backoffice", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ คลิกผ่านระบบหลังบ้าน"},
 		{Key: "auto_bot", Name: "บัญชีถอนหลัก ปรับเครดิตออโต้ โอนเงินออโต้ (Bot)"},
 	}
-	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data, Total: 3})
 }
 
-// @Summary get Qr Wallet Statuses
+// @Summary getQrWalletStatuses
 // @Description ดึงข้อมูลตัวเลือก การเปิดใช้งาน QR Wallet
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -197,7 +202,7 @@ func (h accountingController) getQrWalletStatuses(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Account Statuses
+// @Summary getAccountStatuses
 // @Description ดึงข้อมูลตัวเลือก สถานะบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -213,7 +218,7 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
 }
 
-// @Summary get Account Priorities
+// @Summary getAccountPriorities
 // @Description ดึงข้อมูลตัวเลือก ลำดับความสำคัญบัญชีธนาคาร
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -222,20 +227,28 @@ func (h accountingController) getAccountStatuses(c *gin.Context) {
 // @Success 200 {object} model.SuccessWithPagination
 // @Router /accounting/accountpriorities/list [get]
 func (h accountingController) getAccountPriorities(c *gin.Context) {
-	var data = []model.SimpleOption{
-		{Key: "new", Name: "ระดับ NEW ทั่วไป"},
-		{Key: "gold", Name: "ระดับ Gold ฝากมากกว่า 10 ครั้ง"},
-		{Key: "platinum", Name: "ระดับ Platinum ฝากมากกว่า 20 ครั้ง"},
-		{Key: "vip", Name: "ระดับ VIP ฝากมากกว่า 20 ครั้ง"},
-		{Key: "classic", Name: "ระดับ CLASSIC ฝากสะสมมากกว่า 1,000 บาท"},
-		{Key: "superior", Name: "ระดับ SUPERIOR ฝากสะสมมากกว่า 10,000 บาท"},
-		{Key: "deluxe", Name: "ระดับ DELUXE ฝากสะสมมากกว่า 100,000 บาท"},
-		{Key: "wisdom", Name: "ระดับ WISDOM ฝากสะสมมากกว่า 500,000 บาท"},
+
+	// var data = []model.SimpleOption{
+	// 	{Key: "new", Name: "ระดับ NEW ทั่วไป"},
+	// 	{Key: "gold", Name: "ระดับ Gold ฝากมากกว่า 10 ครั้ง"},
+	// 	{Key: "platinum", Name: "ระดับ Platinum ฝากมากกว่า 20 ครั้ง"},
+	// 	{Key: "vip", Name: "ระดับ VIP ฝากมากกว่า 20 ครั้ง"},
+	// 	{Key: "classic", Name: "ระดับ CLASSIC ฝากสะสมมากกว่า 1,000 บาท"},
+	// 	{Key: "superior", Name: "ระดับ SUPERIOR ฝากสะสมมากกว่า 10,000 บาท"},
+	// 	{Key: "deluxe", Name: "ระดับ DELUXE ฝากสะสมมากกว่า 100,000 บาท"},
+	// 	{Key: "wisdom", Name: "ระดับ WISDOM ฝากสะสมมากกว่า 500,000 บาท"},
+	// }
+	// c.JSON(200, model.SuccessWithPagination{List: data, Total: 8})
+
+	data, err := h.accountingService.GetBankAccountPriorities()
+	if err != nil {
+		HandleError(c, err)
+		return
 	}
-	c.JSON(200, model.SuccessWithPagination{List: data, Total: 2})
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
 }
 
-// @Summary get Account's Bot Statuses
+// @Summary getAccountBotStatuses
 // @Description ดึงข้อมูลตัวเลือก สถานะบอท
 // @Tags Accounting - Options
 // @Security BearerAuth
@@ -310,8 +323,7 @@ func (h accountingController) getBankAccounts(c *gin.Context) {
 // @Router /accounting/bankaccounts/detail/{id} [get]
 func (h accountingController) getBankAccountById(c *gin.Context) {
 
-	var accounting model.BankAccountParam
-
+	var accounting model.BankGetByIdRequest
 	if err := c.ShouldBindUri(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -429,15 +441,7 @@ func (h accountingController) deleteBankAccount(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param accountId query string false "accountId"
-// @Param fromCreatedDate query string false "fromCreatedDate"
-// @Param toCreatedDate query string false "toCreatedDate"
-// @Param transferType query string false "transferType"
-// @Param search query string false "search"
-// @Param page query int false "page"
-// @Param limit query int false "limit"
-// @Param sortCol query string false "sortCol"
-// @Param sortAsc query string false "sortAsc"
+// @Param _ query model.BankAccountTransactionListRequest true "BankAccountTransactionListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/transactions/list [get]
@@ -474,7 +478,7 @@ func (h accountingController) getTransactions(c *gin.Context) {
 // @Router /accounting/transactions/detail/{id} [get]
 func (h accountingController) getTransactionById(c *gin.Context) {
 
-	var accounting model.BankAccountTransactionParam
+	var accounting model.BankGetByIdRequest
 
 	if err := c.ShouldBindUri(&accounting); err != nil {
 		HandleError(c, err)
@@ -626,7 +630,7 @@ func (h accountingController) getTransfers(c *gin.Context) {
 // @Router /accounting/transfers/detail/{id} [get]
 func (h accountingController) getTransferById(c *gin.Context) {
 
-	var accounting model.BankAccountTransferParam
+	var accounting model.BankGetByIdRequest
 	if err := c.ShouldBindUri(&accounting); err != nil {
 		HandleError(c, err)
 		return
@@ -756,6 +760,62 @@ func (h accountingController) deleteTransfer(c *gin.Context) {
 		return
 	}
 	c.JSON(201, model.Success{Message: "Deleted success"})
+}
+
+// @Summary getAccountStatements รายการเดินบัญชีธนาคาร
+// @Description ดึงข้อมูล Statement รายการเดินบัญชีธนาคาร จาก FASTBANK ตรงๆ
+// @Tags Accounting - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param _ query model.BankAccountStatementListRequest true "BankAccountStatementListRequest"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/statements/list [get]
+func (h accountingController) getAccountStatements(c *gin.Context) {
+
+	var query model.BankAccountStatementListRequest
+	if err := c.ShouldBind(&query); err != nil {
+		HandleError(c, err)
+		return
+	}
+	if err := validator.New().Struct(query); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetAccountStatements(query)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithPagination{List: data.List, Total: data.Total})
+}
+
+// @Summary GetAccountStatementById
+// @Description ดึงข้อมูลการโอนด้วย id *ยังไม่ได้ใช้งาน*
+// @Tags Accounting - Bank Account Statements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "id"
+// @Success 200 {object} model.SuccessWithData
+// @Failure 400 {object} handler.ErrorResponse
+// @Router /accounting/statements/detail/{id} [get]
+func (h accountingController) getAccountStatementById(c *gin.Context) {
+
+	var req model.BankGetByIdRequest
+	if err := c.ShouldBindUri(&req); err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	data, err := h.accountingService.GetAccountStatementById(req)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+	c.JSON(200, model.SuccessWithData{Message: "success", Data: data})
 }
 
 // @Summary GetCustomerAccountsInfo เช็คชื่อบัญชีธนาคารลูกค้า
@@ -889,7 +949,7 @@ func (h accountingController) getExternalAccountBalance(c *gin.Context) {
 }
 
 // @Summary CreateExternalAccount
-// @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
+// @Description สร้าง บัญชีธนาคารภายนอก ใหม่
 // @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
@@ -1041,13 +1101,13 @@ func (h accountingController) transferExternalAccount(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Param _ query model.ExternalStatementListRequest true "ExternalStatementListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/logs [get]
 func (h accountingController) getExternalAccountLogs(c *gin.Context) {
 
-	var query model.BankAccountListRequest
+	var query model.ExternalStatementListRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -1071,13 +1131,13 @@ func (h accountingController) getExternalAccountLogs(c *gin.Context) {
 // @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param _ query model.BankAccountListRequest true "BankAccountListRequest"
+// @Param _ query model.ExternalStatementListRequest true "ExternalStatementListRequest"
 // @Success 200 {object} model.SuccessWithData
 // @Failure 400 {object} handler.ErrorResponse
 // @Router /accounting/bankaccounts2/statements [get]
 func (h accountingController) getExternalAccountStatements(c *gin.Context) {
 
-	var query model.BankAccountListRequest
+	var query model.ExternalStatementListRequest
 	if err := c.ShouldBind(&query); err != nil {
 		HandleError(c, err)
 		return
@@ -1164,9 +1224,9 @@ func (h accountingController) webhookNoti(c *gin.Context) {
 	c.JSON(200, model.Success{Message: "success"})
 }
 
-// @Summary CreateBankAccount
-// @Description สร้าง บัญชีธนาคาร ใหม่ ในหน้า จัดการธนาคาร
-// @Tags Accounting - Bank Accounts
+// @Summary CreateBotaccountConfig
+// @Description เพิ่ม การตั้งค่าบัญชีธนาคาร ใหม่
+// @Tags Accounting - FASTBANK
 // @Security BearerAuth
 // @Accept json
 // @Produce json

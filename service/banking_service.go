@@ -225,6 +225,13 @@ func (s *bankingService) GetBankTransactions(req model.BankTransactionListReques
 func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateBody) error {
 
 	var body model.BankTransactionCreateBody
+	body.TransferAt = data.TransferAt
+	body.CreatedByUserId = data.CreatedByUserId
+	body.CreatedByUsername = data.CreatedByUsername
+	body.Status = "pending"
+
+	var autoDepositCondition *model.BankAutoDepositCondition
+	var autoWithdrawCondition *model.BankAutoWithdrawCondition
 
 	if data.TransferType == "deposit" {
 		member, err := s.repoAccounting.GetUserByMemberCode(data.MemberCode)
@@ -232,7 +239,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
-		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		bank, err := s.repoAccounting.GetBankByCode(member.BankCode)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
@@ -256,6 +263,9 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Bank Account")
 		}
+		if condition, err := s.GetAutoDepositCondition(body, *toAccount); err == nil {
+			autoDepositCondition = condition
+		}
 		body.ToAccountId = &toAccount.Id
 		body.ToBankId = &toAccount.BankId
 		body.ToAccountName = &toAccount.AccountName
@@ -269,7 +279,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
-		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		bank, err := s.repoAccounting.GetBankByCode(member.BankCode)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
@@ -279,19 +289,28 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		body.CreditAmount = data.CreditAmount
 		body.TransferType = data.TransferType
 
-		fromAccount, err := s.repoAccounting.GetWithdrawAccountById(*data.FromAccountId)
-		if err != nil {
-			fmt.Println(err)
-			return badRequest("Invalid Bank Account")
+		// Withdraw SystemAccount is not requried
+		if data.FromAccountId != nil {
+			fromAccount, err := s.repoAccounting.GetWithdrawAccountById(*data.FromAccountId)
+			if err != nil {
+				fmt.Println(err)
+				return badRequest("Invalid Bank Account")
+			}
+			body.FromAccountId = &fromAccount.Id
+			body.FromBankId = &fromAccount.BankId
+			body.FromAccountName = &fromAccount.AccountName
+			body.FromAccountNumber = &fromAccount.AccountNumber
+
+			if condition, err := s.GetAutoWithdrawCondition(body, *fromAccount); err == nil {
+				autoWithdrawCondition = condition
+			}
 		}
-		body.FromAccountId = &fromAccount.Id
-		body.FromBankId = &fromAccount.BankId
-		body.FromAccountName = &fromAccount.AccountName
-		body.FromAccountNumber = &fromAccount.AccountNumber
 
 		body.ToBankId = &bank.Id
 		body.ToAccountName = &member.Fullname
 		body.ToAccountNumber = &member.BankAccount
+		body.Status = "pending_credit"
+
 	} else if data.TransferType == "getcreditback" {
 		// ดึงยอดสลายไปเลย
 		member, err := s.repoAccounting.GetUserByMemberCode(data.MemberCode)
@@ -299,7 +318,7 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 			fmt.Println(err)
 			return badRequest("Invalid Member code")
 		}
-		bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+		bank, err := s.repoAccounting.GetBankByCode(member.BankCode)
 		if err != nil {
 			fmt.Println(err)
 			return badRequest("Invalid User Bank")
@@ -316,15 +335,39 @@ func (s *bankingService) CreateBankTransaction(data model.BankTransactionCreateB
 		return badRequest("Invalid Transfer Type")
 	}
 
-	body.TransferAt = data.TransferAt
-	body.CreatedByUserId = data.CreatedByUserId
-	body.CreatedByUsername = data.CreatedByUsername
-	body.Status = "pending"
-
-	if _, err := s.repoBanking.CreateBankTransaction(body); err != nil {
+	if insertId, err := s.repoBanking.CreateBankTransaction(body); err == nil {
+		// todo:
+		if insertId != nil && autoWithdrawCondition != nil {
+			fmt.Println("insertId", insertId)
+			fmt.Println("autoWithdrawCondition", autoWithdrawCondition)
+		} else if insertId != nil && autoDepositCondition != nil {
+			fmt.Println("insertId", insertId)
+			fmt.Println("autoDepositCondition", autoDepositCondition)
+		}
+	} else {
 		return internalServerError(err.Error())
 	}
 	return nil
+}
+func (s *bankingService) GetAutoDepositCondition(body model.BankTransactionCreateBody, toAccount model.BankAccount) (*model.BankAutoDepositCondition, error) {
+
+	// var autoWithdrawCondition model.BankTransactionCreateBody
+	// var autoDepositCondition model.BankTransactionCreateBody
+
+	return nil, nil
+}
+
+func (s *bankingService) GetAutoWithdrawCondition(body model.BankTransactionCreateBody, fromAccount model.BankAccount) (*model.BankAutoWithdrawCondition, error) {
+
+	// var autoWithdrawCondition model.BankTransactionCreateBody
+	// var autoDepositCondition model.BankTransactionCreateBody
+	if fromAccount.AutoWithdrawCreditFlag == "auto" {
+		// todo :
+	}
+	if fromAccount.AutoWithdrawConfirmFlag == "auto" {
+		// todo :
+	}
+	return nil, nil
 }
 
 func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreateBody) error {
@@ -334,7 +377,7 @@ func (s *bankingService) CreateBonusTransaction(data model.BonusTransactionCreat
 		fmt.Println(err)
 		return badRequest("Invalid Member code")
 	}
-	bank, err := s.repoAccounting.GetBankByCode(member.Bankname)
+	bank, err := s.repoAccounting.GetBankByCode(member.BankCode)
 	if err != nil {
 		fmt.Println(err)
 		return badRequest("Invalid User Bank")
